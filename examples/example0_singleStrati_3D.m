@@ -40,6 +40,7 @@ maxPerm = 1000;                 % [mD]
 rho     = 0.6;                  % Corr. coeff. for multivariate distributions
 
 % 2.3 Flow upscaling options and number of simulations
+U.useAcceleration = 1;          % 1 requires MEX setup, 0 otherwise (slower for MPFA).
 U.method          = 'tpfa';     % 'tpfa'for 3D
 U.coarseDims      = [1 1 1];    % desired n cells [x, y, z] in coarse grid
 U.flexible        = true;       % default true, much faster but U.coarseDims
