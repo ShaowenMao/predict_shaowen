@@ -744,7 +744,10 @@ classdef Fault3D
                                              'PoroMin', 'PoroMax', ...
                                              'PermMin', 'PermMax', ...
                                              'PermAniso'}; 
-           fig = uifigure(randi(1000, 1), 'Position', [500 500 700 30*N]);
+           %fig = uifigure(randi(1000, 1), 'Position', [500 500 700 30*N]);
+
+           fig = uifigure('Name', sprintf('%d', randi(1000)), 'Position', [500 500 700 30*N]);
+
            uit = uitable(fig);
            uit.Position = [20 20 550 30*N-40];
            uit.Data = tdata;

@@ -155,7 +155,7 @@ end
 % (realization with maximum upscaled permeability in across the fault), 'minX', 
 % 'maxZ' or 'minZ'.
 % General fault materials and perm view
-plotId = selectSimId('randm', faults, Nsim);                % simulation index
+plotId = selectSimId('randm', faults);                % simulation index
 %plotId = 1;
 if U_flex
     faults{plotId}.plotMaterials(faultSections{plotId}{1}, mySect, ...

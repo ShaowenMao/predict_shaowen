@@ -9,29 +9,35 @@ function plotUpscaledPerm(faults, dim, plotOpt, fignum)
 latx = {'Interpreter', 'latex'};
 sz = [14, 12];
 
+%mask = cellfun( @(x) isa(x, 'Fault3D'), faults );
+mask = cellfun( @(x) ~isempty(x), faults );
+
 % Fault MatProps
 if nargin < 2 || dim == 2
-    kAlongStrike = cell2mat(cellfun(@(x) x.Grid.permy, faults, ...
+    kAlongStrike = cell2mat(cellfun(@(x) x.Grid.permy, faults(mask), ...
                                     'UniformOutput', false)')./(milli*darcy);
 end
-perms = cell2mat(cellfun(@(x) x.Perm, faults, ...
+
+perms = cell2mat(cellfun(@(x) x.Perm, faults(mask), ...
                          'UniformOutput', false)) ./ (milli*darcy);
+
 s = size(faults{1}.Perm, 1);                     
 if s > 1
     perm_cell = zeros(numel(faults), dim, s);
     for n=1:s
-        perm_cell(:,:,n) = cell2mat(cellfun(@(x) x.Perm(n,:), faults, ...
+        perm_cell(:,:,n) = cell2mat(cellfun(@(x) x.Perm(n,:), faults(mask), ...
                                  'UniformOutput', false)) ./ (milli*darcy);
     end
     K_cell = log10(perm_cell);
 end
 if nargin < 2 || dim == 2
-    thick = cell2mat(cellfun(@(x) x.MatProps.thick, faults, ...
+    thick = cell2mat(cellfun(@(x) x.MatProps.thick, faults(mask), ...
                              'UniformOutput', false));
 elseif dim == 3
-    thick = cell2mat(cellfun(@(x) x.Thick, faults, 'UniformOutput', false));
+    thick = cell2mat(cellfun(@(x) x.Thick, faults(mask), 'UniformOutput', false));
 end
-vcl = cell2mat(cellfun(@(x) x.Vcl, faults, 'UniformOutput', false));
+
+vcl = cell2mat(cellfun(@(x) x.Vcl, faults(mask), 'UniformOutput', false));
 if any(any(perms < 0))
     id = unique([find(perms(:, 1)<0), find(perms(:, 2)<0), find(perms(:, 3)<0)]);
     warning(['Negative upscaled perms found in ' num2str(numel(id))...
@@ -305,9 +311,22 @@ else
     %    128, 119, 128]./255;
     [R, P] = corrcoef(K);           % corrcoeff and pval matrices
     a = 0.05;                       % significance level
-    pvals = P'; pvals = pvals([4,3,8]);
-    r = R';     r = r([4, 3, 8]);
-    markr = ['+', 'x', '^'];
+    % pvals = P'; 
+    % pvals = pvals([4,3,8]);
+    % r = R';     
+    % r = r([4, 3, 8]);
+
+    if size(R, 1) < 3 || size(R, 2) < 3
+        warning('Correlation matrix size is less than 3×3. Skipping correlation annotation.');
+        r = [NaN, NaN, NaN];
+        pvals = [NaN, NaN, NaN];
+    else
+        % Extract off-diagonal values: (kxx, kyy), (kxx, kzz), (kyy, kzz)
+        r = [R(1,2), R(1,3), R(2,3)];
+        pvals = [P(1,2), P(1,3), P(2,3)];
+    end
+
+
     for n=1:numel(tidss)
         nexttile(tidss(n))
         colormap(turbo);

@@ -130,7 +130,7 @@ plotMatPropsHist(faults, smears, mySect, layerId, dim)
 % (realization with maximum upscaled permeability in across the fault), 'minX', 
 % 'maxZ' or 'minZ'.
 % General fault materials and perm view
-plotId = selectSimId('randm', faults, Nsim);                % simulation index
+plotId = selectSimId('randm', faults);                % simulation index
 faults{plotId}.plotMaterials(mySect, G0) 
 
 % 3.4. Visualize upscaled permeability

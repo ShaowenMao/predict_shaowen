@@ -1,7 +1,11 @@
 function plotSeg(faults, nSeg)
 % Plot strike-parallel segmentation (number of segments)
 %
-nSegv = cellfun(@(x) numel(x.SegLen), faults);
+
+%mask = cellfun( @(x) isa(x, 'Fault3D'), faults );
+mask = cellfun( @(x) ~isempty(x), faults );
+nSegv = cellfun( @(x) numel(x.SegLen), faults(mask) );
+
 nbins = 10;
 edg = linspace(nSeg.range(1), nSeg.range(2), nbins+1);
 latx = {'Interpreter', 'latex'};
