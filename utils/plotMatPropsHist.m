@@ -14,18 +14,20 @@ if nargin > 4 && dim == 3
     faults = horzcat(faults{:});
     smears = horzcat(smears{:});
 end
-thick = cell2mat(cellfun(@(x) x.MatProps.thick, faults, ...
+
+mask = cellfun( @(x) ~isempty(x), faults );
+thick = cell2mat(cellfun(@(x) x.MatProps.thick, faults(mask), ...
     'UniformOutput', false));
 DTratios = faults{1}.Disp ./ thick;
-phi = cell2mat(cellfun(@(x) x.MatProps.resFric(id), faults, ...
+phi = cell2mat(cellfun(@(x) x.MatProps.resFric(id), faults(mask), ...
     'UniformOutput', false));
-SSFc = cell2mat(cellfun(@(x) x.MatProps.ssfc(id), faults, ...
+SSFc = cell2mat(cellfun(@(x) x.MatProps.ssfc(id), faults(mask), ...
     'UniformOutput', false));
-kprime = cell2mat(cellfun(@(x) x.MatProps.permAnisoRatio(id), faults, ...
+kprime = cell2mat(cellfun(@(x) x.MatProps.permAnisoRatio(id), faults(mask), ...
     'UniformOutput', false));
-perm = cell2mat(cellfun(@(x) x.MatProps.perm(id), faults, ...
+perm = cell2mat(cellfun(@(x) x.MatProps.perm(id), faults(mask), ...
     'UniformOutput', false))./(milli*darcy);
-poro = cell2mat(cellfun(@(x) x.MatProps.poro(id), faults, ...
+poro = cell2mat(cellfun(@(x) x.MatProps.poro(id), faults(mask), ...
     'UniformOutput', false));
 %N = 1000;
 %perm = faults{1}.MatProps.perm{id}(N)/(milli*darcy);
@@ -54,11 +56,13 @@ if faults{1}.MatMap.isclayIn(id) == 1
     else
        layerThick = FS.HW.Thickness(FS.HW.Id == id);
     end
-    sthick = cell2mat(cellfun(@(x) x.Thick(sid), smears, 'UniformOutput', false));
+
+    mask = cellfun( @(x) ~isempty(x), smears );
+    sthick = cell2mat(cellfun(@(x) x.Thick(sid), smears(mask), 'UniformOutput', false));
     Trat = sthick ./ layerThick;
-    sfrac = cell2mat(cellfun(@(x) x.Psmear(sid), smears, 'UniformOutput', false));
-    segLenMax = cell2mat(cellfun(@(x) x.SegLenMax(sid), smears, 'UniformOutput', false));
-    slength = cell2mat(cellfun(@(x) x.Length(sid), smears, 'UniformOutput', false));
+    sfrac = cell2mat(cellfun(@(x) x.Psmear(sid), smears(mask), 'UniformOutput', false));
+    segLenMax = cell2mat(cellfun(@(x) x.SegLenMax(sid), smears(mask), 'UniformOutput', false));
+    slength = cell2mat(cellfun(@(x) x.Length(sid), smears(mask), 'UniformOutput', false));
     segLenFrac = segLenMax ./ slength;
 
     % Smear historgram params
