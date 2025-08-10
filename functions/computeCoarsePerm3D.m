@@ -29,6 +29,10 @@ rock.perm = permG;
 gravity reset off
 if strcmp(U.method, 'tpfa')
     %CG = generateCoarseGrid(G, p);
+    pth = writeJutulInputs( G, rock, ...
+                           'test3D', ...
+                           'C:\predict_shaowen\JutulInputs');
+
     Perm = myUpscalePerm(G, CG, rock, 'method', U.method);   
     
     

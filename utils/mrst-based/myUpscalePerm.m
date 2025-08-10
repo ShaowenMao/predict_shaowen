@@ -114,23 +114,25 @@ along with MRST.  If not, see <http://www.gnu.org/licenses/>.
          else
             T = opt.T;
          end
-         ups = @(cells, hf) upscale_block_tpfa(...
-            extractSubgrid(g, cells), T(hf), dims, fluid, opt.LinSolve);
+         % ups = @(cells, hf) upscale_block_tpfa(...
+         %    extractSubgrid(g, cells), T(hf), dims, fluid, opt.LinSolve);
    end
 
-   map.sub_cells = @(b) find(cg.partition == b);
-   map.hf        = @(c) mcolon(g.cells.facePos(  c  ), ...
-                               g.cells.facePos(c + 1) - 1);
+   % map.sub_cells = @(b) find(cg.partition == b);
+   % map.hf        = @(c) mcolon(g.cells.facePos(  c  ), ...
+   %                             g.cells.facePos(c + 1) - 1);
+   % 
+   % % Compute upscaled permeability for each coarse block
+   % for b = 1 : nBlocks,
+   %    cells = map.sub_cells(b);  % Fine-scale cells present in 'blk'
+   %    hf    = map.hf(cells);     % Fine-scale half-faces in 'blk'
+   % 
+   %    perm(b,:) = ups(cells, hf);
+   % 
+   %    if opt.Verbose, waitbar(b / nBlocks, h), end
+   % end
 
-   % Compute upscaled permeability for each coarse block
-   for b = 1 : nBlocks,
-      cells = map.sub_cells(b);  % Fine-scale cells present in 'blk'
-      hf    = map.hf(cells);     % Fine-scale half-faces in 'blk'
-
-      perm(b,:) = ups(cells, hf);
-
-      if opt.Verbose, waitbar(b / nBlocks, h), end
-   end
+   perm(1,:) = upscale_block_tpfa(g, T, dims, fluid, opt.LinSolve);
 
    if opt.Verbose,
       toc, close(h)
