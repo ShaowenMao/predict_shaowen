@@ -69,7 +69,7 @@ elseif dim == 3
             G.nodes.coords(idNodes, 2) = cumSegLen(n);
         end
         G = computeGeometry(G);
-        G.cellDim = [T/nelem_max, nan, D/nelem_max];
+        G.cellDim = [T/nelem_max, L/numel(segLen), D/nelem_max];
     else
          nelem = [round(T / targetCellDim(1)), ...
                   round(L / LCellDim), ...
