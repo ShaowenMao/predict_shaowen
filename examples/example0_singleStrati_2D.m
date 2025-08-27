@@ -40,7 +40,7 @@ rho     = 0.6;                  % Corr. coeff. for multivariate distributions
 
 % 2.3 Flow upscaling options and number of simulations
 U.useAcceleration = 1;          % 1 requires MEX setup, 0 otherwise (slower for MPFA).
-U.method          = 'mpfa';     % 'tpfa' recommended if useAcceleration = 0
+U.method          = 'tpfa';     % 'tpfa' recommended if useAcceleration = 0
 U.outflux         = 0;          % compare outflux of fine and upscaled model
 U.ARcheck         = 0;          % check if Perm obtained with grid with aspect ratio of 
                                 % only 5 gives same output.
@@ -84,8 +84,8 @@ G0 = makeFaultGrid(T0, D);
 faults = cell(Nsim, 1);
 smears = cell(Nsim, 1);
 tstart = tic;
-parfor n=1:Nsim    % parfor allowed if you have the parallel computing toolbox
-%for n=1
+%parfor n=1:Nsim    % parfor allowed if you have the parallel computing toolbox
+for n=1
     myFault = Fault2D(mySect, faultDip);
     
     % Get material property (intermediate variable) samples, and fix 
