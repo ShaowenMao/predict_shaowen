@@ -97,13 +97,13 @@ for n=1
     
     % Generate smear object with T, Tap, L, Lmax
     smear = Smear(mySect, myFault, G, 1);
-    
+
     % Place fault materials and assign cell-based properties
     myFault = myFault.placeMaterials(mySect, smear, G);
     
     % Compute upscaled permeability distribution
     myFault = myFault.upscaleProps(G, U);
-    
+
     % Save result
     faults{n} = myFault;
     smears{n} = smear;

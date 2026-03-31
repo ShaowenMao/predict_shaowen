@@ -127,7 +127,7 @@ for n=1
     else
         myFault = myFault.upscaleProps(G, U);
     end
-    
+
     % Save results
     faults{n} = myFault;
     if mod(n, 50) == 0
