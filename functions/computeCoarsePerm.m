@@ -44,9 +44,25 @@ if strcmp(U.method, 'tpfa')
     p2 = partitionCartGrid(G.cartDims, [1 1]);
     CG2 = generateCoarseGrid(G, p2);
 
-    pth = writeJutulInputs( G, rock, ...
-                       'test2D', ...
-                       'C:\predict_shaowen\JutulInputs');
+    if isfield(U, 'exportJutulInputs') && U.exportJutulInputs
+        if isfield(U, 'jutulFolder') && ~isempty(U.jutulFolder)
+            jutulFolder = U.jutulFolder;
+        else
+            if exist('getCurrentTask', 'file') == 2
+                task = getCurrentTask();
+            else
+                task = [];
+            end
+            if isempty(task)
+                workerTag = 'main';
+            else
+                workerTag = ['worker_' num2str(task.ID)];
+            end
+            jutulFolder = fullfile(tempdir, 'predict_shaowen', ...
+                                   'JutulInputs', workerTag);
+        end
+        writeJutulInputs(G, rock, 'test2D', jutulFolder);
+    end
 
     K = diag(myUpscalePerm(G, CG2, rock, 'method', U.method));
     

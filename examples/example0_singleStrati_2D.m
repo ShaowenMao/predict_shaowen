@@ -45,7 +45,7 @@ U.outflux         = 0;          % compare outflux of fine and upscaled model
 U.ARcheck         = 0;          % check if Perm obtained with grid with aspect ratio of 
                                 % only 5 gives same output.
 U.coarseDims      = [1 1 1];    % Mandatory one cell if 2D
-Nsim              = 1;       % Number of simulations/realizations
+Nsim              = 10;       % Number of simulations/realizations
 
 % 2.4 Define Stratigraphy and FaultedSection objects
 % Organize the input parameters in HW and FW, and use that info to create a 
@@ -85,7 +85,7 @@ faults = cell(Nsim, 1);
 smears = cell(Nsim, 1);
 tstart = tic;
 %parfor n=1:Nsim    % parfor allowed if you have the parallel computing toolbox
-for n=1
+for n=1: Nsim
     myFault = Fault2D(mySect, faultDip);
     
     % Get material property (intermediate variable) samples, and fix 

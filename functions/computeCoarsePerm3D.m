@@ -29,9 +29,25 @@ rock.perm = permG;
 gravity reset off
 if strcmp(U.method, 'tpfa')
     %CG = generateCoarseGrid(G, p);
-    pth = writeJutulInputs( G, rock, ...
-                           'test3D', ...
-                           'C:\predict_shaowen\JutulInputs');
+    if isfield(U, 'exportJutulInputs') && U.exportJutulInputs
+        if isfield(U, 'jutulFolder') && ~isempty(U.jutulFolder)
+            jutulFolder = U.jutulFolder;
+        else
+            if exist('getCurrentTask', 'file') == 2
+                task = getCurrentTask();
+            else
+                task = [];
+            end
+            if isempty(task)
+                workerTag = 'main';
+            else
+                workerTag = ['worker_' num2str(task.ID)];
+            end
+            jutulFolder = fullfile(tempdir, 'predict_shaowen', ...
+                                   'JutulInputs', workerTag);
+        end
+        writeJutulInputs(G, rock, 'test3D', jutulFolder);
+    end
 
     Perm = myUpscalePerm(G, CG, rock, 'method', U.method);   
     
