@@ -14,7 +14,8 @@ function results = gom_perm_distribution_sensitivity(outputDir, varargin)
 %
 % The default comparison metric is the mean absolute error (MAE) of the
 % bin probabilities in log10-permeability space. Hellinger distance and
-% total variation distance are also saved as complementary metrics.
+% total variation distance are also saved as complementary metrics, and a
+% sample-based Wasserstein distance is computed directly on log10(k).
 %
 % Usage:
 %   results = gom_perm_distribution_sensitivity()
@@ -27,6 +28,8 @@ function results = gom_perm_distribution_sensitivity(outputDir, varargin)
 %   'CorrCoef'      - copula correlation coefficient. Default: 0.6
 %   'BaseSeed'      - base RNG seed. Default: 1729
 %   'Mode'          - 'nested' (default) or 'independent'
+%   'UseParallel'   - run realizations with parfor. Default: false
+%   'NumWorkers'    - requested pool size when auto-starting. Default: []
 %   'ShowProgress'  - print progress. Default: true
 %   'BinEdges'      - histogram bin edges in log10(mD). Default: linspace(-7, 3, 25)
 %
@@ -49,6 +52,8 @@ parser.addParameter('Windows', {'famp1', 'famp2', 'famp3', 'famp4', 'famp5', 'fa
 parser.addParameter('CorrCoef', 0.6, @(x) isnumeric(x) && isscalar(x));
 parser.addParameter('BaseSeed', 1729, @(x) isnumeric(x) && isscalar(x));
 parser.addParameter('Mode', 'nested', @(x) ischar(x) || isstring(x));
+parser.addParameter('UseParallel', false, @(x) islogical(x) && isscalar(x));
+parser.addParameter('NumWorkers', [], @(x) isempty(x) || (isnumeric(x) && isscalar(x) && x >= 1));
 parser.addParameter('ShowProgress', true, @(x) islogical(x) && isscalar(x));
 parser.addParameter('BinEdges', linspace(-7, 3, 25), @(x) isnumeric(x) && isvector(x) && numel(x) >= 3);
 parser.parse(varargin{:});
@@ -72,6 +77,9 @@ assert(exist('mrstModule', 'file') == 2, ...
         'folder before calling gom_perm_distribution_sensitivity.'])
 mrstModule add mrst-gui coarsegrid upscaling incomp mpfa mimetic
 mrstVerbose off
+if opt.UseParallel
+    ensurePredictParallelPool(opt.NumWorkers);
+end
 
 figDir = fullfile(outputDir, 'figures');
 tableDir = fullfile(outputDir, 'tables');
@@ -95,6 +103,7 @@ nBins = numel(binCenters);
 mae = nan(nWindows, nTests, nComp);
 hellinger = nan(nWindows, nTests, nComp);
 totalVariation = nan(nWindows, nTests, nComp);
+wasserstein = nan(nWindows, nTests, nComp);
 referencePerms = cell(nWindows, 1);
 referenceHist = nan(nWindows, nComp, nBins);
 testHist = nan(nWindows, nTests, nComp, nBins);
@@ -109,9 +118,10 @@ for iw = 1:nWindows
     windowOpt = getWindowOptions(window);
     mySect = buildFaultedSection(windowOpt);
 
-    rng(opt.BaseSeed + iw - 1, 'twister');
+    refSeedBase = opt.BaseSeed + 100000*iw;
     permsRef = runWindowPermSamples(mySect, windowOpt, opt.ReferenceNsim, ...
-                                    opt.CorrCoef, U, opt.ShowProgress);
+                                    opt.CorrCoef, U, opt.ShowProgress, ...
+                                    opt.UseParallel, refSeedBase);
     permsRef = sanitizePerms(permsRef, window, 'reference');
     referencePerms{iw} = permsRef;
     referenceHist(iw, :, :) = getHistogramProbabilities(permsRef, binEdges);
@@ -132,9 +142,10 @@ for iw = 1:nWindows
             if opt.ShowProgress
                 fprintf('  Independent rerun for N = %d...\n', nCurrent);
             end
-            rng(getIndependentSeed(opt.BaseSeed, iw, it), 'twister');
+            testSeedBase = getIndependentSeed(opt.BaseSeed, iw, it);
             permsTest = runWindowPermSamples(mySect, windowOpt, nCurrent, ...
-                                             opt.CorrCoef, U, false);
+                                             opt.CorrCoef, U, false, ...
+                                             opt.UseParallel, testSeedBase);
             permsTest = sanitizePerms(permsTest, window, ['N' num2str(nCurrent)]);
         end
         pRef = squeeze(referenceHist(iw, :, :));
@@ -142,29 +153,37 @@ for iw = 1:nWindows
         windowTestHist(it, :, :) = pTest;
         [mae(iw, it, :), hellinger(iw, it, :), totalVariation(iw, it, :)] = ...
             compareProbabilityDistributions(pRef, pTest);
+        wasserstein(iw, it, :) = computeSampleWasserstein(permsRef, permsTest);
     end
     testHist(iw, :, :, :) = windowTestHist;
 
     saveComparisonFigure(window, squeeze(referenceHist(iw, :, :)), ...
                          windowTestHist, binCenters, testNsims, ...
-                         squeeze(mae(iw, :, :)), ...
-                         squeeze(hellinger(iw, :, :)), opt.ReferenceNsim, ...
+                         reshape(mae(iw, :, :), nTests, nComp), ...
+                         reshape(hellinger(iw, :, :), nTests, nComp), ...
+                         reshape(totalVariation(iw, :, :), nTests, nComp), ...
+                         reshape(wasserstein(iw, :, :), nTests, nComp), ...
+                         opt.ReferenceNsim, ...
                          figDir, compLabels);
 
     save(fullfile(dataDir, [window '_distribution_data.mat']), ...
-         'permsRef', 'windowTestHist', 'binEdges', 'binCenters');
+         'permsRef', 'windowTestHist', 'binEdges', 'binCenters', ...
+         'testNsims', 'window');
 end
 
 maeOverall = mean(mae, 3, 'omitnan');
 hellingerOverall = mean(hellinger, 3, 'omitnan');
 tvOverall = mean(totalVariation, 3, 'omitnan');
+wassersteinOverall = mean(wasserstein, 3, 'omitnan');
 
 maeOverallTable = makeMetricTable(maeOverall, windows, testNsims);
 hellingerOverallTable = makeMetricTable(hellingerOverall, windows, testNsims);
 tvOverallTable = makeMetricTable(tvOverall, windows, testNsims);
+wassersteinOverallTable = makeMetricTable(wassersteinOverall, windows, testNsims);
 maeTripletTable = makeTripletMetricTable(mae, windows, testNsims, compNames);
 hellingerTripletTable = makeTripletMetricTable(hellinger, windows, testNsims, compNames);
 tvTripletTable = makeTripletMetricTable(totalVariation, windows, testNsims, compNames);
+wassersteinTripletTable = makeTripletMetricTable(wasserstein, windows, testNsims, compNames);
 
 fprintf('\nOverall MAE Table (mean across kxx, kyy, kzz)\n');
 disp(maeOverallTable)
@@ -178,21 +197,29 @@ fprintf('\nOverall Total Variation Table (mean across kxx, kyy, kzz)\n');
 disp(tvOverallTable)
 fprintf('\nTotal Variation Triplet Table [kxx | kyy | kzz]\n');
 disp(tvTripletTable)
+fprintf('\nOverall Wasserstein Table (mean across kxx, kyy, kzz)\n');
+disp(wassersteinOverallTable)
+fprintf('\nWasserstein Triplet Table [kxx | kyy | kzz]\n');
+disp(wassersteinTripletTable)
 
 writetable(maeOverallTable, fullfile(tableDir, 'mae_overall.csv'), 'WriteRowNames', true);
 writetable(hellingerOverallTable, fullfile(tableDir, 'hellinger_overall.csv'), 'WriteRowNames', true);
 writetable(tvOverallTable, fullfile(tableDir, 'total_variation_overall.csv'), 'WriteRowNames', true);
+writetable(wassersteinOverallTable, fullfile(tableDir, 'wasserstein_overall.csv'), 'WriteRowNames', true);
 writetable(maeTripletTable, fullfile(tableDir, 'mae_triplet.csv'), 'WriteRowNames', true);
 writetable(hellingerTripletTable, fullfile(tableDir, 'hellinger_triplet.csv'), 'WriteRowNames', true);
 writetable(tvTripletTable, fullfile(tableDir, 'total_variation_triplet.csv'), 'WriteRowNames', true);
+writetable(wassersteinTripletTable, fullfile(tableDir, 'wasserstein_triplet.csv'), 'WriteRowNames', true);
 
 maeTables = struct();
 hellingerTables = struct();
 tvTables = struct();
+wassersteinTables = struct();
 for ic = 1:nComp
     maeTables.(compNames{ic}) = makeMetricTable(mae(:, :, ic), windows, testNsims);
     hellingerTables.(compNames{ic}) = makeMetricTable(hellinger(:, :, ic), windows, testNsims);
     tvTables.(compNames{ic}) = makeMetricTable(totalVariation(:, :, ic), windows, testNsims);
+    wassersteinTables.(compNames{ic}) = makeMetricTable(wasserstein(:, :, ic), windows, testNsims);
 
     writetable(maeTables.(compNames{ic}), ...
                fullfile(tableDir, ['mae_' compNames{ic} '.csv']), ...
@@ -203,11 +230,27 @@ for ic = 1:nComp
     writetable(tvTables.(compNames{ic}), ...
                fullfile(tableDir, ['total_variation_' compNames{ic} '.csv']), ...
                'WriteRowNames', true);
+    writetable(wassersteinTables.(compNames{ic}), ...
+               fullfile(tableDir, ['wasserstein_' compNames{ic} '.csv']), ...
+               'WriteRowNames', true);
 end
 
 saveSummaryHeatmap(maeOverall, windows, testNsims, figDir, ...
                    sprintf('Overall MAE vs. %d-realization reference', opt.ReferenceNsim), ...
                    'mae_summary');
+saveSummaryHeatmap(hellingerOverall, windows, testNsims, figDir, ...
+                   sprintf('Overall Hellinger vs. %d-realization reference', opt.ReferenceNsim), ...
+                   'hellinger_summary');
+saveSummaryHeatmap(tvOverall, windows, testNsims, figDir, ...
+                   sprintf('Overall Total Variation vs. %d-realization reference', opt.ReferenceNsim), ...
+                   'total_variation_summary');
+saveSummaryHeatmap(wassersteinOverall, windows, testNsims, figDir, ...
+                   sprintf('Overall Wasserstein vs. %d-realization reference', opt.ReferenceNsim), ...
+                   'wasserstein_summary');
+
+scenarioMetricTable = makeScenarioMetricLongTable(windows, testNsims, compNames, ...
+                                                  mae, hellinger, totalVariation, wasserstein);
+writetable(scenarioMetricTable, fullfile(tableDir, 'scenario_metrics_long.csv'));
 
 results = struct();
 results.Config = opt;
@@ -223,15 +266,20 @@ results.TestHist = testHist;
 results.MAE = mae;
 results.Hellinger = hellinger;
 results.TotalVariation = totalVariation;
+results.Wasserstein = wasserstein;
 results.MAEOverallTable = maeOverallTable;
 results.HellingerOverallTable = hellingerOverallTable;
 results.TotalVariationOverallTable = tvOverallTable;
+results.WassersteinOverallTable = wassersteinOverallTable;
 results.MAETripletTable = maeTripletTable;
 results.HellingerTripletTable = hellingerTripletTable;
 results.TotalVariationTripletTable = tvTripletTable;
+results.WassersteinTripletTable = wassersteinTripletTable;
 results.MAETables = maeTables;
 results.HellingerTables = hellingerTables;
 results.TotalVariationTables = tvTables;
+results.WassersteinTables = wassersteinTables;
+results.ScenarioMetricTable = scenarioMetricTable;
 
 save(fullfile(outputDir, 'gom_perm_distribution_sensitivity_results.mat'), ...
      'results', '-v7.3');
@@ -264,16 +312,30 @@ mySect = mySect.getMatPropDistr();
 end
 
 
-function perms = runWindowPermSamples(mySect, windowOpt, Nsim, rho, U, showProgress)
+function perms = runWindowPermSamples(mySect, windowOpt, Nsim, rho, U, showProgress, useParallel, seedBase)
 % Generate only the permeability outputs, not the full realization objects.
 
 perms = nan(Nsim, 3);
 progressStep = max(1, min(100, floor(Nsim/10)));
-for n = 1:Nsim
-    perms(n, :) = runSingleWindowPermRealization(mySect, windowOpt, rho, U);
+if useParallel
+    if showProgress
+        fprintf('  Running %d realizations in parallel...\n', Nsim);
+    end
+    parfor n = 1:Nsim
+        rng(seedBase + n - 1, 'twister');
+        perms(n, :) = runSingleWindowPermRealization(mySect, windowOpt, rho, U);
+    end
+    if showProgress
+        fprintf('  Parallel batch of %d realizations completed.\n', Nsim);
+    end
+else
+    for n = 1:Nsim
+        rng(seedBase + n - 1, 'twister');
+        perms(n, :) = runSingleWindowPermRealization(mySect, windowOpt, rho, U);
 
-    if showProgress && (mod(n, progressStep) == 0 || n == Nsim)
-        fprintf('  Realization %d / %d completed.\n', n, Nsim);
+        if showProgress && (mod(n, progressStep) == 0 || n == Nsim)
+            fprintf('  Realization %d / %d completed.\n', n, Nsim);
+        end
     end
 end
 end
@@ -350,6 +412,47 @@ hellinger = sqrt(0.5 * sum((sqrt(pTest) - sqrt(pRef)).^2, 2));
 end
 
 
+function wasserstein = computeSampleWasserstein(permsRef, permsTest)
+% Compute sample-based 1D Wasserstein distance on log10(k) for each component.
+
+logRef = log10(permsRef);
+logTest = log10(permsTest);
+nComp = size(logRef, 2);
+wasserstein = zeros(nComp, 1);
+for ic = 1:nComp
+    wasserstein(ic) = wasserstein1dEmpirical(logRef(:, ic), logTest(:, ic));
+end
+end
+
+
+function w = wasserstein1dEmpirical(x, y)
+% Exact 1D Wasserstein distance between empirical distributions.
+
+x = sort(x(:));
+y = sort(y(:));
+if isempty(x) || isempty(y)
+    w = NaN;
+    return
+end
+
+support = unique([x; y], 'sorted');
+if isscalar(support)
+    w = 0;
+    return
+end
+
+[~, xLoc] = ismember(x, support);
+[~, yLoc] = ismember(y, support);
+xCounts = accumarray(xLoc, 1, [numel(support), 1]);
+yCounts = accumarray(yLoc, 1, [numel(support), 1]);
+
+Fx = cumsum(xCounts) / numel(x);
+Fy = cumsum(yCounts) / numel(y);
+intervalWidths = diff(support);
+w = sum(abs(Fx(1:end-1) - Fy(1:end-1)) .* intervalWidths);
+end
+
+
 function tbl = makeMetricTable(values, windows, testNsims)
 % Build a summary table.
 
@@ -377,6 +480,42 @@ tripletCells = cellstr(tripletStrings);
 tbl = cell2table(tripletCells, ...
                  'VariableNames', cellstr(varNames), ...
                  'RowNames', windows);
+end
+
+
+function tbl = makeScenarioMetricLongTable(windows, testNsims, compNames, mae, hellinger, totalVariation, wasserstein)
+% Build a long-format metric table for all scenarios and components.
+
+nRows = numel(windows) * numel(testNsims) * numel(compNames);
+windowCol = strings(nRows, 1);
+componentCol = strings(nRows, 1);
+nsimCol = zeros(nRows, 1);
+maeCol = zeros(nRows, 1);
+hellingerCol = zeros(nRows, 1);
+tvCol = zeros(nRows, 1);
+wassersteinCol = zeros(nRows, 1);
+
+idx = 0;
+for iw = 1:numel(windows)
+    for it = 1:numel(testNsims)
+        for ic = 1:numel(compNames)
+            idx = idx + 1;
+            windowCol(idx) = windows{iw};
+            componentCol(idx) = compNames{ic};
+            nsimCol(idx) = testNsims(it);
+            maeCol(idx) = mae(iw, it, ic);
+            hellingerCol(idx) = hellinger(iw, it, ic);
+            tvCol(idx) = totalVariation(iw, it, ic);
+            wassersteinCol(idx) = wasserstein(iw, it, ic);
+        end
+    end
+end
+
+tbl = table(cellstr(windowCol), nsimCol, cellstr(componentCol), ...
+            maeCol, hellingerCol, tvCol, wassersteinCol, ...
+            'VariableNames', {'Window', 'Nsim', 'Component', ...
+                              'MAE', 'Hellinger', 'TotalVariation', ...
+                              'Wasserstein'});
 end
 
 
@@ -409,7 +548,7 @@ close(fh)
 end
 
 
-function saveComparisonFigure(window, probsRef, probsTest, binCenters, testNsims, maeVals, hellVals, refNsim, figDir, compLabels)
+function saveComparisonFigure(window, probsRef, probsTest, binCenters, testNsims, maeVals, hellVals, tvVals, wassersteinVals, refNsim, figDir, compLabels)
 % Save the comparison figure for one window.
 
 nTests = numel(testNsims);
@@ -428,8 +567,11 @@ for it = 1:nTests
         grid on
         xlabel(['$\log_{10}$(' compLabels{ic} ' [mD])'], 'Interpreter', 'latex')
         ylabel('Probability [-]', 'Interpreter', 'latex')
-        title(sprintf('N = %d | MAE = %.4f | H = %.4f', ...
-              testNsims(it), maeVals(it, ic), hellVals(it, ic)))
+        title(sprintf(['N = %d\n' ...
+                       'MAE = %.4f | H = %.4f\n' ...
+                       'TV = %.4f | W = %.4f'], ...
+              testNsims(it), maeVals(it, ic), hellVals(it, ic), ...
+              tvVals(it, ic), wassersteinVals(it, ic)))
         xlim([binCenters(1) binCenters(end)])
         ylim([0, 1.05 * max([probsRef(ic, :), squeeze(probsTest(it, ic, :))']) + eps])
         if it == 1 && ic == 1
@@ -448,7 +590,7 @@ end
 function seed = getIndependentSeed(baseSeed, windowId, testId)
 % Deterministic but distinct seed for each independent rerun.
 
-seed = baseSeed + 1000*windowId + 100*testId;
+seed = baseSeed + 1000000*windowId + 10000*testId;
 end
 
 

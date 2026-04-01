@@ -19,6 +19,9 @@ function [faults, faultSections, smears, mySect, Us, telapsed] = predict_inputs_
 % Name-value options:
 %   'MakePlots'    - if true, plot permeability histograms. Default: true
 %   'CorrCoef'     - copula correlation coefficient. Default: 0.6
+%   'UseParallel'  - run realizations with parfor. Default: false
+%   'NumWorkers'   - requested pool size when auto-starting. Default: []
+%   'BaseSeed'     - deterministic seed base for realizations. Default: []
 %   'ShowProgress' - print progress in the command window. Default: true
 %   'UpscaleOpts'  - struct overriding fields of the default U options
 %
@@ -41,6 +44,9 @@ assert(isscalar(Nsim) && isnumeric(Nsim) && Nsim >= 1 && mod(Nsim, 1) == 0, ...
 
 opt.MakePlots = true;
 opt.CorrCoef = 0.6;
+opt.UseParallel = false;
+opt.NumWorkers = [];
+opt.BaseSeed = [];
 opt.ShowProgress = true;
 opt.UpscaleOpts = struct();
 opt = merge_options_relaxed(opt, varargin{:});
@@ -49,6 +55,9 @@ assert(exist('mrstModule', 'file') == 2, ...
        ['MRST is not on the MATLAB path. Run startup.m in your MRST ' ...
         'folder before calling predict_inputs_gom.'])
 mrstModule add mrst-gui coarsegrid upscaling incomp mpfa mimetic
+if opt.UseParallel
+    ensurePredictParallelPool(opt.NumWorkers);
+end
 
 windowOpt = getWindowOptions(window);
 
@@ -91,12 +100,33 @@ Us = cell(Nsim, 1);
 
 tstart = tic;
 progressStep = max(1, min(50, floor(Nsim/10)));
-for n = 1:Nsim
-    [faults{n}, faultSections{n}, smears{n}, Us{n}] = ...
-        runSingleWindowRealization(mySect, windowOpt, opt.CorrCoef, U);
+if opt.UseParallel
+    baseSeed = opt.BaseSeed;
+    corrCoef = opt.CorrCoef;
+    if opt.ShowProgress
+        fprintf('Running %d GOM realizations in parallel...\n', Nsim);
+    end
+    parfor n = 1:Nsim
+        if ~isempty(baseSeed)
+            rng(baseSeed + n - 1, 'twister');
+        end
+        [faults{n}, faultSections{n}, smears{n}, Us{n}] = ...
+            runSingleWindowRealization(mySect, windowOpt, corrCoef, U);
+    end
+    if opt.ShowProgress
+        fprintf('Simulation %d / %d completed.\n', Nsim, Nsim);
+    end
+else
+    for n = 1:Nsim
+        if ~isempty(opt.BaseSeed)
+            rng(opt.BaseSeed + n - 1, 'twister');
+        end
+        [faults{n}, faultSections{n}, smears{n}, Us{n}] = ...
+            runSingleWindowRealization(mySect, windowOpt, opt.CorrCoef, U);
 
-    if opt.ShowProgress && (mod(n, progressStep) == 0 || n == Nsim)
-        fprintf('Simulation %d / %d completed.\n', n, Nsim);
+        if opt.ShowProgress && (mod(n, progressStep) == 0 || n == Nsim)
+            fprintf('Simulation %d / %d completed.\n', n, Nsim);
+        end
     end
 end
 telapsed = toc(tstart);
