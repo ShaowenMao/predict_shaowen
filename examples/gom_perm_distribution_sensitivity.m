@@ -107,6 +107,7 @@ wasserstein = nan(nWindows, nTests, nComp);
 referencePerms = cell(nWindows, 1);
 referenceHist = nan(nWindows, nComp, nBins);
 testHist = nan(nWindows, nTests, nComp, nBins);
+windowSampleCsvFiles = strings(nWindows, 1);
 
 for iw = 1:nWindows
     window = windows{iw};
@@ -130,6 +131,7 @@ for iw = 1:nWindows
                         binCenters, figDir, compLabels, opt.ReferenceNsim);
 
     windowTestHist = nan(nTests, nComp, nBins);
+    windowTestPerms = cell(nTests, 1);
     for it = 1:nTests
         nCurrent = testNsims(it);
         if strcmp(opt.Mode, 'nested')
@@ -148,6 +150,7 @@ for iw = 1:nWindows
                                              opt.UseParallel, testSeedBase);
             permsTest = sanitizePerms(permsTest, window, ['N' num2str(nCurrent)]);
         end
+        windowTestPerms{it} = permsTest;
         pRef = squeeze(referenceHist(iw, :, :));
         pTest = getHistogramProbabilities(permsTest, binEdges);
         windowTestHist(it, :, :) = pTest;
@@ -166,9 +169,15 @@ for iw = 1:nWindows
                          opt.ReferenceNsim, ...
                          figDir, compLabels);
 
+    testPermsByNsim = makeScenarioPermStruct(windowTestPerms, testNsims);
+    windowSampleTable = makeWindowSampleTable(window, opt.ReferenceNsim, ...
+                                              permsRef, testNsims, ...
+                                              windowTestPerms);
+    windowSampleCsvFiles(iw) = fullfile(dataDir, [window '_distribution_samples.csv']);
+    writetable(windowSampleTable, windowSampleCsvFiles(iw));
     save(fullfile(dataDir, [window '_distribution_data.mat']), ...
          'permsRef', 'windowTestHist', 'binEdges', 'binCenters', ...
-         'testNsims', 'window');
+         'testNsims', 'window', 'testPermsByNsim');
 end
 
 maeOverall = mean(mae, 3, 'omitnan');
@@ -233,6 +242,23 @@ for ic = 1:nComp
     writetable(wassersteinTables.(compNames{ic}), ...
                fullfile(tableDir, ['wasserstein_' compNames{ic} '.csv']), ...
                'WriteRowNames', true);
+
+    saveSummaryHeatmap(mae(:, :, ic), windows, testNsims, figDir, ...
+                       sprintf('MAE for %s vs. %d-realization reference', ...
+                               compNames{ic}, opt.ReferenceNsim), ...
+                       ['mae_' compNames{ic} '_summary']);
+    saveSummaryHeatmap(hellinger(:, :, ic), windows, testNsims, figDir, ...
+                       sprintf('Hellinger for %s vs. %d-realization reference', ...
+                               compNames{ic}, opt.ReferenceNsim), ...
+                       ['hellinger_' compNames{ic} '_summary']);
+    saveSummaryHeatmap(totalVariation(:, :, ic), windows, testNsims, figDir, ...
+                       sprintf('Total Variation for %s vs. %d-realization reference', ...
+                               compNames{ic}, opt.ReferenceNsim), ...
+                       ['total_variation_' compNames{ic} '_summary']);
+    saveSummaryHeatmap(wasserstein(:, :, ic), windows, testNsims, figDir, ...
+                       sprintf('Wasserstein for %s vs. %d-realization reference', ...
+                               compNames{ic}, opt.ReferenceNsim), ...
+                       ['wasserstein_' compNames{ic} '_summary']);
 end
 
 saveSummaryHeatmap(maeOverall, windows, testNsims, figDir, ...
@@ -251,6 +277,10 @@ saveSummaryHeatmap(wassersteinOverall, windows, testNsims, figDir, ...
 scenarioMetricTable = makeScenarioMetricLongTable(windows, testNsims, compNames, ...
                                                   mae, hellinger, totalVariation, wasserstein);
 writetable(scenarioMetricTable, fullfile(tableDir, 'scenario_metrics_long.csv'));
+allSampleTable = makeCombinedSampleTable(windowSampleCsvFiles);
+if ~isempty(allSampleTable)
+    writetable(allSampleTable, fullfile(dataDir, 'all_distribution_samples.csv'));
+end
 
 results = struct();
 results.Config = opt;
@@ -280,6 +310,7 @@ results.HellingerTables = hellingerTables;
 results.TotalVariationTables = tvTables;
 results.WassersteinTables = wassersteinTables;
 results.ScenarioMetricTable = scenarioMetricTable;
+results.WindowSampleCsvFiles = cellstr(windowSampleCsvFiles);
 
 save(fullfile(outputDir, 'gom_perm_distribution_sensitivity_results.mat'), ...
      'results', '-v7.3');
@@ -519,6 +550,61 @@ tbl = table(cellstr(windowCol), nsimCol, cellstr(componentCol), ...
 end
 
 
+function s = makeScenarioPermStruct(windowTestPerms, testNsims)
+% Store raw permeability samples by scenario size in a struct.
+
+s = struct();
+for it = 1:numel(testNsims)
+    fieldName = matlab.lang.makeValidName("N" + string(testNsims(it)));
+    s.(fieldName) = windowTestPerms{it};
+end
+end
+
+
+function tbl = makeWindowSampleTable(window, refNsim, permsRef, testNsims, windowTestPerms)
+% Build a long-format table of raw permeability samples for one window.
+
+blocks = cell(numel(testNsims) + 1, 1);
+blocks{1} = makeSampleBlock(window, sprintf('Reference_N%d', refNsim), ...
+                            refNsim, permsRef);
+for it = 1:numel(testNsims)
+    blocks{it + 1} = makeSampleBlock(window, sprintf('N%d', testNsims(it)), ...
+                                     testNsims(it), windowTestPerms{it});
+end
+tbl = vertcat(blocks{:});
+end
+
+
+function tbl = makeSampleBlock(window, scenarioLabel, nsim, perms)
+% Build a long-format table block for one window/scenario.
+
+nSamples = size(perms, 1);
+tbl = table(repmat({window}, nSamples, 1), ...
+            repmat({scenarioLabel}, nSamples, 1), ...
+            repmat(nsim, nSamples, 1), ...
+            (1:nSamples)', perms(:, 1), perms(:, 2), perms(:, 3), ...
+            'VariableNames', {'Window', 'Scenario', 'Nsim', 'SampleIndex', ...
+                              'kxx_mD', 'kyy_mD', 'kzz_mD'});
+end
+
+
+function tbl = makeCombinedSampleTable(csvFiles)
+% Combine per-window sample CSV files into a single table.
+
+validFiles = csvFiles(strlength(csvFiles) > 0);
+if isempty(validFiles)
+    tbl = table();
+    return
+end
+
+blocks = cell(numel(validFiles), 1);
+for i = 1:numel(validFiles)
+    blocks{i} = readtable(validFiles(i));
+end
+tbl = vertcat(blocks{:});
+end
+
+
 function saveReferenceFigure(window, permsRef, probsRef, binCenters, figDir, compLabels, refNsim)
 % Save the reference distribution figure for one window.
 
@@ -553,8 +639,13 @@ function saveComparisonFigure(window, probsRef, probsTest, binCenters, testNsims
 
 nTests = numel(testNsims);
 colors = lines(nTests);
+figWidth = 1500;
+rowHeight = 240;
+topBottomMargin = 120;
+figHeight = max(700, rowHeight*nTests + topBottomMargin);
 
-fh = figure('Visible', 'off', 'Color', 'w');
+fh = figure('Visible', 'off', 'Color', 'w', ...
+            'Position', [100 100 figWidth figHeight]);
 tiledlayout(nTests, 3, 'Padding', 'compact', 'TileSpacing', 'compact');
 for it = 1:nTests
     for ic = 1:3
