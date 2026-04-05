@@ -24,8 +24,9 @@ function results = gom_perm_reference_floor_convergence(outputDir, varargin)
 %   7. Fit log10(D) = a + b*log10(Nsim) to the median convergence curve.
 %
 % Raw permeability values for all references and all repeated small runs
-% are saved in per-window MAT files. Summary tables and figures are saved
-% alongside them.
+% are saved as soon as each ensemble finishes, and the driver can resume
+% from those saved checkpoints after an interruption. Summary tables and
+% figures are saved alongside them.
 %
 % Usage:
 %   results = gom_perm_reference_floor_convergence()
@@ -43,6 +44,8 @@ function results = gom_perm_reference_floor_convergence(outputDir, varargin)
 %   'BaseSeed'      - deterministic seed base. Default: 1729
 %   'UseParallel'   - run realizations with parfor. Default: false
 %   'NumWorkers'    - requested pool size when auto-starting. Default: []
+%   'Resume'        - reuse saved raw-ensemble checkpoints when present.
+%                     Default: true
 %   'ShowProgress'  - print progress. Default: true
 %   'MakePlots'     - save convergence figures. Default: true
 %   'BinEdges'      - histogram bin edges in log10(mD).
@@ -50,6 +53,8 @@ function results = gom_perm_reference_floor_convergence(outputDir, varargin)
 %
 % Notes:
 %   - Run MRST startup.m before calling this function.
+%   - Checkpoints are stored per window under data/<window>/references and
+%     data/<window>/small_runs.
 %   - MAE and Hellinger are computed on histogram probabilities in
 %     log10(mD) space using the shared BinEdges.
 %   - Wasserstein distance is computed directly from the raw log10(k)
@@ -71,6 +76,7 @@ parser.addParameter('CorrCoef', 0.6, @(x) isnumeric(x) && isscalar(x));
 parser.addParameter('BaseSeed', 1729, @(x) isnumeric(x) && isscalar(x));
 parser.addParameter('UseParallel', false, @(x) islogical(x) && isscalar(x));
 parser.addParameter('NumWorkers', [], @(x) isempty(x) || (isnumeric(x) && isscalar(x) && x >= 1));
+parser.addParameter('Resume', true, @(x) islogical(x) && isscalar(x));
 parser.addParameter('ShowProgress', true, @(x) islogical(x) && isscalar(x));
 parser.addParameter('MakePlots', true, @(x) islogical(x) && isscalar(x));
 parser.addParameter('BinEdges', linspace(-7, 3, 25), @(x) isnumeric(x) && isvector(x) && numel(x) >= 3);
@@ -130,6 +136,13 @@ for iw = 1:numWindows
         fprintf('\n=== Window %s ===\n', window);
     end
 
+    windowDir = fullfile(dataDir, window);
+    referenceDir = fullfile(windowDir, 'references');
+    smallRunDir = fullfile(windowDir, 'small_runs');
+    ensureFolder(windowDir);
+    ensureFolder(referenceDir);
+    ensureFolder(smallRunDir);
+
     windowOpt = getWindowOptions(window);
     mySect = buildFaultedSection(windowOpt);
 
@@ -139,10 +152,33 @@ for iw = 1:numWindows
     referenceHist = nan(numRefs, numComp, numel(binEdges)-1);
     for ir = 1:numRefs
         runLabel = sprintf('%s reference R%d', window, ir);
-        [referencePerms{ir}, referenceMeta{ir}] = runWindowPermSamplesExact( ...
-            mySect, windowOpt, opt.ReferenceNsim, opt.CorrCoef, U, ...
-            opt.UseParallel, makeReferenceSeed(opt.BaseSeed, iw, ir), ...
-            opt.ShowProgress, runLabel);
+        refSeed = makeReferenceSeed(opt.BaseSeed, iw, ir);
+        refFile = fullfile(referenceDir, sprintf('reference_R%d.mat', ir));
+        expected = struct('Kind', 'Reference', 'Window', window, ...
+                          'TargetN', opt.ReferenceNsim, ...
+                          'SeedBase', refSeed, ...
+                          'CorrCoef', opt.CorrCoef, ...
+                          'ReferenceId', ir, 'Nsim', NaN, 'Repeat', NaN);
+        if opt.Resume
+            [referencePerms{ir}, referenceMeta{ir}, loadedFromCheckpoint] = ...
+                loadEnsembleCheckpoint(refFile, expected);
+        else
+            loadedFromCheckpoint = false;
+        end
+        if loadedFromCheckpoint
+            if opt.ShowProgress
+                fprintf('  %s: resumed from %s\n', runLabel, refFile);
+            end
+        else
+            [referencePerms{ir}, referenceMeta{ir}] = runWindowPermSamplesExact( ...
+                mySect, windowOpt, opt.ReferenceNsim, opt.CorrCoef, U, ...
+                opt.UseParallel, refSeed, opt.ShowProgress, runLabel);
+            saveEnsembleCheckpoint(refFile, referencePerms{ir}, ...
+                                   referenceMeta{ir}, expected);
+            if opt.ShowProgress
+                fprintf('  %s: saved checkpoint %s\n', runLabel, refFile);
+            end
+        end
         referenceLogPerms{ir} = log10(referencePerms{ir});
         referenceHist(ir, :, :) = getHistogramProbabilitiesFromLog(referenceLogPerms{ir}, binEdges);
     end
@@ -177,10 +213,35 @@ for iw = 1:numWindows
         end
         for irpt = 1:opt.NumRepeats
             runLabel = sprintf('%s N%d repeat %d', window, nCurrent, irpt);
-            [smallPerms{it, irpt}, smallMeta{it, irpt}] = runWindowPermSamplesExact( ...
-                mySect, windowOpt, nCurrent, opt.CorrCoef, U, ...
-                opt.UseParallel, makeSmallRunSeed(opt.BaseSeed, iw, it, irpt), ...
-                false, runLabel);
+            runSeed = makeSmallRunSeed(opt.BaseSeed, iw, it, irpt);
+            runFile = fullfile(smallRunDir, ...
+                               sprintf('N%d_repeat%02d.mat', nCurrent, irpt));
+            expected = struct('Kind', 'SmallRun', 'Window', window, ...
+                              'TargetN', nCurrent, ...
+                              'SeedBase', runSeed, ...
+                              'CorrCoef', opt.CorrCoef, ...
+                              'ReferenceId', NaN, 'Nsim', nCurrent, ...
+                              'Repeat', irpt);
+            if opt.Resume
+                [smallPerms{it, irpt}, smallMeta{it, irpt}, loadedFromCheckpoint] = ...
+                    loadEnsembleCheckpoint(runFile, expected);
+            else
+                loadedFromCheckpoint = false;
+            end
+            if loadedFromCheckpoint
+                if opt.ShowProgress
+                    fprintf('  %s: resumed from %s\n', runLabel, runFile);
+                end
+            else
+                [smallPerms{it, irpt}, smallMeta{it, irpt}] = runWindowPermSamplesExact( ...
+                    mySect, windowOpt, nCurrent, opt.CorrCoef, U, ...
+                    opt.UseParallel, runSeed, false, runLabel);
+                saveEnsembleCheckpoint(runFile, smallPerms{it, irpt}, ...
+                                       smallMeta{it, irpt}, expected);
+                if opt.ShowProgress
+                    fprintf('  %s: saved checkpoint %s\n', runLabel, runFile);
+                end
+            end
 
             logSmall = log10(smallPerms{it, irpt});
             histSmall = getHistogramProbabilitiesFromLog(logSmall, binEdges);
@@ -235,13 +296,14 @@ for iw = 1:numWindows
     ensembleMetaBlocks{iw} = makeEnsembleMetaLongTable(window, referenceMeta, ...
         smallMeta, testNsims);
 
-    windowDataFiles(iw) = fullfile(dataDir, [window '_rigorous_convergence_data.mat']);
+    windowDataFiles(iw) = fullfile(windowDir, [window '_rigorous_convergence_data.mat']);
     save(windowDataFiles(iw), 'window', 'binEdges', 'metricNames', 'metricStems', ...
          'compNames', 'testNsims', 'referencePerms', 'referenceMeta', ...
          'referencePairDistances', 'pairLabels', 'floorMedian', 'floorMin', ...
          'floorMax', 'smallPerms', 'smallMeta', 'smallToReferenceDistances', ...
          'runScores', 'summaryMedian', 'summaryP10', 'summaryP90', ...
-         'fitIntercept', 'fitSlope', 'fitR2', 'fitNumUsed', '-v7.3');
+         'fitIntercept', 'fitSlope', 'fitR2', 'fitNumUsed', ...
+         'referenceDir', 'smallRunDir', '-v7.3');
 end
 
 referenceFloorTable = vertcat(referenceFloorBlocks{:});
@@ -695,6 +757,90 @@ function seed = makeSmallRunSeed(baseSeed, windowId, testId, repeatId)
 % Deterministic seed for each repeated small ensemble.
 
 seed = baseSeed + 100000000*windowId + 1000000*(100 + testId) + 10000*repeatId;
+end
+
+
+function [perms, meta, loaded] = loadEnsembleCheckpoint(filePath, expected)
+% Load a saved raw-ensemble checkpoint if it matches the current request.
+
+perms = [];
+meta = struct();
+loaded = false;
+
+if ~exist(filePath, 'file')
+    return
+end
+
+try
+    S = load(filePath, 'perms', 'meta', 'checkpointInfo');
+catch ME
+    warning('Could not load checkpoint %s (%s). Regenerating it.', filePath, ME.message)
+    return
+end
+
+if ~isfield(S, 'perms') || ~isfield(S, 'meta') || ~isfield(S, 'checkpointInfo')
+    warning('Checkpoint %s is missing required variables. Regenerating it.', filePath)
+    return
+end
+
+if ~isCheckpointCompatible(S.checkpointInfo, expected)
+    return
+end
+
+if size(S.perms, 1) ~= expected.TargetN || size(S.perms, 2) ~= 3
+    warning('Checkpoint %s has an unexpected permeability array size. Regenerating it.', filePath)
+    return
+end
+
+if any(~isfinite(S.perms(:))) || any(S.perms(:) <= 0)
+    warning('Checkpoint %s contains invalid permeability values. Regenerating it.', filePath)
+    return
+end
+
+perms = S.perms;
+meta = S.meta;
+loaded = true;
+end
+
+
+function tf = isCheckpointCompatible(checkpointInfo, expected)
+% Check whether a checkpoint matches the current ensemble request.
+
+requiredFields = {'Kind', 'Window', 'TargetN', 'SeedBase', 'CorrCoef', ...
+                  'ReferenceId', 'Nsim', 'Repeat'};
+for i = 1:numel(requiredFields)
+    if ~isfield(checkpointInfo, requiredFields{i})
+        tf = false;
+        return
+    end
+end
+
+tf = strcmpi(string(checkpointInfo.Kind), string(expected.Kind)) && ...
+     strcmpi(string(checkpointInfo.Window), string(expected.Window)) && ...
+     isequaln(checkpointInfo.TargetN, expected.TargetN) && ...
+     isequaln(checkpointInfo.SeedBase, expected.SeedBase) && ...
+     isequaln(checkpointInfo.CorrCoef, expected.CorrCoef) && ...
+     isequaln(checkpointInfo.ReferenceId, expected.ReferenceId) && ...
+     isequaln(checkpointInfo.Nsim, expected.Nsim) && ...
+     isequaln(checkpointInfo.Repeat, expected.Repeat);
+end
+
+
+function saveEnsembleCheckpoint(filePath, perms, meta, checkpointInfo)
+% Save a raw-ensemble checkpoint atomically to support restart/resume.
+
+checkpointInfo.CompletedOn = char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss'));
+checkpointInfo.NumReturned = size(perms, 1);
+
+folderPath = fileparts(filePath);
+ensureFolder(folderPath);
+tmpFilePath = [filePath '.tmp'];
+if exist(tmpFilePath, 'file')
+    delete(tmpFilePath);
+end
+
+save(tmpFilePath, 'perms', 'meta', 'checkpointInfo', '-v7.3');
+movefile(tmpFilePath, filePath, 'f');
 end
 
 
