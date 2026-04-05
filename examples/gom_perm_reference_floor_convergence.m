@@ -83,7 +83,7 @@ parser.addParameter('BinEdges', linspace(-7, 3, 25), @(x) isnumeric(x) && isvect
 parser.parse(varargin{:});
 opt = parser.Results;
 
-testNsims = sort(unique(opt.TestNsims(:)'));
+testNsims = sortUniqueNumericVector(opt.TestNsims(:)');
 assert(all(testNsims < opt.ReferenceNsim), ...
        'All TestNsims values must be smaller than ReferenceNsim.')
 windows = cellstr(string(opt.Windows));
@@ -509,7 +509,7 @@ if isempty(x) || isempty(y)
     return
 end
 
-support = unique([x; y], 'sorted');
+support = mergeSortedNumericVectors(x, y);
 if isscalar(support)
     w = 0;
     return
@@ -524,6 +524,32 @@ Fx = cumsum(xCounts) / numel(x);
 Fy = cumsum(yCounts) / numel(y);
 intervalWidths = diff(support);
 w = sum(abs(Fx(1:end-1) - Fy(1:end-1)) .* intervalWidths);
+end
+
+
+function values = sortUniqueNumericVector(values)
+% Sort a numeric vector and remove repeated entries without unique().
+
+values = sort(values(:)');
+if isempty(values)
+    return
+end
+
+keepMask = [true, diff(values) ~= 0];
+values = values(keepMask);
+end
+
+
+function values = mergeSortedNumericVectors(x, y)
+% Merge two numeric vectors and remove repeats without unique().
+
+values = sort([x(:); y(:)]);
+if isempty(values)
+    return
+end
+
+keepMask = [true; diff(values) ~= 0];
+values = values(keepMask);
 end
 
 
