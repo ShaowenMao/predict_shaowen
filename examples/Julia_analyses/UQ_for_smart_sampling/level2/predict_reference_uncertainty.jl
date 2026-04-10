@@ -21,10 +21,10 @@ Required Julia packages:
     Pkg.add(["MAT", "CairoMakie", "Clustering"])
 
 Examples:
-    julia examples/predict_reference_uncertainty.jl
-    julia examples/predict_reference_uncertainty.jl --windows famp1
-    julia examples/predict_reference_uncertainty.jl --windows famp1,famp2 --clusters 4
-    julia examples/predict_reference_uncertainty.jl --data-dir path\\to\\data --output-dir path\\to\\out
+    julia examples/Julia_analyses/UQ_for_smart_sampling/level2/predict_reference_uncertainty.jl
+    julia examples/Julia_analyses/UQ_for_smart_sampling/level2/predict_reference_uncertainty.jl --windows famp1
+    julia examples/Julia_analyses/UQ_for_smart_sampling/level2/predict_reference_uncertainty.jl --windows famp1,famp2 --clusters 4
+    julia examples/Julia_analyses/UQ_for_smart_sampling/level2/predict_reference_uncertainty.jl --data-dir path\\to\\data --output-dir path\\to\\out
 """
 
 const REQUIRED_PACKAGES = ["MAT", "CairoMakie", "Clustering"]
@@ -48,11 +48,12 @@ CairoMakie.activate!()
 const COMPONENT_NAMES = ("kxx", "kyy", "kzz")
 const COMPONENT_LABELS = ("log10(kxx [mD])", "log10(kyy [mD])", "log10(kzz [mD])")
 const PAIRWISE_COMPONENTS = ((1, 2), (1, 3), (2, 3))
+const EXAMPLES_ROOT = normpath(joinpath(@__DIR__, "..", "..", ".."))
 
 function parse_args(args::Vector{String})
     options = Dict(
-        "data-dir" => normpath(joinpath(@__DIR__, "gom_sensitivity_independent", "data")),
-        "output-dir" => normpath(joinpath(@__DIR__, "gom_sensitivity_independent", "julia_uncertainty")),
+        "data-dir" => normpath(joinpath(EXAMPLES_ROOT, "gom_sensitivity_independent", "data")),
+        "output-dir" => normpath(joinpath(EXAMPLES_ROOT, "gom_sensitivity_independent", "julia_uncertainty")),
         "windows" => "",
         "clusters" => "3",
         "seed" => "1729",
@@ -91,7 +92,7 @@ end
 
 function print_help()
     println("Usage:")
-    println("  julia examples/predict_reference_uncertainty.jl [options]")
+    println("  julia examples/Julia_analyses/UQ_for_smart_sampling/level2/predict_reference_uncertainty.jl [options]")
     println()
     println("Options:")
     println("  --data-dir <path>         Folder with *_distribution_data.mat files")
