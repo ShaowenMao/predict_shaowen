@@ -398,34 +398,42 @@ end
 function perm = runSingleWindowPermRealization(mySect, windowOpt, rho, U)
 % Run one 3D realization and return only the upscaled permeability in mD.
 
-nSeg = getNSeg(mySect.Vcl, mySect.IsClayVcl, mySect.DepthFaulting);
-myFaultSection = Fault2D(mySect, windowOpt.fDip);
-myFault = Fault3D(myFaultSection, mySect);
+perm = nan(1, 3);
 
-if U.flexible
-    [myFault, Urun] = myFault.getSegmentationLength(U, nSeg.fcn);
-else
-    myFault = myFault.getSegmentationLength(U, nSeg.fcn);
-    Urun = U;
-end
+try
+    nSeg = getNSeg(mySect.Vcl, mySect.IsClayVcl, mySect.DepthFaulting);
+    myFaultSection = Fault2D(mySect, windowOpt.fDip);
+    myFault = Fault3D(myFaultSection, mySect);
 
-G = [];
-for k = 1:numel(myFault.SegLen)
-    myFaultSection = myFaultSection.getMaterialProperties(mySect, ...
-                                                          'corrCoef', rho);
-    myFaultSection.MatProps.thick = myFault.Thick;
-    if isempty(G)
-        G = makeFaultGrid(myFault.Thick, myFault.Disp, ...
-                          myFault.Length, myFault.SegLen, Urun);
+    if U.flexible
+        [myFault, Urun] = myFault.getSegmentationLength(U, nSeg.fcn);
+    else
+        myFault = myFault.getSegmentationLength(U, nSeg.fcn);
+        Urun = U;
     end
 
-    smear = Smear(mySect, myFaultSection, G, 1);
-    myFaultSection = myFaultSection.placeMaterials(mySect, smear, G);
-    myFault = myFault.assignExtrudedVals(G, myFaultSection, k);
-end
+    G = [];
+    for k = 1:numel(myFault.SegLen)
+        myFaultSection = myFaultSection.getMaterialProperties(mySect, ...
+                                                              'corrCoef', rho);
+        myFaultSection.MatProps.thick = myFault.Thick;
+        if isempty(G)
+            G = makeFaultGrid(myFault.Thick, myFault.Disp, ...
+                              myFault.Length, myFault.SegLen, Urun);
+        end
 
-[myFault, ~] = myFault.upscaleProps(G, Urun);
-perm = myFault.Perm ./ (milli*darcy);
+        smear = Smear(mySect, myFaultSection, G, 1);
+        myFaultSection = myFaultSection.placeMaterials(mySect, smear, G);
+        myFault = myFault.assignExtrudedVals(G, myFaultSection, k);
+    end
+
+    [myFault, ~] = myFault.upscaleProps(G, Urun);
+    perm = myFault.Perm ./ (milli*darcy);
+catch
+    % Rare geometry/material placement failures are treated as rejected
+    % realizations so resumable batch generation can continue.
+    perm(:) = NaN;
+end
 end
 
 
