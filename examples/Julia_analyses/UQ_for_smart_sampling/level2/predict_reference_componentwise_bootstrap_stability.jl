@@ -901,6 +901,8 @@ function save_bootstrap_curve_figure(window::AbstractString, baseline_results, c
     band_color = RGBAf(0.16, 0.45, 0.80, 0.18)
     median_color = RGBf(0.12, 0.35, 0.70)
     baseline_color = RGBf(0.05, 0.05, 0.05)
+    common_xticks = ([-7.0, -5.0, -3.0, -1.0, 1.0], ["-7", "-5", "-3", "-1", "1"])
+    common_xlims = (-7.0, 1.0)
 
     for (ic, label) in enumerate(COMPONENT_LABELS)
         thresholds = curve_grids[ic]
@@ -908,6 +910,7 @@ function save_bootstrap_curve_figure(window::AbstractString, baseline_results, c
                   title = "$(COMPONENT_NAMES[ic]): bootstrap ECDF",
                   xlabelsize = 22, ylabelsize = 22, titlesize = 22,
                   xticklabelsize = 22, yticklabelsize = 22,
+                  xticks = common_xticks,
                   xgridcolor = RGBAf(0, 0, 0, 0.08), ygridcolor = RGBAf(0, 0, 0, 0.08),
                   leftspinecolor = :black,
                   bottomspinecolor = :black,
@@ -918,6 +921,7 @@ function save_bootstrap_curve_figure(window::AbstractString, baseline_results, c
         band!(ax, thresholds, lower, upper, color = band_color)
         lines!(ax, thresholds, med, color = median_color, linewidth = 2.6, label = "bootstrap median")
         lines!(ax, thresholds, baseline_curve_data.ecdf[ic], color = baseline_color, linewidth = 2.0, linestyle = :dash, label = "baseline")
+        xlims!(ax, common_xlims...)
         text!(ax, 0.98, 0.98; space = :relative, text = string("(", Char('a' + ic - 1), ")"),
               align = (:right, :top), fontsize = 22, font = :bold, color = :black)
         if ic == 1
@@ -932,6 +936,7 @@ function save_bootstrap_curve_figure(window::AbstractString, baseline_results, c
                   title = "$(COMPONENT_NAMES[ic]): bootstrap exceedance", yscale = log10,
                   xlabelsize = 22, ylabelsize = 22, titlesize = 22,
                   xticklabelsize = 22, yticklabelsize = 22,
+                  xticks = common_xticks,
                   xgridcolor = RGBAf(0, 0, 0, 0.08), ygridcolor = RGBAf(0, 0, 0, 0.08),
                   leftspinecolor = :black,
                   bottomspinecolor = :black,
@@ -942,6 +947,7 @@ function save_bootstrap_curve_figure(window::AbstractString, baseline_results, c
         band!(ax, thresholds, max.(lower, 1e-8), max.(upper, 1e-8), color = band_color)
         lines!(ax, thresholds, max.(med, 1e-8), color = median_color, linewidth = 2.6, label = "bootstrap median")
         lines!(ax, thresholds, max.(baseline_curve_data.exceed[ic], 1e-8), color = baseline_color, linewidth = 2.0, linestyle = :dash, label = "baseline")
+        xlims!(ax, common_xlims...)
         ylims!(ax, 1e-5, 1.0)
         text!(ax, 0.98, 0.98; space = :relative, text = string("(", Char('d' + ic - 1), ")"),
               align = (:right, :top), fontsize = 22, font = :bold, color = :black)
@@ -1023,6 +1029,8 @@ end
 function save_bootstrap_mode_count_figure(window::AbstractString, baseline_results, stores, output_path::AbstractString)
     fig = Figure(size = (1850, 640), fontsize = 18, backgroundcolor = :white)
     bar_color = RGBAf(0.42, 0.79, 0.75, 0.92)
+    prob_ticks = [0.0, 0.5, 1.0]
+    prob_ticklabels = ["0", "0.5", "1.0"]
 
     all_counts = sort(unique(vcat([collect(store.mode_count) for store in stores]...)))
     for (ic, comp_name) in enumerate(COMPONENT_NAMES)
@@ -1036,14 +1044,15 @@ function save_bootstrap_mode_count_figure(window::AbstractString, baseline_resul
                   xlabelsize = 22, ylabelsize = 22, titlesize = 22,
                   xticklabelsize = 22, yticklabelsize = 22,
                   xticks = (x, [string(k) for k in all_counts]),
+                  yticks = (prob_ticks, prob_ticklabels),
                   xgridvisible = false, ygridcolor = RGBAf(0, 0, 0, 0.08),
                   leftspinecolor = :black,
                   bottomspinecolor = :black,
                   topspinevisible = false, rightspinevisible = false)
         barplot!(ax, x, probs, color = bar_color, strokecolor = :black, strokewidth = 0.7)
-        ylims!(ax, 0.0, 1.05)
+        ylims!(ax, 0.0, 1.14)
         for (xi, prob) in zip(x, probs)
-            text!(ax, xi, min(1.02, prob + 0.035), text = @sprintf("%.3f", prob),
+            text!(ax, xi, min(1.06, prob + 0.03), text = @sprintf("%.3f", prob),
                   align = (:center, :bottom), fontsize = 22, color = :black)
         end
         text!(ax, 0.98, 0.98; space = :relative, text = string("(", Char('a' + ic - 1), ")"),
@@ -1053,7 +1062,7 @@ function save_bootstrap_mode_count_figure(window::AbstractString, baseline_resul
     end
 
     Label(fig[0, :], "$window componentwise bootstrap mode-count ambiguity", fontsize = 24, font = :bold)
-    Label(fig[2, :], "Blue bar marks the baseline pooled mode count. Heights are empirical bootstrap probabilities over all refits.", fontsize = 22)
+    Label(fig[2, :], "Bar heights are empirical bootstrap probabilities over all refits. Baseline pooled mode count is annotated in each panel.", fontsize = 22)
     save(output_path, fig)
     root, ext = splitext(output_path)
     lowercase(ext) == ".png" && save(root * ".pdf", fig)
@@ -1124,6 +1133,8 @@ function save_bootstrap_quantile_figure(window::AbstractString, baseline_results
     qlabels = ["q05", "q10", "q50", "q90", "q95"]
     qidx = [2, 3, 5, 7, 8]
     qlevels = collect(BOOT_QUANTILES)[qidx]
+    common_ylims = (-7.0, 1.0)
+    common_yticks = ([-7.0, -5.0, -3.0, -1.0, 1.0], ["-7", "-5", "-3", "-1", "1"])
 
     for (ic, comp_name) in enumerate(COMPONENT_NAMES)
         baseline_q = quantile(baseline_results[ic].values, qlevels)
@@ -1133,11 +1144,11 @@ function save_bootstrap_quantile_figure(window::AbstractString, baseline_results
         high = [quantile(vec(store.quantiles[idx, :]), 0.90) for idx in qidx]
         x = collect(1:length(qidx))
 
-        ax = Axis(fig[1, ic], xlabel = "Quantile", ylabel = (ic == 1 ? "log10 permeability" : ""),
+        ax = Axis(fig[1, ic], xlabel = "Quantile", ylabel = (ic == 1 ? "log10 permeability [mD]" : ""),
                   title = "$(comp_name): quantile stability",
                   xlabelsize = 22, ylabelsize = 22, titlesize = 22,
                   xticklabelsize = 22, yticklabelsize = 22,
-                  xticks = (x, qlabels),
+                  xticks = (x, qlabels), yticks = common_yticks,
                   xgridvisible = false, ygridcolor = RGBAf(0, 0, 0, 0.08),
                   leftspinecolor = :black,
                   bottomspinecolor = :black,
@@ -1146,6 +1157,7 @@ function save_bootstrap_quantile_figure(window::AbstractString, baseline_results
         scatter!(ax, x, med, color = point_color, markersize = 13, label = "bootstrap median")
         scatter!(ax, x, baseline_q, color = :black, marker = :rect, markersize = 11, label = "baseline")
         xlims!(ax, 0.6, length(qidx) + 0.4)
+        ylims!(ax, common_ylims...)
         text!(ax, 0.98, 0.98; space = :relative, text = string("(", Char('a' + ic - 1), ")"),
               align = (:right, :top), fontsize = 22, font = :bold, color = :black)
         if ic == 1

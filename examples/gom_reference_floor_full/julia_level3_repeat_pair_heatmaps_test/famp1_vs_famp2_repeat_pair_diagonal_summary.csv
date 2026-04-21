@@ -1,0 +1,4 @@
+component,num_row_repeats,num_col_repeats,num_common_repeats,full_mean,full_std,full_min,full_max,diagonal_mean,diagonal_std,diagonal_min,diagonal_max,offdiagonal_mean,offdiagonal_std,offdiagonal_min,offdiagonal_max,median_diagonal_percentile_vs_offdiagonal
+kxx,30,30,30,0.000588,0.022405,-0.068847,0.073966,0.006450,0.021919,-0.041595,0.045133,0.000386,0.022407,-0.068847,0.073966,0.572414
+kyy,30,30,30,0.000589,0.021945,-0.070128,0.059803,0.001648,0.018190,-0.038923,0.031320,0.000553,0.022071,-0.070128,0.059803,0.562069
+kzz,30,30,30,-0.001895,0.021951,-0.072928,0.076220,-0.003538,0.024059,-0.033695,0.076220,-0.001838,0.021887,-0.072928,0.075005,0.348276

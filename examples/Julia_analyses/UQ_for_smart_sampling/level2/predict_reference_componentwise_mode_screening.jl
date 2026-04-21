@@ -778,8 +778,9 @@ function nice_density_top(ymax::Float64)
 end
 
 function fixed_density_ticks(ymax::Float64)
-    ytop = nice_density_top(1.05 * ymax)
-    return ytop, collect(range(0.0, ytop; length = 5))
+    _ = ymax
+    ytop = 2.0
+    return ytop, [0.0, 0.5, 1.0, 1.5, 2.0]
 end
 
 function save_mode_screening_figure(window::AbstractString, component_results, output_path::AbstractString)
@@ -807,7 +808,7 @@ function save_mode_screening_figure(window::AbstractString, component_results, o
                   xlabelsize = 22,
                   ylabelsize = 22,
                   xticks = common_xticks,
-                  yticks = yticks,
+                  yticks = (yticks, [@sprintf("%.1f", y) for y in yticks]),
                   xticklabelsize = 22,
                   yticklabelsize = 22,
                   xgridcolor = RGBAf(0, 0, 0, 0.08),
