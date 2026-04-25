@@ -1,0 +1,4 @@
+ disp('hello
+      |
+{Error: Character vector is not terminated properly.
+} 

@@ -1,0 +1,12 @@
+name = "UQWorkflow"
+uuid = "44b9eaf4-3c5a-4c1b-8cb6-0c352cf30f1d"
+version = "0.1.0"
+
+[deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+KernelDensity = "5ab0869b-81aa-558d-bb23-cbf5423bbe9b"
+MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
+
+[compat]
+julia = "1.11"
+MAT = "0.11"

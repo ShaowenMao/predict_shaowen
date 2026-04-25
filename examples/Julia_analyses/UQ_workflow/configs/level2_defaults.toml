@@ -1,0 +1,19 @@
+[workflow]
+geology_id = "g_ref"
+fixed_windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"]
+
+[level2]
+state_fraction = 0.20
+small_neighbor_fraction = 0.10
+large_neighbor_fraction = 0.35
+weights = [1.0, 1.0, 1.0]
+max_k = 5
+silhouette_threshold = 0.25
+min_cluster_fraction = 0.10
+min_cluster_size = 10
+random_seed = 1729
+max_kmedoids_iter = 40
+num_restarts = 4
+
+[validation]
+holdout_repeats = [2, 3, 4, 5]

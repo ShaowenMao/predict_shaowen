@@ -1,0 +1,7 @@
+geology_id,window,sample_kind,mat_path,n_samples
+g_ref,famp1,small_runs_repeat01,examples/gom_reference_floor_full/data/famp1/small_runs/N2000_repeat01.mat,2000
+g_ref,famp2,small_runs_repeat01,examples/gom_reference_floor_full/data/famp2/small_runs/N2000_repeat01.mat,2000
+g_ref,famp3,small_runs_repeat01,examples/gom_reference_floor_full/data/famp3/small_runs/N2000_repeat01.mat,2000
+g_ref,famp4,small_runs_repeat01,examples/gom_reference_floor_full/data/famp4/small_runs/N2000_repeat01.mat,2000
+g_ref,famp5,small_runs_repeat01,examples/gom_reference_floor_full/data/famp5/small_runs/N2000_repeat01.mat,2000
+g_ref,famp6,small_runs_repeat01,examples/gom_reference_floor_full/data/famp6/small_runs/N2000_repeat01.mat,2000
