@@ -230,7 +230,8 @@ repoRoot = fileparts(examplesDir);
 pathsToAdd = {repoRoot, ...
               fullfile(repoRoot, 'classes'), ...
               fullfile(repoRoot, 'functions'), ...
-              fullfile(repoRoot, 'utils')};
+              fullfile(repoRoot, 'utils'), ...
+              fullfile(repoRoot, 'utils', 'mrst-based')};
 for i = 1:numel(pathsToAdd)
     if exist(pathsToAdd{i}, 'dir')
         addpath(pathsToAdd{i});
@@ -702,6 +703,12 @@ end
 numValid = S.state.NumValid;
 if numValid < 0 || numValid > targetN
     warning('Progress checkpoint %s has an invalid NumValid. Restarting that case.', filePath)
+    return
+end
+
+if S.state.NumAttempts > 20*targetN && numValid < targetN
+    warning(['Progress checkpoint %s already exceeded the invalid-attempt ' ...
+             'limit. Restarting that case.'], filePath)
     return
 end
 

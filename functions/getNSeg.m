@@ -53,9 +53,11 @@ nSeg.fcn   = [];
 
 % Mean vals
 zfm = mean(zf);
-vclm = mean(vcl(vcl >= isClayVcl));
+tolVcl = 10*eps(max(1, abs(isClayVcl)));
+vclm = mean(vcl(vcl >= isClayVcl - tolVcl));
 assert(zfm <= 3000)
-assert(all([vclm >= isClayVcl, vclm <= 1]))
+assert(all([vclm >= isClayVcl - tolVcl, vclm <= 1 + tolVcl]))
+vclm = min(max(vclm, isClayVcl), 1);
 
 % nSeg min and max based on data compiled from papers above (zf < 1m)
 endpoints = [1 16];
