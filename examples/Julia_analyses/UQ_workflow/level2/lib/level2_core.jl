@@ -27,13 +27,16 @@ function build_window_state(log_perms::Matrix{Float64},
     distance_matrix = pairwise_euclidean(local_normal_scores)
 
     cluster_info = choose_clustering(distance_matrix, state_score, config, window)
-    state_info = build_state_libraries(state_score, cluster_info["assignments"], distance_matrix, config)
+    global_medoid_index = choose_medoid(collect(1:size(log_perms, 1)), distance_matrix)
+    state_info = build_state_libraries(state_score,
+                                       cluster_info["assignments"],
+                                       distance_matrix,
+                                       global_medoid_index,
+                                       config)
 
     low_stats = state_record("low", state_info["low_indices"], state_score, distance_matrix, config)
     high_stats = state_record("high", state_info["high_indices"], state_score, distance_matrix, config; descending = true)
     central_stats = state_record("central", state_info["central_indices"], state_score, distance_matrix, config)
-
-    global_medoid_index = choose_medoid(collect(1:size(log_perms, 1)), distance_matrix)
 
     return Dict{String, Any}(
         "schema_version" => "level2_window_state_v1",
@@ -396,6 +399,7 @@ end
 function build_state_libraries(state_score::Vector{Float64},
                                assignments::Vector{Int},
                                distance_matrix::Matrix{Float64},
+                               global_medoid_index::Int,
                                config::Dict{String, Any})
     n = length(state_score)
     n_target = max(1, ceil(Int, config["state_fraction"] * n))
@@ -414,8 +418,7 @@ function build_state_libraries(state_score::Vector{Float64},
         high_indices = sort(findall(in(high_clusters), assignments))
     end
 
-    blocked = Set(vcat(low_indices, high_indices))
-    central_indices = choose_central_indices(state_score, n_target, blocked)
+    central_indices = choose_central_indices(global_medoid_index, distance_matrix, n_target)
     return Dict{String, Any}(
         "low_indices" => unique(low_indices),
         "high_indices" => unique(high_indices),
@@ -434,21 +437,11 @@ function accumulate_clusters(cluster_order, assignments::Vector{Int}, n_target::
     return selected
 end
 
-function choose_central_indices(state_score::Vector{Float64}, n_target::Int, blocked::Set{Int})
-    med = median(state_score)
-    order = sortperm(abs.(state_score .- med))
-    selected = Int[]
-    for idx in order
-        idx in blocked && continue
-        push!(selected, idx)
-        length(selected) == n_target && return selected
-    end
-    for idx in order
-        idx in selected && continue
-        push!(selected, idx)
-        length(selected) == n_target && break
-    end
-    return selected
+function choose_central_indices(global_medoid_index::Int,
+                                distance_matrix::Matrix{Float64},
+                                n_target::Int)
+    order = sortperm(vec(distance_matrix[global_medoid_index, :]))
+    return order[1:min(n_target, length(order))]
 end
 
 function state_record(label::AbstractString,

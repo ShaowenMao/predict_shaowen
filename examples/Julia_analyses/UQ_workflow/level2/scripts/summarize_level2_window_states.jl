@@ -3,6 +3,7 @@
 using Pkg
 Pkg.activate(normpath(joinpath(@__DIR__, "..", "..")))
 
+using LinearAlgebra
 using Statistics
 
 include(joinpath(@__DIR__, "..", "lib", "level2_io.jl"))
@@ -50,14 +51,17 @@ function main(args::Vector{String})
     output_root = isempty(opt["output-dir"]) ? state_root : normpath(opt["output-dir"])
     table_root = joinpath(output_root, "tables")
     point_table_root = joinpath(table_root, "window_point_tables")
+    neighborhood_table_root = joinpath(table_root, "neighborhood_tables")
     report_root = joinpath(output_root, "reports")
     mkpath(table_root)
     mkpath(point_table_root)
+    mkpath(neighborhood_table_root)
     mkpath(report_root)
 
     window_rows = Vector{Vector{String}}()
     cluster_rows = Vector{Vector{String}}()
     state_rows = Vector{Vector{String}}()
+    neighborhood_summary_rows = Vector{Vector{String}}()
     report_lines = String[
         "Level 2 summary report",
         "created_at = $(Level2IO.timestamp_string())",
@@ -70,6 +74,12 @@ function main(args::Vector{String})
         isfile(state_path) || error("Missing window-state MAT file: $state_path")
         state = Level2IO.load_window_state(state_path)
         Level2IO.write_window_point_table(joinpath(point_table_root, "$(window)_level2_points.csv"), state)
+        write_neighborhood_tables!(
+            neighborhood_summary_rows,
+            joinpath(neighborhood_table_root, "$(window)_neighborhood_neighbors.csv"),
+            state,
+            window,
+        )
 
         chosen_k = int_scalar(state["chosen_k"])
         silhouette = float_scalar(state["best_silhouette"])
@@ -107,11 +117,17 @@ function main(args::Vector{String})
         for label in ("low", "high", "central")
             scores = vector_float(state["state_score"])[vector_int(state["$(label)_indices"])]
             mean_log = vector_float(state["$(label)_mean_log_perm"])
+            log_perms = matrix_float(state["log_perms"])
+            medoid_index = int_scalar(state["$(label)_medoid_index"])
+            medoid_log_perm = vec(log_perms[medoid_index, :])
             push!(state_rows, [
                 window,
                 label,
                 string(length(scores)),
-                string(int_scalar(state["$(label)_medoid_index"])),
+                string(medoid_index),
+                string(round(medoid_log_perm[1], digits = 6)),
+                string(round(medoid_log_perm[2], digits = 6)),
+                string(round(medoid_log_perm[3], digits = 6)),
                 string(round(minimum(scores), digits = 6)),
                 string(round(median(scores), digits = 6)),
                 string(round(maximum(scores), digits = 6)),
@@ -127,6 +143,7 @@ function main(args::Vector{String})
         push!(report_lines, "  unimodal = $(Bool(unimodal))")
         push!(report_lines, "  state_sizes = low:$low_n high:$high_n central:$central_n")
         push!(report_lines, "  point_table = $(joinpath(point_table_root, "$(window)_level2_points.csv"))")
+        push!(report_lines, "  neighborhood_table = $(joinpath(neighborhood_table_root, "$(window)_neighborhood_neighbors.csv"))")
         push!(report_lines, "")
     end
 
@@ -139,17 +156,107 @@ function main(args::Vector{String})
                         "cluster_medoid_index", "cluster_order_rank"],
                        cluster_rows)
     Level2IO.write_csv(joinpath(table_root, "state_library_summary.csv"),
-                       ["window", "state_label", "library_size", "medoid_index", "score_min",
-                        "score_median", "score_max", "mean_log_kxx", "mean_log_kyy", "mean_log_kzz"],
+                       ["window", "state_label", "library_size", "medoid_index",
+                        "medoid_log_kxx", "medoid_log_kyy", "medoid_log_kzz",
+                        "state_score_min", "state_score_median", "state_score_max",
+                        "mean_log_kxx", "mean_log_kyy", "mean_log_kzz"],
                        state_rows)
+    Level2IO.write_csv(joinpath(table_root, "neighborhood_summary.csv"),
+                       ["window", "state_label", "neighborhood", "neighbor_count",
+                        "state_library_size", "medoid_index", "medoid_log_kxx",
+                        "medoid_log_kyy", "medoid_log_kzz", "neighbor_fraction",
+                        "distance_min", "distance_median", "distance_max",
+                        "state_score_min", "state_score_median", "state_score_max",
+                        "mean_log_kxx", "mean_log_kyy", "mean_log_kzz"],
+                       neighborhood_summary_rows)
     Level2IO.write_text_lines(joinpath(report_root, "level2_summary_report.txt"), report_lines)
 
     println("Saved Level 2 summaries to $output_root")
+end
+
+function write_neighborhood_tables!(
+    summary_rows::Vector{Vector{String}},
+    output_path::AbstractString,
+    state,
+    window::AbstractString,
+)
+    log_perms = matrix_float(state["log_perms"])
+    local_normal_scores = matrix_float(state["local_normal_scores"])
+    state_scores = vector_float(state["state_score"])
+    detail_rows = Vector{Vector{String}}()
+
+    for label in ("low", "central", "high")
+        state_indices = vector_int(state["$(label)_indices"])
+        medoid_index = int_scalar(state["$(label)_medoid_index"])
+        medoid_z = vec(local_normal_scores[medoid_index, :])
+        medoid_log_perm = vec(log_perms[medoid_index, :])
+
+        for neighborhood in ("small", "large")
+            neighbor_indices = vector_int(state["$(label)_$(neighborhood)_neighbors"])
+            distances = [norm(vec(local_normal_scores[idx, :]) - medoid_z) for idx in neighbor_indices]
+            order = sortperm(distances)
+            sorted_indices = neighbor_indices[order]
+            sorted_distances = distances[order]
+            neighbor_scores = state_scores[sorted_indices]
+            neighbor_logs = log_perms[sorted_indices, :]
+
+            push!(summary_rows, [
+                window,
+                label,
+                neighborhood,
+                string(length(sorted_indices)),
+                string(length(state_indices)),
+                string(medoid_index),
+                fmt(medoid_log_perm[1]),
+                fmt(medoid_log_perm[2]),
+                fmt(medoid_log_perm[3]),
+                fmt(length(sorted_indices) / length(state_indices)),
+                fmt(minimum(sorted_distances)),
+                fmt(median(sorted_distances)),
+                fmt(maximum(sorted_distances)),
+                fmt(minimum(neighbor_scores)),
+                fmt(median(neighbor_scores)),
+                fmt(maximum(neighbor_scores)),
+                fmt(mean(neighbor_logs[:, 1])),
+                fmt(mean(neighbor_logs[:, 2])),
+                fmt(mean(neighbor_logs[:, 3])),
+            ])
+
+            for rank in eachindex(sorted_indices)
+                idx = sorted_indices[rank]
+                push!(detail_rows, [
+                    window,
+                    label,
+                    neighborhood,
+                    string(rank),
+                    string(idx),
+                    fmt(sorted_distances[rank]),
+                    fmt(state_scores[idx]),
+                    fmt(log_perms[idx, 1]),
+                    fmt(log_perms[idx, 2]),
+                    fmt(log_perms[idx, 3]),
+                    fmt(local_normal_scores[idx, 1]),
+                    fmt(local_normal_scores[idx, 2]),
+                    fmt(local_normal_scores[idx, 3]),
+                ])
+            end
+        end
+    end
+
+    Level2IO.write_csv(output_path,
+                       ["window", "state_label", "neighborhood", "neighbor_rank",
+                        "neighbor_index", "distance_to_state_medoid",
+                        "state_score", "log_kxx", "log_kyy", "log_kzz",
+                        "local_normal_score_kxx", "local_normal_score_kyy",
+                        "local_normal_score_kzz"],
+                       detail_rows)
 end
 
 float_scalar(value) = value isa AbstractArray ? Float64(first(vec(value))) : Float64(value)
 int_scalar(value) = Int(round(float_scalar(value)))
 vector_int(values) = values isa AbstractArray ? vec(Int.(values)) : [Int(values)]
 vector_float(values) = values isa AbstractArray ? vec(Float64.(values)) : [Float64(values)]
+matrix_float(values) = Matrix{Float64}(values)
+fmt(value) = string(round(Float64(value), digits = 6))
 
 main(ARGS)

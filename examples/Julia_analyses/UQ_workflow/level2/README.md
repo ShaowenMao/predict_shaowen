@@ -8,7 +8,8 @@ Current script layout:
 - `scripts/build_level2_window_states.jl`
   builds one Level 2 object for each of the six windows.
 - `scripts/summarize_level2_window_states.jl`
-  compiles concise CSV and text summaries from the saved window-state objects.
+  compiles concise CSV and text summaries from the saved window-state objects,
+  including detailed CSV exports for the Step 2.7 perturbation neighborhoods.
 - `scripts/validate_level2_window_states.jl`
   compares the built proxy objects against holdout `N2000_repeatXX.mat`
   libraries to assess stability.
@@ -23,9 +24,24 @@ Current script layout:
   reruns the Step 2.3 regime detection for multiple minimum cluster fractions
   such as 5%, 10%, and 15%. These outputs are sensitivity checks; the 10%
   setting remains the baseline analysis setting.
+- `scripts/bootstrap_level2_joint_regimes.jl`
+  optionally runs a Step 2.3 bootstrap stability check. This can be
+  time-consuming for publication-grade settings such as 100 resamples per
+  window. Each replicate resamples the 2000 realizations inside a window and
+  reruns the same automatic `K`-selection rule, then summarizes how often the
+  selected `K` matches the full-data result.
 - `scripts/plot_level2_window_grouping_3d.jl`
   creates one supplementary 3D grouping figure per window in both raw
   `log10(k)` space and local normal-score space.
+- `scripts/plot_level2_state_component_distributions.jl`
+  creates violin-style state component distribution figures. It saves the
+  original mean/median overlay figures and a companion medoid-overlay figure
+  where the marker is an actual representative PREDICT realization for each
+  state library.
+- `scripts/plot_level2_neighbor_component_distributions.jl`
+  creates Step 2.7 violin-style perturbation-neighborhood figures. Small and
+  large neighborhoods are saved separately so the tight and loose perturbation
+  distributions remain readable.
 - `scripts/plot_marginal_hist_screening.jl`
   creates a pre-Step-2 marginal histogram screening figure in `log10(k)`
   space for each window and each component, using the proxy 2000-run
@@ -57,3 +73,8 @@ Recommended Level 2 execution flow:
 6. run `plot_level2_joint_regime_sensitivity.jl` when checking robustness of
    the Step 2.3 minimum-cluster-mass choice. Use the 5% and 15% figures as
    comparison views, not as automatic replacements for the 10% baseline.
+7. Optional: run `bootstrap_level2_joint_regimes.jl` only when checking
+   whether the Step 2.3 regime choice is stable under resampling, for example
+   before paper submission or reviewer response. The primary result is
+   `P(K = original K)` for each window. This is not required for routine
+   Level 2 development runs.
