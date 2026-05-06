@@ -111,6 +111,7 @@ function build_pairwise_figure(state::Dict{String, Any}, max_points::Int, seed::
     window = String(state["window"])
     chosen_k = Level2Plotting.int_scalar(state["chosen_k"])
     silhouette = round(Level2Plotting.float_scalar(state["best_silhouette"]), digits = 4)
+    metric_label = distance_metric_label(state)
 
     log_perms = Level2Plotting.matrix_float(state["log_perms"])
     cluster_ranks = Level2Plotting.cluster_rank_assignments(state)
@@ -156,7 +157,7 @@ function build_pairwise_figure(state::Dict{String, Any}, max_points::Int, seed::
         colsize!(fig.layout, panel_idx, Relative(1 / 3))
     end
     Label(fig[0, 2],
-          "$window joint regimes in raw log10(k) space | K = $chosen_k | silhouette = $silhouette",
+          "$window joint regimes in raw log10(k) space | metric = $metric_label | K = $chosen_k | silhouette = $silhouette",
           fontsize = 24,
           font = :bold,
           halign = :center,
@@ -184,6 +185,7 @@ function build_pca_figure(state::Dict{String, Any}, max_points::Int, seed::Int)
     window = String(state["window"])
     chosen_k = Level2Plotting.int_scalar(state["chosen_k"])
     silhouette = round(Level2Plotting.float_scalar(state["best_silhouette"]), digits = 4)
+    metric_label = distance_metric_label(state)
 
     z = Level2Plotting.matrix_float(state["local_normal_scores"])
     cluster_ranks = Level2Plotting.cluster_rank_assignments(state)
@@ -194,7 +196,7 @@ function build_pca_figure(state::Dict{String, Any}, max_points::Int, seed::Int)
 
     fig = Figure(size = (1050, 980))
     Label(fig[0, :],
-          "$window joint regimes in local normal-score PCA | K = $chosen_k | silhouette = $silhouette",
+          "$window joint regimes in local normal-score PCA | metric = $metric_label | K = $chosen_k | silhouette = $silhouette",
           fontsize = 24,
           font = :bold)
 
@@ -227,7 +229,7 @@ function build_pca_figure(state::Dict{String, Any}, max_points::Int, seed::Int)
            labelsize = 18)
 
     Label(fig[3, 1],
-          "This PCA panel is computed from the local normal-score coordinates used by the clustering step.",
+          "This PCA panel is a supplemental view from local normal-score coordinates; the clustering metric is shown in the title.",
           fontsize = 18)
 
     return fig
@@ -237,6 +239,8 @@ function build_all_windows_pairwise_grid(states::Dict{String, Dict{String, Any}}
                                          max_points::Int,
                                          seed::Int)
     windows = Level2IO.FIXED_WINDOWS
+    metric_labels = unique(distance_metric_label(states[window]) for window in windows)
+    metric_text = length(metric_labels) == 1 ? first(metric_labels) : "mixed metrics"
     title_font_size = 42
     header_font_size = 34
     axis_font_size = 34
@@ -250,7 +254,7 @@ function build_all_windows_pairwise_grid(states::Dict{String, Dict{String, Any}}
     colgap!(fig.layout, 18)
 
     Label(fig[1, 1:6],
-          "All-window joint regimes in raw log10(k) space",
+          "All-window joint regimes in raw log10(k) space | metric = $metric_text",
           fontsize = title_font_size,
           font = :bold,
           halign = :center,
@@ -319,22 +323,8 @@ function build_all_windows_pairwise_grid(states::Dict{String, Dict{String, Any}}
               tellwidth = false)
     end
 
-    legend_elements = [
-        MarkerElement(color = Level2Plotting.CLUSTER_COLORS[1],
-                      marker = :circle,
-                      markersize = 22,
-                      strokecolor = :transparent),
-        MarkerElement(color = Level2Plotting.CLUSTER_COLORS[2],
-                      marker = :circle,
-                      markersize = 22,
-                      strokecolor = :transparent),
-        MarkerElement(color = :white,
-                      marker = :circle,
-                      markersize = 23,
-                      strokecolor = :black,
-                      strokewidth = 2.0),
-    ]
-    legend_labels = ["Regime 1", "Regime 2", "Cluster medoid"]
+    max_regimes = maximum(length(Level2Plotting.vector_int(states[window]["cluster_order"])) for window in windows)
+    legend_elements, legend_labels = build_combined_legend_content(max_regimes)
     Legend(fig[9, 1:6], legend_elements, legend_labels;
            orientation = :horizontal,
            framevisible = false,
@@ -345,7 +335,7 @@ function build_all_windows_pairwise_grid(states::Dict{String, Dict{String, Any}}
            labelsize = header_font_size)
 
     Label(fig[10, 1:6],
-          "Within each window: Regime 1 = lower-score regime; Regime 2 = higher-score regime.",
+          "Within each window, regime numbers are ordered from lower to higher median state score.",
           fontsize = axis_font_size,
           halign = :center,
           tellwidth = false)
@@ -366,6 +356,27 @@ function build_all_windows_pairwise_grid(states::Dict{String, Dict{String, Any}}
     resize_to_layout!(fig)
 
     return fig
+end
+
+function build_combined_legend_content(max_regimes::Int)
+    elements = CairoMakie.LegendElement[]
+    labels = String[]
+    for rank in 1:max_regimes
+        push!(elements,
+              MarkerElement(color = Level2Plotting.CLUSTER_COLORS[rank],
+                            marker = :circle,
+                            markersize = 22,
+                            strokecolor = :transparent))
+        push!(labels, "Regime $rank")
+    end
+    push!(elements,
+          MarkerElement(color = :white,
+                        marker = :circle,
+                        markersize = 23,
+                        strokecolor = :black,
+                        strokewidth = 2.0))
+    push!(labels, "Cluster medoid")
+    return elements, labels
 end
 
 function add_cluster_medoid_circles!(ax,
@@ -430,6 +441,13 @@ function build_legend_content(cluster_sizes)
                         strokewidth = 2.0))
     push!(labels, "Cluster medoid")
     return elements, labels
+end
+
+function distance_metric_label(state::Dict{String, Any})
+    metric = String(get(state, "distance_metric", "local_normal"))
+    metric == "log_unit" && return "log unit"
+    metric == "local_normal" && return "local normal"
+    return metric
 end
 
 main(ARGS)

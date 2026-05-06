@@ -87,9 +87,27 @@ function main(args::Vector{String})
         low_n = length(vector_int(state["low_indices"]))
         high_n = length(vector_int(state["high_indices"]))
         central_n = length(vector_int(state["central_indices"]))
+        distance_metric = get(state, "distance_metric", "local_normal")
+        distance_scales = haskey(state, "distance_component_scales") ?
+            join(string.(round.(vector_float(state["distance_component_scales"]), digits = 6)), ";") :
+            "1.0;1.0;1.0"
+        min_cluster_fraction = haskey(state, "min_cluster_fraction") ?
+            string(round(float_scalar(state["min_cluster_fraction"]), digits = 4)) :
+            ""
+        min_cluster_size_floor = haskey(state, "min_cluster_size") ?
+            int_scalar(state["min_cluster_size"]) :
+            0
+        effective_min_cluster_size = haskey(state, "n_samples") && !isempty(min_cluster_fraction) ?
+            max(min_cluster_size_floor, ceil(Int, parse(Float64, min_cluster_fraction) * int_scalar(state["n_samples"]))) :
+            min_cluster_size_floor
 
         push!(window_rows, [
             window,
+            string(distance_metric),
+            distance_scales,
+            min_cluster_fraction,
+            string(min_cluster_size_floor),
+            string(effective_min_cluster_size),
             string(chosen_k),
             string(round(silhouette, digits = 6)),
             string(unimodal),
@@ -138,6 +156,10 @@ function main(args::Vector{String})
         end
 
         push!(report_lines, "window = $window")
+        push!(report_lines, "  distance_metric = $distance_metric")
+        push!(report_lines, "  distance_component_scales = $distance_scales")
+        push!(report_lines, "  min_cluster_fraction = $min_cluster_fraction")
+        push!(report_lines, "  effective_min_cluster_size = $effective_min_cluster_size")
         push!(report_lines, "  chosen_k = $chosen_k")
         push!(report_lines, "  silhouette = $(round(silhouette, digits = 6))")
         push!(report_lines, "  unimodal = $(Bool(unimodal))")
@@ -148,7 +170,9 @@ function main(args::Vector{String})
     end
 
     Level2IO.write_csv(joinpath(table_root, "window_state_summary.csv"),
-                       ["window", "chosen_k", "best_silhouette", "is_effectively_unimodal",
+                       ["window", "distance_metric", "distance_component_scales",
+                        "min_cluster_fraction", "min_cluster_size_floor", "effective_min_cluster_size",
+                        "chosen_k", "best_silhouette", "is_effectively_unimodal",
                         "low_n", "high_n", "central_n", "global_medoid_index"],
                        window_rows)
     Level2IO.write_csv(joinpath(table_root, "cluster_summary.csv"),
@@ -181,19 +205,19 @@ function write_neighborhood_tables!(
     window::AbstractString,
 )
     log_perms = matrix_float(state["log_perms"])
-    local_normal_scores = matrix_float(state["local_normal_scores"])
+    distance_features = state_distance_features(state)
     state_scores = vector_float(state["state_score"])
     detail_rows = Vector{Vector{String}}()
 
     for label in ("low", "central", "high")
         state_indices = vector_int(state["$(label)_indices"])
         medoid_index = int_scalar(state["$(label)_medoid_index"])
-        medoid_z = vec(local_normal_scores[medoid_index, :])
+        medoid_features = vec(distance_features[medoid_index, :])
         medoid_log_perm = vec(log_perms[medoid_index, :])
 
         for neighborhood in ("small", "large")
             neighbor_indices = vector_int(state["$(label)_$(neighborhood)_neighbors"])
-            distances = [norm(vec(local_normal_scores[idx, :]) - medoid_z) for idx in neighbor_indices]
+            distances = [norm(vec(distance_features[idx, :]) - medoid_features) for idx in neighbor_indices]
             order = sortperm(distances)
             sorted_indices = neighbor_indices[order]
             sorted_distances = distances[order]
@@ -235,9 +259,9 @@ function write_neighborhood_tables!(
                     fmt(log_perms[idx, 1]),
                     fmt(log_perms[idx, 2]),
                     fmt(log_perms[idx, 3]),
-                    fmt(local_normal_scores[idx, 1]),
-                    fmt(local_normal_scores[idx, 2]),
-                    fmt(local_normal_scores[idx, 3]),
+                    fmt(distance_features[idx, 1]),
+                    fmt(distance_features[idx, 2]),
+                    fmt(distance_features[idx, 3]),
                 ])
             end
         end
@@ -247,9 +271,29 @@ function write_neighborhood_tables!(
                        ["window", "state_label", "neighborhood", "neighbor_rank",
                         "neighbor_index", "distance_to_state_medoid",
                         "state_score", "log_kxx", "log_kyy", "log_kzz",
-                        "local_normal_score_kxx", "local_normal_score_kyy",
-                        "local_normal_score_kzz"],
+                        "distance_feature_kxx", "distance_feature_kyy",
+                        "distance_feature_kzz"],
                        detail_rows)
+end
+
+function state_distance_features(state)
+    metric = String(get(state, "distance_metric", "local_normal"))
+    log_perms = matrix_float(state["log_perms"])
+    local_normal_scores = matrix_float(state["local_normal_scores"])
+    scales = haskey(state, "distance_component_scales") ?
+        vector_float(state["distance_component_scales"]) :
+        ones(Float64, size(log_perms, 2))
+    weights = haskey(state, "distance_weights") ?
+        vector_float(state["distance_weights"]) :
+        ones(Float64, size(log_perms, 2))
+
+    values = metric == "local_normal" ? local_normal_scores : log_perms
+    features = similar(values)
+    for j in axes(values, 2)
+        scale = scales[j] > 0 ? scales[j] : 1.0
+        features[:, j] .= values[:, j] .* sqrt(weights[j]) ./ scale
+    end
+    return features
 end
 
 float_scalar(value) = value isa AbstractArray ? Float64(first(vec(value))) : Float64(value)

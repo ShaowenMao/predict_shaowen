@@ -3,6 +3,21 @@
 Level 2 builds empirical within-window state objects from one 2000-run joint
 permeability library per fixed window.
 
+Distance convention:
+
+- Local ranks and local normal scores are still saved and used for state-score
+  ordering.
+- The default clustering, medoid, and perturbation-neighborhood distance is
+  physical log-unit distance in `log10(k)` space, where `a_c = 1` for all
+  components.
+- Use `--distance-metric local_normal` only as a legacy/sensitivity comparison.
+- The default minimum cluster fraction is 5%, so a 2000-run window requires at
+  least 100 samples for a non-singleton regime.
+- Low and high state libraries use regime-aware target-mass selection: extreme
+  regimes are included first, and only the needed part of the adjacent boundary
+  regime is added to reach the target `state_fraction`. The central library is
+  selected by distance to the global medoid after excluding low/high samples.
+
 Current script layout:
 
 - `scripts/build_level2_window_states.jl`
@@ -22,8 +37,8 @@ Current script layout:
   one raw-space pairwise figure and one separate PCA figure per window.
 - `scripts/plot_level2_joint_regime_sensitivity.jl`
   reruns the Step 2.3 regime detection for multiple minimum cluster fractions
-  such as 5%, 10%, and 15%. These outputs are sensitivity checks; the 10%
-  setting remains the baseline analysis setting.
+  such as 5%, 10%, and 15%. These outputs are sensitivity checks; the 5%
+  setting is the baseline analysis setting.
 - `scripts/bootstrap_level2_joint_regimes.jl`
   optionally runs a Step 2.3 bootstrap stability check. This can be
   time-consuming for publication-grade settings such as 100 resamples per
@@ -71,8 +86,8 @@ Recommended Level 2 execution flow:
    The 3D grouping figure is a supplementary spatial check rather than the
    primary decision plot.
 6. run `plot_level2_joint_regime_sensitivity.jl` when checking robustness of
-   the Step 2.3 minimum-cluster-mass choice. Use the 5% and 15% figures as
-   comparison views, not as automatic replacements for the 10% baseline.
+   the Step 2.3 minimum-cluster-mass choice. Use the 10% and 15% figures as
+   comparison views, not as automatic replacements for the 5% baseline.
 7. Optional: run `bootstrap_level2_joint_regimes.jl` only when checking
    whether the Step 2.3 regime choice is stable under resampling, for example
    before paper submission or reviewer response. The primary result is

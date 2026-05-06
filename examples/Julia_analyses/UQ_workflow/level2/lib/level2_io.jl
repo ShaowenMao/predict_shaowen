@@ -48,6 +48,8 @@ function read_level2_config(path::AbstractString)
 
     weights = Float64.(level2["weights"])
     length(weights) == 3 || error("Expected exactly three Level 2 weights in $path")
+    distance_weights = Float64.(get(level2, "distance_weights", weights))
+    length(distance_weights) == 3 || error("Expected exactly three distance weights in $path")
 
     return Dict{String, Any}(
         "config_path" => normpath(path),
@@ -59,6 +61,8 @@ function read_level2_config(path::AbstractString)
         "small_neighbor_fraction" => Float64(level2["small_neighbor_fraction"]),
         "large_neighbor_fraction" => Float64(level2["large_neighbor_fraction"]),
         "weights" => weights,
+        "distance_metric" => String(get(level2, "distance_metric", "log_unit")),
+        "distance_weights" => distance_weights,
         "max_k" => Int(level2["max_k"]),
         "silhouette_threshold" => Float64(level2["silhouette_threshold"]),
         "min_cluster_fraction" => Float64(level2["min_cluster_fraction"]),
@@ -146,18 +150,18 @@ function write_window_point_table(path::AbstractString, state::Dict{String, Any}
     log_perms = Matrix{Float64}(state["log_perms"])
     local_ranks = Matrix{Float64}(state["local_ranks"])
     local_normal_scores = Matrix{Float64}(state["local_normal_scores"])
-    state_score = vec(Float64.(state["state_score"]))
-    cluster_assignments = vec(Int.(state["cluster_assignments"]))
-    cluster_order = vec(Int.(state["cluster_order"]))
+    state_score = to_float_vector(state["state_score"])
+    cluster_assignments = to_int_vector(state["cluster_assignments"])
+    cluster_order = to_int_vector(state["cluster_order"])
 
     n = size(log_perms, 1)
     size(local_ranks, 1) == n || error("local_ranks row count does not match log_perms")
     size(local_normal_scores, 1) == n || error("local_normal_scores row count does not match log_perms")
 
     cluster_rank_map = Dict(cluster_id => rank for (rank, cluster_id) in enumerate(cluster_order))
-    low_set = Set(vec(Int.(state["low_indices"])))
-    central_set = Set(vec(Int.(state["central_indices"])))
-    high_set = Set(vec(Int.(state["high_indices"])))
+    low_set = Set(to_int_vector(state["low_indices"]))
+    central_set = Set(to_int_vector(state["central_indices"]))
+    high_set = Set(to_int_vector(state["high_indices"]))
 
     header = [
         "sample_index",
@@ -229,5 +233,7 @@ function csv_escape(value::AbstractString)
 end
 
 float_string(value::Real) = string(round(Float64(value), digits = 8))
+to_int_vector(values) = values isa AbstractArray ? vec(Int.(values)) : [Int(values)]
+to_float_vector(values) = values isa AbstractArray ? vec(Float64.(values)) : [Float64(values)]
 
 end

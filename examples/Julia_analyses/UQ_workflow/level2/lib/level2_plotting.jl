@@ -40,11 +40,11 @@ const STATE_COLORS = Dict(
     "high" => RGBf(0.820, 0.235, 0.196),
 )
 const CLUSTER_COLORS = [
-    RGBf(0.153, 0.392, 0.780),
-    RGBf(0.820, 0.235, 0.196),
-    RGBf(0.212, 0.620, 0.365),
-    RGBf(0.702, 0.518, 0.102),
-    RGBf(0.500, 0.353, 0.831),
+    RGBf(0.000, 0.255, 0.650),  # deep blue
+    RGBf(0.930, 0.460, 0.000),  # orange
+    RGBf(0.000, 0.620, 0.300),  # green
+    RGBf(0.090, 0.090, 0.090),  # charcoal
+    RGBf(0.610, 0.450, 0.000),  # olive brown
 ]
 
 function activate_plot_theme!()

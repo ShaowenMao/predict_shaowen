@@ -24,7 +24,8 @@ function build_window_state(log_perms::Matrix{Float64},
     local_ranks = compute_local_ranks(log_perms)
     state_score = compute_state_score(local_ranks, config["weights"])
     local_normal_scores = compute_local_normal_scores(local_ranks)
-    distance_matrix = pairwise_euclidean(local_normal_scores)
+    distance_info = build_distance_matrix(log_perms, local_normal_scores, config)
+    distance_matrix = distance_info["distance_matrix"]
 
     cluster_info = choose_clustering(distance_matrix, state_score, config, window)
     global_medoid_index = choose_medoid(collect(1:size(log_perms, 1)), distance_matrix)
@@ -53,6 +54,9 @@ function build_window_state(log_perms::Matrix{Float64},
         "state_score" => state_score,
         "state_score_order" => sortperm(state_score),
         "weights" => Float64.(config["weights"]),
+        "distance_metric" => distance_info["distance_metric"],
+        "distance_component_scales" => distance_info["distance_component_scales"],
+        "distance_weights" => distance_info["distance_weights"],
         "chosen_k" => cluster_info["chosen_k"],
         "best_silhouette" => cluster_info["best_silhouette"],
         "is_effectively_unimodal" => Int(cluster_info["is_effectively_unimodal"]),
@@ -205,6 +209,41 @@ function pairwise_euclidean(z::Matrix{Float64})
         end
     end
     return d
+end
+
+function build_distance_matrix(log_perms::Matrix{Float64},
+                               local_normal_scores::Matrix{Float64},
+                               config::Dict{String, Any})
+    metric = String(get(config, "distance_metric", "log_unit"))
+    weights = Float64.(get(config, "distance_weights", ones(size(log_perms, 2))))
+    length(weights) == size(log_perms, 2) || error("distance_weights must match permeability component count")
+    all(weights .> 0) || error("distance_weights must be positive")
+
+    if metric == "local_normal"
+        scales = ones(Float64, size(log_perms, 2))
+        features = weighted_features(local_normal_scores, scales, weights)
+    elseif metric == "log_unit"
+        scales = ones(Float64, size(log_perms, 2))
+        features = weighted_features(log_perms, scales, weights)
+    else
+        error("Unsupported distance_metric '$metric'. Use log_unit or local_normal.")
+    end
+
+    return Dict{String, Any}(
+        "distance_metric" => metric,
+        "distance_component_scales" => scales,
+        "distance_weights" => weights,
+        "distance_matrix" => pairwise_euclidean(features),
+    )
+end
+
+function weighted_features(values::Matrix{Float64}, scales::Vector{Float64}, weights::Vector{Float64})
+    features = similar(values)
+    for j in axes(values, 2)
+        scale = scales[j] > 0 ? scales[j] : 1.0
+        features[:, j] .= values[:, j] .* sqrt(weights[j]) ./ scale
+    end
+    return features
 end
 
 function choose_clustering(distance_matrix::Matrix{Float64},
@@ -408,17 +447,20 @@ function build_state_libraries(state_score::Vector{Float64},
     if chosen_k == 1
         score_order = sortperm(state_score)
         low_indices = score_order[1:n_target]
-        high_indices = score_order[end-n_target+1:end]
+        low_set = Set(low_indices)
+        high_candidates = [idx for idx in reverse(score_order) if !(idx in low_set)]
+        high_indices = high_candidates[1:min(n_target, length(high_candidates))]
     else
         medians = cluster_score_medians(state_score, assignments, chosen_k)
         cluster_order = sortperm(medians)
-        low_clusters = accumulate_clusters(cluster_order, assignments, n_target)
-        high_clusters = accumulate_clusters(reverse(cluster_order), assignments, n_target)
-        low_indices = sort(findall(in(low_clusters), assignments))
-        high_indices = sort(findall(in(high_clusters), assignments))
+        low_indices = select_regime_aware_state(cluster_order, assignments, state_score, n_target)
+        high_indices = select_regime_aware_state(reverse(cluster_order), assignments, state_score, n_target;
+                                                 descending = true,
+                                                 excluded = Set(low_indices))
     end
 
-    central_indices = choose_central_indices(global_medoid_index, distance_matrix, n_target)
+    central_indices = choose_central_indices(global_medoid_index, distance_matrix, n_target;
+                                             excluded = Set(vcat(low_indices, high_indices)))
     return Dict{String, Any}(
         "low_indices" => unique(low_indices),
         "high_indices" => unique(high_indices),
@@ -426,22 +468,35 @@ function build_state_libraries(state_score::Vector{Float64},
     )
 end
 
-function accumulate_clusters(cluster_order, assignments::Vector{Int}, n_target::Int)
+function select_regime_aware_state(cluster_order,
+                                   assignments::Vector{Int},
+                                   state_score::Vector{Float64},
+                                   n_target::Int;
+                                   descending::Bool = false,
+                                   excluded::Set{Int} = Set{Int}())
     selected = Int[]
-    total = 0
     for cluster_id in cluster_order
-        push!(selected, cluster_id)
-        total += count(==(cluster_id), assignments)
-        total >= n_target && break
+        remaining = n_target - length(selected)
+        remaining <= 0 && break
+
+        members = [idx for idx in eachindex(assignments)
+                   if assignments[idx] == cluster_id && !(idx in excluded)]
+        isempty(members) && continue
+
+        ordered_members = members[sortperm(state_score[members], rev = descending)]
+        append!(selected, ordered_members[1:min(remaining, length(ordered_members))])
     end
-    return selected
+    return sort(unique(selected))
 end
 
 function choose_central_indices(global_medoid_index::Int,
                                 distance_matrix::Matrix{Float64},
-                                n_target::Int)
+                                n_target::Int;
+                                excluded::Set{Int} = Set{Int}())
     order = sortperm(vec(distance_matrix[global_medoid_index, :]))
-    return order[1:min(n_target, length(order))]
+    candidates = [idx for idx in order if !(idx in excluded)]
+    isempty(candidates) && return order[1:min(n_target, length(order))]
+    return candidates[1:min(n_target, length(candidates))]
 end
 
 function state_record(label::AbstractString,

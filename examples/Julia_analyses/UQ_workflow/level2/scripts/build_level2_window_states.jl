@@ -14,6 +14,9 @@ function parse_args(args::Vector{String})
         "config" => Level2IO.default_config_path(),
         "manifest" => Level2IO.default_manifest_path(),
         "output-dir" => "",
+        "distance-metric" => "",
+        "min-cluster-fraction" => "",
+        "min-cluster-size" => "",
     )
 
     i = 1
@@ -48,12 +51,32 @@ function print_help()
     println("  --config <path>       Level 2 TOML config")
     println("  --manifest <path>     Proxy manifest CSV")
     println("  --output-dir <path>   Output root for saved window-state objects")
+    println("  --distance-metric <name>")
+    println("                       Override config distance metric:")
+    println("                       log_unit or local_normal")
+    println("  --min-cluster-fraction <x>")
+    println("                       Override the minimum cluster fraction, e.g. 0.05")
+    println("  --min-cluster-size <n>")
+    println("                       Override the absolute minimum cluster size floor")
     println("  -h, --help            Show this help")
 end
 
 function main(args::Vector{String})
     opt = parse_args(args)
     config = Level2IO.read_level2_config(opt["config"])
+    if !isempty(opt["distance-metric"])
+        config["distance_metric"] = opt["distance-metric"]
+    end
+    if !isempty(opt["min-cluster-fraction"])
+        value = parse(Float64, opt["min-cluster-fraction"])
+        0.0 < value <= 1.0 || error("--min-cluster-fraction must be in (0, 1]")
+        config["min_cluster_fraction"] = value
+    end
+    if !isempty(opt["min-cluster-size"])
+        value = parse(Int, opt["min-cluster-size"])
+        value >= 1 || error("--min-cluster-size must be at least 1")
+        config["min_cluster_size"] = value
+    end
     manifest_rows = Level2IO.read_manifest_csv(opt["manifest"], config)
 
     output_root = isempty(opt["output-dir"]) ?
@@ -74,6 +97,10 @@ function main(args::Vector{String})
         "config_path = $(config["config_path"])",
         "manifest_path = $(normpath(opt["manifest"]))",
         "geology_id = $(config["geology_id"])",
+        "distance_metric = $(config["distance_metric"])",
+        "distance_weights = $(join(config["distance_weights"], ", "))",
+        "min_cluster_fraction = $(config["min_cluster_fraction"])",
+        "min_cluster_size = $(config["min_cluster_size"])",
         "output_root = $output_root",
         "windows = $(join(config["fixed_windows"], ", "))",
         "",
@@ -99,6 +126,10 @@ function main(args::Vector{String})
             window,
             proxy["source_path"],
             string(state["n_samples"]),
+            string(state["distance_metric"]),
+            join(string.(round.(Float64.(state["distance_component_scales"]), digits = 6)), ";"),
+            string(state["min_cluster_fraction"]),
+            string(state["min_cluster_size"]),
             string(state["chosen_k"]),
             string(round(Float64(state["best_silhouette"]), digits = 6)),
             string(Int(state["is_effectively_unimodal"])),
@@ -109,6 +140,10 @@ function main(args::Vector{String})
         ])
 
         push!(report_lines, "window = $window")
+        push!(report_lines, "  distance_metric = $(state["distance_metric"])")
+        push!(report_lines, "  distance_component_scales = $(join(round.(Float64.(state["distance_component_scales"]), digits = 6), ", "))")
+        push!(report_lines, "  min_cluster_fraction = $(state["min_cluster_fraction"])")
+        push!(report_lines, "  min_cluster_size = $(state["min_cluster_size"])")
         push!(report_lines, "  chosen_k = $(state["chosen_k"])")
         push!(report_lines, "  best_silhouette = $(round(Float64(state["best_silhouette"]), digits = 6))")
         push!(report_lines, "  unimodal = $(Bool(Int(state["is_effectively_unimodal"])))")
@@ -119,7 +154,9 @@ function main(args::Vector{String})
     end
 
     Level2IO.write_csv(joinpath(table_root, "level2_build_summary.csv"),
-                       ["window", "source_path", "n_samples", "chosen_k", "best_silhouette",
+                       ["window", "source_path", "n_samples", "distance_metric", "distance_component_scales",
+                        "min_cluster_fraction", "min_cluster_size",
+                        "chosen_k", "best_silhouette",
                         "is_effectively_unimodal", "low_n", "high_n", "central_n", "state_path"],
                        build_rows)
     Level2IO.write_text_lines(joinpath(report_root, "level2_build_report.txt"), report_lines)

@@ -5,7 +5,6 @@ Pkg.activate(normpath(joinpath(@__DIR__, "..", "..")))
 
 using CairoMakie
 using Printf
-using Statistics
 
 include(joinpath(@__DIR__, "..", "lib", "level2_io.jl"))
 include(joinpath(@__DIR__, "..", "lib", "level2_plotting.jl"))
@@ -15,9 +14,9 @@ using .Level2Plotting
 
 const STATE_LABELS = Dict(
     "low" => "Low",
-    "central" => "Central",
     "high" => "High",
 )
+const STATE_ORDER = ("low", "high")
 const COMPONENT_AXIS_LABELS = (
     "log10(kxx [mD])",
     "log10(kyy [mD])",
@@ -26,6 +25,10 @@ const COMPONENT_AXIS_LABELS = (
 const FIXED_Y_LIMS = (-7.1, 2.1)
 const FIXED_Y_TICKS = [-7.0, -4.0, -1.0, 2.0]
 const FIXED_Y_TICK_LABELS = ["-7", "-4", "-1", "2"]
+const DEFAULT_FIXED_COUNT_DENSITY_REFERENCE = 1200.0
+const PANEL_WIDTH = 430
+const PANEL_ASPECT = 3 / 2
+const PANEL_HEIGHT = round(Int, PANEL_WIDTH / PANEL_ASPECT)
 
 panel_label(index::Integer) = "($(Char(Int('a') + index - 1)))"
 
@@ -33,6 +36,7 @@ function parse_args(args::Vector{String})
     options = Dict(
         "state-root" => normpath(joinpath(Level2IO.default_level2_output_root(), "g_ref")),
         "output-dir" => "",
+        "fixed-count-density-reference" => string(DEFAULT_FIXED_COUNT_DENSITY_REFERENCE),
     )
 
     i = 1
@@ -60,7 +64,9 @@ function print_help()
     println()
     println("Options:")
     println("  --state-root <path>    Root folder containing built Level 2 state MAT files")
-    println("  --output-dir <path>    Folder where state component violin figures are saved")
+    println("  --output-dir <path>    Folder where the default state component violin figure is saved")
+    println("  --fixed-count-density-reference <value>")
+    println("                         Fixed density*count reference for cross-panel violin width scaling")
     println("  -h, --help             Show this help")
 end
 
@@ -69,32 +75,22 @@ function main(args::Vector{String})
     state_root = normpath(opt["state-root"])
     output_root = isempty(opt["output-dir"]) ? joinpath(state_root, "figures", "state_component_distributions") :
                   normpath(opt["output-dir"])
+    fixed_count_density_reference = parse(Float64, opt["fixed-count-density-reference"])
+    fixed_count_density_reference > 0 || error("--fixed-count-density-reference must be positive")
     mkpath(output_root)
 
     Level2Plotting.activate_plot_theme!()
 
     states = load_states(state_root)
+    fig = build_state_component_violin_grid(states; fixed_count_density_reference = fixed_count_density_reference)
 
-    combined_fig = build_all_windows_state_component_grid(states)
-    save(joinpath(output_root, "all_windows_state_component_violins.png"), combined_fig)
-    save(joinpath(output_root, "all_windows_state_component_violins_row_spaced.png"), combined_fig)
-    save_optional_pdf(joinpath(output_root, "all_windows_state_component_violins.pdf"), combined_fig)
+    png_path = joinpath(output_root, "all_windows_state_component_violins.png")
+    pdf_path = joinpath(output_root, "all_windows_state_component_violins.pdf")
+    save(png_path, fig)
+    save_optional_pdf(pdf_path, fig)
 
-    combined_medoid_fig = build_all_windows_state_component_medoid_grid(states)
-    save(joinpath(output_root, "all_windows_state_component_violins_medoids.png"), combined_medoid_fig)
-    save_optional_pdf(joinpath(output_root, "all_windows_state_component_violins_medoids.pdf"), combined_medoid_fig)
-
-    for (widx, window) in enumerate(Level2IO.FIXED_WINDOWS)
-        fig = build_window_state_component_figure(states[window], widx)
-        save(joinpath(output_root, "$(window)_state_component_violins.png"), fig)
-        save_optional_pdf(joinpath(output_root, "$(window)_state_component_violins.pdf"), fig)
-
-        medoid_fig = build_window_state_component_medoid_figure(states[window], widx)
-        save(joinpath(output_root, "$(window)_state_component_violins_medoids.png"), medoid_fig)
-        save_optional_pdf(joinpath(output_root, "$(window)_state_component_violins_medoids.pdf"), medoid_fig)
-    end
-
-    println("Saved state component violin figures to $output_root")
+    println("Saved default state component violin figure:")
+    println("  $png_path")
 end
 
 function save_optional_pdf(path::AbstractString, fig::Figure)
@@ -115,22 +111,22 @@ function load_states(state_root::AbstractString)
     return states
 end
 
-function build_all_windows_state_component_grid(states::Dict{String, Dict{String, Any}})
+function build_state_component_violin_grid(states::Dict{String, Dict{String, Any}};
+                                           fixed_count_density_reference::Real)
     windows = Level2IO.FIXED_WINDOWS
     title_font_size = 42
     header_font_size = 34
     axis_font_size = 34
     tick_font_size = 34
-    panel_size = 430
 
     fig = Figure(size = (3900, 2180),
                  figure_padding = (24, 24, 18, 18),
                  backgroundcolor = :white)
-    rowgap!(fig.layout, 14)
+    rowgap!(fig.layout, 5)
     colgap!(fig.layout, 18)
 
     Label(fig[1, 1:6],
-          "State component distributions by window",
+          "Fixed-scale low and high state component distributions by window",
           fontsize = title_font_size,
           font = :bold,
           halign = :center,
@@ -168,15 +164,15 @@ function build_all_windows_state_component_grid(states::Dict{String, Dict{String
                       ygridwidth = 1.0,
                       topspinevisible = false,
                       rightspinevisible = false,
-                      xticks = (1:3, [STATE_LABELS[label] for label in Level2Plotting.STATE_ORDER]),
+                      xticks = (1:2, [STATE_LABELS[label] for label in STATE_ORDER]),
                       yticks = (FIXED_Y_TICKS, FIXED_Y_TICK_LABELS),
-                      aspect = AxisAspect(1))
+                      aspect = AxisAspect(PANEL_ASPECT))
 
-            add_component_violins!(ax, state, component_idx;
-                                   violin_width = 0.72,
-                                   median_width = 0.28,
-                                   mean_markersize = 14)
-            xlims!(ax, 0.4, 3.6)
+            add_fixed_scale_violins!(ax, state, component_idx;
+                                     violin_width = 0.72,
+                                     fixed_count_density_reference = fixed_count_density_reference,
+                                     medoid_markersize = 24)
+            xlims!(ax, 0.4, 2.6)
             ylims!(ax, FIXED_Y_LIMS...)
             add_panel_label!(ax, panel_label((component_idx - 1) * length(windows) + widx);
                              fontsize = axis_font_size)
@@ -190,7 +186,7 @@ function build_all_windows_state_component_grid(states::Dict{String, Dict{String
         end
     end
 
-    legend_elements, legend_labels = build_distribution_legend()
+    legend_elements, legend_labels = build_legend()
     Legend(fig[8, 1:6], legend_elements, legend_labels;
            orientation = :horizontal,
            framevisible = false,
@@ -201,7 +197,8 @@ function build_all_windows_state_component_grid(states::Dict{String, Dict{String
            labelsize = header_font_size)
 
     Label(fig[9, 1:6],
-          "Violins show the full empirical state-library distribution; black bars are medians and white circles are means.",
+          @sprintf("All panels use fixed density-count reference = %.0f, so violin widths are comparable across windows and geologies.",
+                   fixed_count_density_reference),
           fontsize = axis_font_size,
           halign = :center,
           tellwidth = false)
@@ -209,336 +206,57 @@ function build_all_windows_state_component_grid(states::Dict{String, Dict{String
     rowsize!(fig.layout, 1, Fixed(70))
     rowsize!(fig.layout, 2, Fixed(88))
     for row in component_rows
-        rowsize!(fig.layout, row, Fixed(panel_size))
+        rowsize!(fig.layout, row, Fixed(PANEL_HEIGHT))
     end
-    rowsize!(fig.layout, 4, Fixed(40))
-    rowsize!(fig.layout, 6, Fixed(40))
+    rowsize!(fig.layout, 4, Fixed(13))
+    rowsize!(fig.layout, 6, Fixed(13))
     rowsize!(fig.layout, 8, Fixed(70))
     rowsize!(fig.layout, 9, Fixed(50))
     for col in 1:6
-        colsize!(fig.layout, col, Fixed(panel_size))
+        colsize!(fig.layout, col, Fixed(PANEL_WIDTH))
     end
     resize_to_layout!(fig)
 
     return fig
 end
 
-function build_all_windows_state_component_medoid_grid(states::Dict{String, Dict{String, Any}})
-    windows = Level2IO.FIXED_WINDOWS
-    title_font_size = 42
-    header_font_size = 34
-    axis_font_size = 34
-    tick_font_size = 34
-    panel_size = 430
+function add_fixed_scale_violins!(ax,
+                                  state::Dict{String, Any},
+                                  component_idx::Int;
+                                  violin_width::Real,
+                                  fixed_count_density_reference::Real,
+                                  medoid_markersize::Real)
+    all_x = Float64[]
+    all_y = Float64[]
+    all_colors = RGBAf[]
 
-    fig = Figure(size = (3900, 2180),
-                 figure_padding = (24, 24, 18, 18),
-                 backgroundcolor = :white)
-    rowgap!(fig.layout, 14)
-    colgap!(fig.layout, 18)
-
-    Label(fig[1, 1:6],
-          "State component distributions and medoids by window",
-          fontsize = title_font_size,
-          font = :bold,
-          halign = :center,
-          tellwidth = false)
-
-    for (widx, window) in enumerate(windows)
-        state = states[window]
-        chosen_k = Level2Plotting.int_scalar(state["chosen_k"])
-        silhouette = Level2Plotting.float_scalar(state["best_silhouette"])
-        Label(fig[2, widx],
-              @sprintf("W%d\nK = %d, sil = %.3f", widx, chosen_k, silhouette),
-              fontsize = header_font_size,
-              font = :bold,
-              halign = :center,
-              tellwidth = false)
-    end
-
-    component_rows = (3, 5, 7)
-    for component_idx in 1:3
-        row = component_rows[component_idx]
-        for (widx, window) in enumerate(windows)
-            state = states[window]
-            ax = Axis(fig[row, widx],
-                      xlabel = component_idx == 3 ? "State library" : "",
-                      ylabel = widx == 1 ? COMPONENT_AXIS_LABELS[component_idx] : "",
-                      xlabelsize = axis_font_size,
-                      ylabelsize = axis_font_size,
-                      xticklabelsize = tick_font_size,
-                      yticklabelsize = tick_font_size,
-                      xlabelpadding = 8.0,
-                      ylabelpadding = 12.0,
-                      xgridvisible = false,
-                      ygridvisible = true,
-                      ygridcolor = RGBf(0.88, 0.88, 0.88),
-                      ygridwidth = 1.0,
-                      topspinevisible = false,
-                      rightspinevisible = false,
-                      xticks = (1:3, [STATE_LABELS[label] for label in Level2Plotting.STATE_ORDER]),
-                      yticks = (FIXED_Y_TICKS, FIXED_Y_TICK_LABELS),
-                      aspect = AxisAspect(1))
-
-            add_component_violins!(ax, state, component_idx;
-                                   violin_width = 0.72,
-                                   median_width = 0.28,
-                                   mean_markersize = 14,
-                                   show_median = false,
-                                   show_mean = false,
-                                   show_medoid = true,
-                                   medoid_markersize = 24)
-            xlims!(ax, 0.4, 3.6)
-            ylims!(ax, FIXED_Y_LIMS...)
-            add_panel_label!(ax, panel_label((component_idx - 1) * length(windows) + widx);
-                             fontsize = axis_font_size)
-
-            if component_idx != 3
-                hidexdecorations!(ax, grid = false)
-            end
-            if widx != 1
-                hideydecorations!(ax, grid = false)
-            end
-        end
-    end
-
-    legend_elements, legend_labels = build_medoid_distribution_legend()
-    Legend(fig[8, 1:6], legend_elements, legend_labels;
-           orientation = :horizontal,
-           framevisible = false,
-           patchlabelgap = 12,
-           rowgap = 8,
-           colgap = 26,
-           tellwidth = false,
-           labelsize = header_font_size)
-
-    Label(fig[9, 1:6],
-          "Violins show empirical state-library distributions; gold diamonds show the medoid, an actual representative PREDICT realization.",
-          fontsize = axis_font_size,
-          halign = :center,
-          tellwidth = false)
-
-    rowsize!(fig.layout, 1, Fixed(70))
-    rowsize!(fig.layout, 2, Fixed(88))
-    for row in component_rows
-        rowsize!(fig.layout, row, Fixed(panel_size))
-    end
-    rowsize!(fig.layout, 4, Fixed(40))
-    rowsize!(fig.layout, 6, Fixed(40))
-    rowsize!(fig.layout, 8, Fixed(70))
-    rowsize!(fig.layout, 9, Fixed(50))
-    for col in 1:6
-        colsize!(fig.layout, col, Fixed(panel_size))
-    end
-    resize_to_layout!(fig)
-
-    return fig
-end
-
-function build_window_state_component_figure(state::Dict{String, Any}, window_index::Int)
-    window = String(state["window"])
-    chosen_k = Level2Plotting.int_scalar(state["chosen_k"])
-    silhouette = Level2Plotting.float_scalar(state["best_silhouette"])
-
-    title_font_size = 34
-    axis_font_size = 26
-    tick_font_size = 24
-
-    fig = Figure(size = (1900, 760),
-                 figure_padding = (22, 22, 16, 16),
-                 backgroundcolor = :white)
-    rowgap!(fig.layout, 12)
-    colgap!(fig.layout, 22)
-
-    Label(fig[1, 1:3],
-          @sprintf("W%d (%s) state component distributions | K = %d | silhouette = %.3f",
-                   window_index, window, chosen_k, silhouette),
-          fontsize = title_font_size,
-          font = :bold,
-          halign = :center,
-          tellwidth = false)
-
-    for component_idx in 1:3
-        ax = Axis(fig[2, component_idx],
-                  title = COMPONENT_AXIS_LABELS[component_idx],
-                  xlabel = "State library",
-                  ylabel = component_idx == 1 ? "log10 permeability" : "",
-                  titlesize = axis_font_size,
-                  xlabelsize = axis_font_size,
-                  ylabelsize = axis_font_size,
-                  xticklabelsize = tick_font_size,
-                  yticklabelsize = tick_font_size,
-                  xgridvisible = false,
-                  ygridvisible = true,
-                  ygridcolor = RGBf(0.88, 0.88, 0.88),
-                  ygridwidth = 1.0,
-                  topspinevisible = false,
-                  rightspinevisible = false,
-                  xticks = (1:3, [STATE_LABELS[label] for label in Level2Plotting.STATE_ORDER]),
-                  yticks = (FIXED_Y_TICKS, FIXED_Y_TICK_LABELS),
-                  aspect = AxisAspect(1))
-
-        add_component_violins!(ax, state, component_idx;
-                               violin_width = 0.72,
-                               median_width = 0.30,
-                               mean_markersize = 13)
-        xlims!(ax, 0.4, 3.6)
-        ylims!(ax, FIXED_Y_LIMS...)
-        add_panel_label!(ax, panel_label(component_idx); fontsize = axis_font_size)
-        if component_idx != 1
-            hideydecorations!(ax, grid = false)
-        end
-    end
-
-    legend_elements, legend_labels = build_distribution_legend()
-    Legend(fig[3, 1:3], legend_elements, legend_labels;
-           orientation = :horizontal,
-           framevisible = false,
-           patchlabelgap = 10,
-           rowgap = 8,
-           colgap = 22,
-           tellwidth = false,
-           labelsize = tick_font_size)
-
-    rowsize!(fig.layout, 1, Fixed(66))
-    rowsize!(fig.layout, 2, Fixed(430))
-    rowsize!(fig.layout, 3, Fixed(70))
-    for col in 1:3
-        colsize!(fig.layout, col, Fixed(430))
-    end
-    resize_to_layout!(fig)
-
-    return fig
-end
-
-function build_window_state_component_medoid_figure(state::Dict{String, Any}, window_index::Int)
-    window = String(state["window"])
-    chosen_k = Level2Plotting.int_scalar(state["chosen_k"])
-    silhouette = Level2Plotting.float_scalar(state["best_silhouette"])
-
-    title_font_size = 34
-    axis_font_size = 26
-    tick_font_size = 24
-
-    fig = Figure(size = (1900, 760),
-                 figure_padding = (22, 22, 16, 16),
-                 backgroundcolor = :white)
-    rowgap!(fig.layout, 12)
-    colgap!(fig.layout, 22)
-
-    Label(fig[1, 1:3],
-          @sprintf("W%d (%s) state component distributions and medoids | K = %d | silhouette = %.3f",
-                   window_index, window, chosen_k, silhouette),
-          fontsize = title_font_size,
-          font = :bold,
-          halign = :center,
-          tellwidth = false)
-
-    for component_idx in 1:3
-        ax = Axis(fig[2, component_idx],
-                  title = COMPONENT_AXIS_LABELS[component_idx],
-                  xlabel = "State library",
-                  ylabel = component_idx == 1 ? "log10 permeability" : "",
-                  titlesize = axis_font_size,
-                  xlabelsize = axis_font_size,
-                  ylabelsize = axis_font_size,
-                  xticklabelsize = tick_font_size,
-                  yticklabelsize = tick_font_size,
-                  xgridvisible = false,
-                  ygridvisible = true,
-                  ygridcolor = RGBf(0.88, 0.88, 0.88),
-                  ygridwidth = 1.0,
-                  topspinevisible = false,
-                  rightspinevisible = false,
-                  xticks = (1:3, [STATE_LABELS[label] for label in Level2Plotting.STATE_ORDER]),
-                  yticks = (FIXED_Y_TICKS, FIXED_Y_TICK_LABELS),
-                  aspect = AxisAspect(1))
-
-        add_component_violins!(ax, state, component_idx;
-                               violin_width = 0.72,
-                               median_width = 0.30,
-                               mean_markersize = 13,
-                               show_median = false,
-                               show_mean = false,
-                               show_medoid = true,
-                               medoid_markersize = 22)
-        xlims!(ax, 0.4, 3.6)
-        ylims!(ax, FIXED_Y_LIMS...)
-        add_panel_label!(ax, panel_label(component_idx); fontsize = axis_font_size)
-        if component_idx != 1
-            hideydecorations!(ax, grid = false)
-        end
-    end
-
-    legend_elements, legend_labels = build_medoid_distribution_legend()
-    Legend(fig[3, 1:3], legend_elements, legend_labels;
-           orientation = :horizontal,
-           framevisible = false,
-           patchlabelgap = 10,
-           rowgap = 8,
-           colgap = 22,
-           tellwidth = false,
-           labelsize = tick_font_size)
-
-    rowsize!(fig.layout, 1, Fixed(66))
-    rowsize!(fig.layout, 2, Fixed(430))
-    rowsize!(fig.layout, 3, Fixed(70))
-    for col in 1:3
-        colsize!(fig.layout, col, Fixed(430))
-    end
-    resize_to_layout!(fig)
-
-    return fig
-end
-
-function add_component_violins!(ax,
-                                state::Dict{String, Any},
-                                component_idx::Int;
-                                violin_width::Real,
-                                median_width::Real,
-                                mean_markersize::Real,
-                                show_median::Bool = true,
-                                show_mean::Bool = true,
-                                show_medoid::Bool = false,
-                                medoid_markersize::Real = 22)
-    for (state_idx, label) in enumerate(Level2Plotting.STATE_ORDER)
+    for (state_idx, label) in enumerate(STATE_ORDER)
         values = component_state_values(state, label, component_idx)
-        xs = fill(Float64(state_idx), length(values))
-        violin!(ax, xs, values;
-                color = (Level2Plotting.STATE_COLORS[label], 0.72),
-                width = violin_width,
-                strokecolor = :black,
-                strokewidth = 1.0)
-        if show_median
-            median_value = median(values)
-            lines!(ax,
-                   [state_idx - median_width, state_idx + median_width],
-                   [median_value, median_value];
-                   color = :black,
-                   linewidth = 4)
-        end
-        if show_mean
-            mean_value = mean(values)
-            scatter!(ax,
-                     [state_idx],
-                     [mean_value];
-                     marker = :circle,
-                     color = :white,
-                     strokecolor = :black,
-                     strokewidth = 1.8,
-                     markersize = mean_markersize)
-        end
-        if show_medoid
-            medoid_value = Level2Plotting.medoid_component_values(state, label)[component_idx]
-            scatter!(ax,
-                     [state_idx],
-                     [medoid_value];
-                     marker = :diamond,
-                     color = RGBf(1.0, 0.78, 0.10),
-                     strokecolor = :black,
-                     strokewidth = 2.2,
-                     markersize = medoid_markersize)
-        end
+        base_color = Level2Plotting.STATE_COLORS[label]
+        state_color = RGBAf(base_color.r, base_color.g, base_color.b, 0.72)
+        append!(all_x, fill(Float64(state_idx), length(values)))
+        append!(all_y, values)
+        append!(all_colors, fill(state_color, length(values)))
+    end
+
+    violin!(ax, all_x, all_y;
+            color = all_colors,
+            width = violin_width,
+            scale = :count,
+            max_density = fixed_count_density_reference,
+            strokecolor = :black,
+            strokewidth = 1.0)
+
+    for (state_idx, label) in enumerate(STATE_ORDER)
+        medoid_value = Level2Plotting.medoid_component_values(state, label)[component_idx]
+        scatter!(ax,
+                 [state_idx],
+                 [medoid_value];
+                 marker = :diamond,
+                 color = RGBf(1.0, 0.78, 0.10),
+                 strokecolor = :black,
+                 strokewidth = 2.2,
+                 markersize = medoid_markersize)
     end
 end
 
@@ -550,34 +268,10 @@ function component_state_values(state::Dict{String, Any},
     return vec(log_perms[indices, component_idx])
 end
 
-function build_distribution_legend()
+function build_legend()
     elements = CairoMakie.LegendElement[]
     labels = String[]
-    for label in Level2Plotting.STATE_ORDER
-        push!(elements,
-              PolyElement(color = (Level2Plotting.STATE_COLORS[label], 0.72),
-                          strokecolor = :black,
-                          strokewidth = 1.0))
-        push!(labels, STATE_LABELS[label])
-    end
-    push!(elements,
-          LineElement(color = :black,
-                      linewidth = 4))
-    push!(labels, "Median")
-    push!(elements,
-          MarkerElement(color = :white,
-                        marker = :circle,
-                        markersize = 18,
-                        strokecolor = :black,
-                        strokewidth = 1.8))
-    push!(labels, "Mean")
-    return elements, labels
-end
-
-function build_medoid_distribution_legend()
-    elements = CairoMakie.LegendElement[]
-    labels = String[]
-    for label in Level2Plotting.STATE_ORDER
+    for label in STATE_ORDER
         push!(elements,
               PolyElement(color = (Level2Plotting.STATE_COLORS[label], 0.72),
                           strokecolor = :black,
