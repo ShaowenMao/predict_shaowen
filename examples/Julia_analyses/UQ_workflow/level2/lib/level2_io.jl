@@ -1,3 +1,12 @@
+"""
+    Level2IO
+
+Input/output utilities for the Level 2 UQ workflow.
+
+This module resolves repository-relative paths, reads TOML/CSV configuration
+files, loads PREDICT MAT libraries, saves Level 2 state objects, and writes
+CSV/text outputs used by review and sampling scripts.
+"""
 module Level2IO
 
 using MAT
@@ -24,16 +33,52 @@ const FIXED_WINDOWS = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"]
 const WORKFLOW_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const REPO_ROOT = normpath(joinpath(WORKFLOW_ROOT, "..", "..", ".."))
 
+"""
+    default_config_path()
+
+Return the default Level 2 analysis TOML configuration path.
+"""
 default_config_path() = normpath(joinpath(WORKFLOW_ROOT, "configs", "level2_defaults.toml"))
+
+"""
+    default_manifest_path()
+
+Return the default proxy manifest CSV path.
+"""
 default_manifest_path() = normpath(joinpath(WORKFLOW_ROOT, "configs", "level2_proxy_manifest.csv"))
+
+"""
+    default_level2_output_root()
+
+Return the default folder for Level 2 outputs inside the workflow tree.
+"""
 default_level2_output_root() = normpath(joinpath(WORKFLOW_ROOT, "level2", "outputs"))
 
+"""
+    timestamp_string()
+
+Return an ISO-like local timestamp string for reports.
+"""
 timestamp_string() = Dates.format(now(), dateformat"yyyy-mm-ddTHH:MM:SS")
 
+"""
+    resolve_repo_path(path)
+
+Resolve a repository-relative path against `REPO_ROOT`; absolute paths are
+normalized and returned unchanged.
+"""
 function resolve_repo_path(path::AbstractString)
     return isabspath(path) ? normpath(path) : normpath(joinpath(REPO_ROOT, path))
 end
 
+"""
+    read_level2_config(path)
+
+Read and validate the baseline Level 2 TOML configuration.
+
+The returned dictionary normalizes types, validates the six fixed windows, and
+fills optional plotting/validation settings with defaults.
+"""
 function read_level2_config(path::AbstractString)
     cfg_raw = TOML.parsefile(path)
     haskey(cfg_raw, "workflow") || error("Missing [workflow] section in $path")
@@ -42,6 +87,7 @@ function read_level2_config(path::AbstractString)
     workflow = cfg_raw["workflow"]
     level2 = cfg_raw["level2"]
     validation = get(cfg_raw, "validation", Dict{String, Any}())
+    plotting = get(cfg_raw, "plotting", Dict{String, Any}())
 
     windows = String.(workflow["fixed_windows"])
     windows == FIXED_WINDOWS || error("Config must use the six fixed windows $(join(FIXED_WINDOWS, ", "))")
@@ -58,8 +104,8 @@ function read_level2_config(path::AbstractString)
         "geology_id" => String(workflow["geology_id"]),
         "fixed_windows" => windows,
         "state_fraction" => Float64(level2["state_fraction"]),
-        "small_neighbor_fraction" => Float64(level2["small_neighbor_fraction"]),
-        "large_neighbor_fraction" => Float64(level2["large_neighbor_fraction"]),
+        "local_pool_fraction" => Float64(level2["local_pool_fraction"]),
+        "local_pool_min_count" => Int(level2["local_pool_min_count"]),
         "weights" => weights,
         "distance_metric" => String(get(level2, "distance_metric", "log_unit")),
         "distance_weights" => distance_weights,
@@ -71,9 +117,24 @@ function read_level2_config(path::AbstractString)
         "max_kmedoids_iter" => Int(level2["max_kmedoids_iter"]),
         "num_restarts" => Int(level2["num_restarts"]),
         "holdout_repeats" => Int.(get(validation, "holdout_repeats", Int[])),
+        "state_violin_fixed_count_density_reference" =>
+            Float64(get(plotting, "state_violin_fixed_count_density_reference", 560.0)),
+        "local_pool_violin_fixed_count_density_reference" =>
+            Float64(get(plotting, "local_pool_violin_fixed_count_density_reference", 120.0)),
+        "state_wide_pool_violin_fixed_count_density_reference" =>
+            Float64(get(plotting, "state_wide_pool_violin_fixed_count_density_reference", 560.0)),
     )
 end
 
+"""
+    read_manifest_csv(path, cfg)
+
+Read the Level 2 proxy manifest and return rows ordered by the six fixed
+windows.
+
+Each row gains a `resolved_mat_path` field so downstream loaders do not need to
+repeat path resolution.
+"""
 function read_manifest_csv(path::AbstractString, cfg::Dict{String, Any})
     lines = readlines(path)
     isempty(lines) && error("Manifest is empty: $path")
@@ -115,6 +176,15 @@ function read_manifest_csv(path::AbstractString, cfg::Dict{String, Any})
     return ordered_rows
 end
 
+"""
+    load_proxy_library(row)
+
+Load one PREDICT MAT library from a manifest row.
+
+The MAT file must contain a positive `perms` matrix with columns `kxx`, `kyy`,
+and `kzz`. The returned dictionary includes both raw permeability and
+`log10(k)` values.
+"""
 function load_proxy_library(row::Dict{String, String})
     filepath = row["resolved_mat_path"]
     data = matread(filepath)
@@ -136,21 +206,40 @@ function load_proxy_library(row::Dict{String, String})
     )
 end
 
+"""
+    save_window_state(path, state)
+
+Save a Level 2 window-state dictionary to a MAT file, creating parent folders
+as needed.
+"""
 function save_window_state(path::AbstractString, state::Dict{String, Any})
     mkpath(dirname(path))
     matwrite(path, state)
     return path
 end
 
+"""
+    load_window_state(path)
+
+Load a saved Level 2 window-state MAT file.
+"""
 load_window_state(path::AbstractString) = matread(path)
 
+"""
+    write_window_point_table(path, state)
+
+Write one row per PREDICT realization with log permeability, local ranks,
+normal scores, joint rank score, cluster id, and low/high state indicators.
+"""
 function write_window_point_table(path::AbstractString, state::Dict{String, Any})
     mkpath(dirname(path))
 
     log_perms = Matrix{Float64}(state["log_perms"])
     local_ranks = Matrix{Float64}(state["local_ranks"])
     local_normal_scores = Matrix{Float64}(state["local_normal_scores"])
-    state_score = to_float_vector(state["state_score"])
+    joint_rank_score = haskey(state, "joint_rank_score") ?
+        to_float_vector(state["joint_rank_score"]) :
+        to_float_vector(state["state_score"])
     cluster_assignments = to_int_vector(state["cluster_assignments"])
     cluster_order = to_int_vector(state["cluster_order"])
 
@@ -160,7 +249,6 @@ function write_window_point_table(path::AbstractString, state::Dict{String, Any}
 
     cluster_rank_map = Dict(cluster_id => rank for (rank, cluster_id) in enumerate(cluster_order))
     low_set = Set(to_int_vector(state["low_indices"]))
-    central_set = Set(to_int_vector(state["central_indices"]))
     high_set = Set(to_int_vector(state["high_indices"]))
 
     header = [
@@ -168,11 +256,10 @@ function write_window_point_table(path::AbstractString, state::Dict{String, Any}
         "log_kxx", "log_kyy", "log_kzz",
         "local_rank_kxx", "local_rank_kyy", "local_rank_kzz",
         "local_normal_score_kxx", "local_normal_score_kyy", "local_normal_score_kzz",
-        "state_score",
+        "joint_rank_score",
         "cluster_id",
-        "cluster_rank",
+        "ordered_cluster_number",
         "is_low_state",
-        "is_central_state",
         "is_high_state",
     ]
 
@@ -189,11 +276,10 @@ function write_window_point_table(path::AbstractString, state::Dict{String, Any}
             float_string(local_normal_scores[i, 1]),
             float_string(local_normal_scores[i, 2]),
             float_string(local_normal_scores[i, 3]),
-            float_string(state_score[i]),
+            float_string(joint_rank_score[i]),
             string(cluster_assignments[i]),
             string(cluster_rank_map[cluster_assignments[i]]),
             i in low_set ? "1" : "0",
-            i in central_set ? "1" : "0",
             i in high_set ? "1" : "0",
         ]
     end
@@ -202,6 +288,11 @@ function write_window_point_table(path::AbstractString, state::Dict{String, Any}
     return path
 end
 
+"""
+    write_csv(path, header, rows)
+
+Write a simple CSV file with escaping for commas and quotation marks.
+"""
 function write_csv(path::AbstractString, header::Vector{String}, rows::Vector{Vector{String}})
     mkpath(dirname(path))
     open(path, "w") do io
@@ -214,6 +305,11 @@ function write_csv(path::AbstractString, header::Vector{String}, rows::Vector{Ve
     return path
 end
 
+"""
+    write_text_lines(path, lines)
+
+Write a plain-text report from a vector of lines.
+"""
 function write_text_lines(path::AbstractString, lines::Vector{String})
     mkpath(dirname(path))
     open(path, "w") do io
@@ -224,6 +320,11 @@ function write_text_lines(path::AbstractString, lines::Vector{String})
     return path
 end
 
+"""
+    csv_escape(value)
+
+Escape one string field for CSV output.
+"""
 function csv_escape(value::AbstractString)
     escaped = replace(value, "\"" => "\"\"")
     if occursin(',', escaped) || occursin('"', escaped)
@@ -232,8 +333,27 @@ function csv_escape(value::AbstractString)
     return escaped
 end
 
+"""
+    float_string(value)
+
+Format a real value for compact CSV output.
+"""
 float_string(value::Real) = string(round(Float64(value), digits = 8))
+
+"""
+    to_int_vector(values)
+
+Convert scalar or array-like values loaded from MAT files to a vector of
+integers.
+"""
 to_int_vector(values) = values isa AbstractArray ? vec(Int.(values)) : [Int(values)]
+
+"""
+    to_float_vector(values)
+
+Convert scalar or array-like values loaded from MAT files to a vector of
+floating-point values.
+"""
 to_float_vector(values) = values isa AbstractArray ? vec(Float64.(values)) : [Float64(values)]
 
 end

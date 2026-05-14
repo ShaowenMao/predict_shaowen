@@ -1,16 +1,16 @@
 #!/usr/bin/env julia
 
 using Pkg
-Pkg.activate(normpath(joinpath(@__DIR__, "..", "..")))
+Pkg.activate(normpath(joinpath(@__DIR__, "..", "..", "..")))
 
 using CairoMakie
 using Printf
 using Random
 using Statistics
 
-include(joinpath(@__DIR__, "..", "lib", "level2_io.jl"))
-include(joinpath(@__DIR__, "..", "lib", "level2_core.jl"))
-include(joinpath(@__DIR__, "..", "lib", "level2_plotting.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_io.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_core.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_plotting.jl"))
 
 using .Level2IO
 using .Level2Core
@@ -47,7 +47,7 @@ end
 
 function print_help()
     println("Usage:")
-    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/bootstrap_level2_joint_regimes.jl [options]")
+    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/03_review_joint_clusters/run_joint_cluster_bootstrap.jl [options]")
     println()
     println("Options:")
     println("  --config <path>              Level 2 TOML config")
@@ -70,7 +70,7 @@ function main(args::Vector{String})
     base_seed = parse(Int, opt["seed"])
 
     output_root = isempty(opt["output-dir"]) ?
-        normpath(joinpath(Level2IO.default_level2_output_root(), config["geology_id"], "figures", "joint_regime_bootstrap")) :
+        normpath(joinpath(Level2IO.default_level2_output_root(), config["geology_id"], "figures", "joint_cluster_bootstrap")) :
         normpath(opt["output-dir"])
     table_root = joinpath(output_root, "tables")
     figure_root = joinpath(output_root, "figures")
@@ -91,9 +91,9 @@ function main(args::Vector{String})
         bootstrap_size = requested_bootstrap_size == 0 ? n : requested_bootstrap_size
         bootstrap_size > 1 || error("Bootstrap size must be at least 2 for $window")
 
-        println("Bootstrapping Step 2.3 regimes for $window ($bootstrap_repeats replicates, n = $bootstrap_size)")
+        println("Bootstrapping Step 2.3 joint clusters for $window ($bootstrap_repeats replicates, n = $bootstrap_size)")
 
-        original = detect_regime(log_perms, config, window, config["random_seed"])
+        original = detect_joint_clusters(log_perms, config, window, config["random_seed"])
         k_values = Int[]
         silhouettes = Float64[]
         unimodal_values = Int[]
@@ -103,7 +103,7 @@ function main(args::Vector{String})
             row_idx = rand(rng, 1:n, bootstrap_size)
             boot_log = Matrix{Float64}(log_perms[row_idx, :])
             boot_seed = base_seed + 100_000 * widx + repeat_id
-            result = detect_regime(boot_log, config, window, boot_seed)
+            result = detect_joint_clusters(boot_log, config, window, boot_seed)
 
             chosen_k = Int(result["chosen_k"])
             silhouette = Float64(result["best_silhouette"])
@@ -137,13 +137,13 @@ function main(args::Vector{String})
         push!(summary_rows, summary_row(window_summary))
     end
 
-    Level2IO.write_csv(joinpath(table_root, "joint_regime_bootstrap_replicates.csv"),
+    Level2IO.write_csv(joinpath(table_root, "joint_cluster_bootstrap_replicates.csv"),
                        ["window", "bootstrap_id", "original_n", "bootstrap_n",
                         "chosen_k", "best_silhouette", "is_effectively_unimodal",
                         "cluster_sizes_ordered"],
                        replicate_rows)
 
-    Level2IO.write_csv(joinpath(table_root, "joint_regime_bootstrap_summary.csv"),
+    Level2IO.write_csv(joinpath(table_root, "joint_cluster_bootstrap_summary.csv"),
                        ["window", "original_k", "original_silhouette", "bootstrap_repeats",
                         "bootstrap_n", "modal_k", "p_same_k_as_original", "p_k2",
                         "p_effectively_unimodal", "silhouette_q05", "silhouette_median",
@@ -151,23 +151,23 @@ function main(args::Vector{String})
                        summary_rows)
 
     fig = build_bootstrap_overview(summary, config["max_k"])
-    save(joinpath(figure_root, "joint_regime_bootstrap_overview.png"), fig)
-    save_optional_pdf(joinpath(figure_root, "joint_regime_bootstrap_overview.pdf"), fig)
+    save(joinpath(figure_root, "joint_cluster_bootstrap_overview.png"), fig)
+    save_optional_pdf(joinpath(figure_root, "joint_cluster_bootstrap_overview.pdf"), fig)
 
     println("Saved Step 2.3 bootstrap outputs to $output_root")
 end
 
-function detect_regime(log_perms::Matrix{Float64},
-                       config::Dict{String, Any},
-                       window::AbstractString,
-                       random_seed::Integer)
+function detect_joint_clusters(log_perms::Matrix{Float64},
+                               config::Dict{String, Any},
+                               window::AbstractString,
+                               random_seed::Integer)
     cfg = copy(config)
     cfg["random_seed"] = Int(random_seed)
     local_ranks = Level2Core.compute_local_ranks(log_perms)
-    state_score = Level2Core.compute_state_score(local_ranks, Float64.(cfg["weights"]))
+    joint_rank_score = Level2Core.compute_joint_rank_score(local_ranks, Float64.(cfg["weights"]))
     local_normal_scores = Level2Core.compute_local_normal_scores(local_ranks)
-    distance_matrix = Level2Core.pairwise_euclidean(local_normal_scores)
-    return Level2Core.choose_clustering(distance_matrix, state_score, cfg, window)
+    distance_info = Level2Core.build_distance_matrix(log_perms, local_normal_scores, cfg)
+    return Level2Core.choose_clustering(distance_info["distance_matrix"], joint_rank_score, cfg, window)
 end
 
 function ordered_cluster_sizes(result::Dict{String, Any})
@@ -251,7 +251,7 @@ function build_bootstrap_overview(summary::Dict{String, Dict{String, Any}}, max_
 
     fig = Figure(size = (1750, 820), figure_padding = 24, backgroundcolor = :white)
     Label(fig[1, 1:2],
-          "Step 2.3 bootstrap stability of automatic joint-regime detection",
+          "Step 2.3 bootstrap stability of automatic joint-cluster detection",
           fontsize = title_font_size,
           font = :bold,
           halign = :center,

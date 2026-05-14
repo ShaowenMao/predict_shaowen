@@ -1,3 +1,13 @@
+"""
+    Level2Core
+
+Core algorithms for Level 2 within-window UQ analysis.
+
+This module turns one window's joint PREDICT permeability library into a
+Level 2 state object. It provides local rank transforms, physical-space
+distance construction, k-medoids joint clustering, low/high state-library
+selection, medoid selection, and local/state-wide perturbation pools.
+"""
 module Level2Core
 
 using Statistics
@@ -11,6 +21,16 @@ export FIXED_WINDOWS,
 
 const FIXED_WINDOWS = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"]
 
+"""
+    build_window_state(log_perms, raw_perms, window, source_path, source_label, config)
+
+Build one complete Level 2 window-state object.
+
+The returned dictionary is the canonical MAT schema used by downstream table,
+plotting, validation, and sampling scripts. Clustering is performed using the
+configured distance metric, while low/high ordering is based on the local-rank
+joint rank score.
+"""
 function build_window_state(log_perms::Matrix{Float64},
                             raw_perms::Matrix{Float64},
                             window::AbstractString,
@@ -22,23 +42,22 @@ function build_window_state(log_perms::Matrix{Float64},
     size(log_perms, 1) >= 20 || error("Expected at least 20 samples for $window")
 
     local_ranks = compute_local_ranks(log_perms)
-    state_score = compute_state_score(local_ranks, config["weights"])
+    joint_rank_score = compute_joint_rank_score(local_ranks, config["weights"])
     local_normal_scores = compute_local_normal_scores(local_ranks)
     distance_info = build_distance_matrix(log_perms, local_normal_scores, config)
     distance_matrix = distance_info["distance_matrix"]
 
-    cluster_info = choose_clustering(distance_matrix, state_score, config, window)
+    cluster_info = choose_clustering(distance_matrix, joint_rank_score, config, window)
     global_medoid_index = choose_medoid(collect(1:size(log_perms, 1)), distance_matrix)
-    state_info = build_state_libraries(state_score,
+    state_info = build_state_libraries(joint_rank_score,
                                        cluster_info["assignments"],
-                                       distance_matrix,
-                                       global_medoid_index,
                                        config)
 
-    low_stats = state_record("low", state_info["low_indices"], state_score, distance_matrix, config)
-    high_stats = state_record("high", state_info["high_indices"], state_score, distance_matrix, config; descending = true)
-    central_stats = state_record("central", state_info["central_indices"], state_score, distance_matrix, config)
-
+    low_stats = state_record("low", state_info["low_indices"], joint_rank_score,
+                             distance_matrix, cluster_info["assignments"], config)
+    high_stats = state_record("high", state_info["high_indices"], joint_rank_score,
+                              distance_matrix, cluster_info["assignments"], config;
+                              descending = true)
     return Dict{String, Any}(
         "schema_version" => "level2_window_state_v1",
         "created_at" => string(Dates.now()),
@@ -51,8 +70,10 @@ function build_window_state(log_perms::Matrix{Float64},
         "log_perms" => log_perms,
         "local_ranks" => local_ranks,
         "local_normal_scores" => local_normal_scores,
-        "state_score" => state_score,
-        "state_score_order" => sortperm(state_score),
+        "joint_rank_score" => joint_rank_score,
+        "joint_rank_score_order" => sortperm(joint_rank_score),
+        "state_score" => joint_rank_score,
+        "state_score_order" => sortperm(joint_rank_score),
         "weights" => Float64.(config["weights"]),
         "distance_metric" => distance_info["distance_metric"],
         "distance_component_scales" => distance_info["distance_component_scales"],
@@ -65,30 +86,29 @@ function build_window_state(log_perms::Matrix{Float64},
         "cluster_assignments" => cluster_info["assignments"],
         "cluster_sizes" => cluster_info["cluster_sizes"],
         "cluster_medoids" => cluster_info["cluster_medoids"],
-        "cluster_score_medians" => cluster_info["cluster_score_medians"],
+        "cluster_joint_rank_medians" => cluster_info["cluster_joint_rank_medians"],
+        "cluster_score_medians" => cluster_info["cluster_joint_rank_medians"],
         "cluster_order" => cluster_info["cluster_order"],
         "global_medoid_index" => global_medoid_index,
         "low_indices" => low_stats["indices"],
         "high_indices" => high_stats["indices"],
-        "central_indices" => central_stats["indices"],
         "low_ordered_indices" => low_stats["ordered_indices"],
         "high_ordered_indices" => high_stats["ordered_indices"],
-        "central_ordered_indices" => central_stats["ordered_indices"],
         "low_medoid_index" => low_stats["medoid_index"],
         "high_medoid_index" => high_stats["medoid_index"],
-        "central_medoid_index" => central_stats["medoid_index"],
-        "low_small_neighbors" => low_stats["small_neighbors"],
-        "low_large_neighbors" => low_stats["large_neighbors"],
-        "high_small_neighbors" => high_stats["small_neighbors"],
-        "high_large_neighbors" => high_stats["large_neighbors"],
-        "central_small_neighbors" => central_stats["small_neighbors"],
-        "central_large_neighbors" => central_stats["large_neighbors"],
+        "low_medoid_cluster_id" => low_stats["medoid_cluster_id"],
+        "high_medoid_cluster_id" => high_stats["medoid_cluster_id"],
+        "low_local_pool_candidates" => low_stats["local_pool_candidates"],
+        "high_local_pool_candidates" => high_stats["local_pool_candidates"],
+        "low_local_pool" => low_stats["local_pool"],
+        "low_state_wide_pool" => low_stats["state_wide_pool"],
+        "high_local_pool" => high_stats["local_pool"],
+        "high_state_wide_pool" => high_stats["state_wide_pool"],
         "low_mean_log_perm" => mean_vector(log_perms, low_stats["indices"]),
         "high_mean_log_perm" => mean_vector(log_perms, high_stats["indices"]),
-        "central_mean_log_perm" => mean_vector(log_perms, central_stats["indices"]),
         "state_fraction" => config["state_fraction"],
-        "small_neighbor_fraction" => config["small_neighbor_fraction"],
-        "large_neighbor_fraction" => config["large_neighbor_fraction"],
+        "local_pool_fraction" => config["local_pool_fraction"],
+        "local_pool_min_count" => config["local_pool_min_count"],
         "min_cluster_size" => config["min_cluster_size"],
         "min_cluster_fraction" => config["min_cluster_fraction"],
         "silhouette_threshold" => config["silhouette_threshold"],
@@ -97,6 +117,12 @@ function build_window_state(log_perms::Matrix{Float64},
     )
 end
 
+"""
+    compare_window_states(reference_state, holdout_state)
+
+Compute stability metrics between a reference Level 2 state and a holdout
+state built from another repeat library.
+"""
 function compare_window_states(reference_state::Dict{String, Any},
                                holdout_state::Dict{String, Any})
     ref_log = matrix_float(reference_state["log_perms"])
@@ -114,7 +140,7 @@ function compare_window_states(reference_state::Dict{String, Any},
                                                       float_scalar(holdout_state["best_silhouette"]))),
     )
 
-    for label in ("global", "low", "high", "central")
+    for label in ("global", "low", "high")
         ref_index = medoid_index(reference_state, label)
         hold_index = medoid_index(holdout_state, label)
         ref_point = vec(ref_log[ref_index, :])
@@ -129,6 +155,14 @@ function compare_window_states(reference_state::Dict{String, Any},
     return metrics
 end
 
+"""
+    compute_local_ranks(log_perms)
+
+Compute component-wise empirical percentile ranks within one window.
+
+Each column of `log_perms` is ranked independently, so the output describes
+whether each realization is locally low or high for `kxx`, `kyy`, and `kzz`.
+"""
 function compute_local_ranks(log_perms::Matrix{Float64})
     n, p = size(log_perms)
     ranks = zeros(Float64, n, p)
@@ -138,6 +172,11 @@ function compute_local_ranks(log_perms::Matrix{Float64})
     return ranks
 end
 
+"""
+    empirical_percentile_ranks(x)
+
+Return tie-aware empirical percentile ranks in `(0, 1)` for one vector.
+"""
 function empirical_percentile_ranks(x::AbstractVector{<:Real})
     n = length(x)
     order = sortperm(x)
@@ -158,8 +197,19 @@ function empirical_percentile_ranks(x::AbstractVector{<:Real})
     return ranks
 end
 
+"""
+    compute_local_normal_scores(local_ranks)
+
+Transform local percentile ranks to normal scores with the inverse standard
+normal CDF.
+"""
 compute_local_normal_scores(local_ranks::Matrix{Float64}) = inv_norm_cdf.(clamp.(local_ranks, 1e-6, 1.0 - 1e-6))
 
+"""
+    inv_norm_cdf(p)
+
+Approximate the inverse standard normal cumulative distribution function.
+"""
 function inv_norm_cdf(p::Float64)
     p <= 0.0 && return -Inf
     p >= 1.0 && return Inf
@@ -191,12 +241,33 @@ function inv_norm_cdf(p::Float64)
     end
 end
 
-function compute_state_score(local_ranks::Matrix{Float64}, weights::Vector{Float64})
+"""
+    compute_joint_rank_score(local_ranks, weights)
+
+Compute the weighted average local rank across `kxx`, `kyy`, and `kzz`.
+
+This score is used only for low-to-high ordering and state-library
+construction; it is not the clustering distance.
+"""
+function compute_joint_rank_score(local_ranks::Matrix{Float64}, weights::Vector{Float64})
     weight_sum = sum(weights)
-    weight_sum > 0 || error("State-score weights must sum to a positive value")
+    weight_sum > 0 || error("Joint-rank-score weights must sum to a positive value")
     return vec((local_ranks * weights) ./ weight_sum)
 end
 
+"""
+    compute_state_score(local_ranks, weights)
+
+Backward-compatible alias for `compute_joint_rank_score`.
+"""
+compute_state_score(local_ranks::Matrix{Float64}, weights::Vector{Float64}) =
+    compute_joint_rank_score(local_ranks, weights)
+
+"""
+    pairwise_euclidean(z)
+
+Compute a full pairwise Euclidean distance matrix for feature rows.
+"""
 function pairwise_euclidean(z::Matrix{Float64})
     n = size(z, 1)
     d = zeros(Float64, n, n)
@@ -211,6 +282,15 @@ function pairwise_euclidean(z::Matrix{Float64})
     return d
 end
 
+"""
+    build_distance_matrix(log_perms, local_normal_scores, config)
+
+Build the pairwise distance matrix and distance metadata used for clustering,
+medoids, and perturbation pools.
+
+The default `log_unit` metric uses physical `log10(k)` values directly. The
+`local_normal` metric is retained only as a sensitivity option.
+"""
 function build_distance_matrix(log_perms::Matrix{Float64},
                                local_normal_scores::Matrix{Float64},
                                config::Dict{String, Any})
@@ -237,6 +317,11 @@ function build_distance_matrix(log_perms::Matrix{Float64},
     )
 end
 
+"""
+    weighted_features(values, scales, weights)
+
+Scale and weight component columns before pairwise distance calculation.
+"""
 function weighted_features(values::Matrix{Float64}, scales::Vector{Float64}, weights::Vector{Float64})
     features = similar(values)
     for j in axes(values, 2)
@@ -246,8 +331,18 @@ function weighted_features(values::Matrix{Float64}, scales::Vector{Float64}, wei
     return features
 end
 
+"""
+    choose_clustering(distance_matrix, joint_rank_score, config, window)
+
+Select the joint permeability clustering for one window.
+
+The function tries `K = 2:max_k`, rejects clusterings with too-small clusters,
+chooses the valid `K` with the highest average silhouette, and falls back to a
+single-cluster state if no valid multi-cluster solution is sufficiently
+separated.
+"""
 function choose_clustering(distance_matrix::Matrix{Float64},
-                           state_score::Vector{Float64},
+                           joint_rank_score::Vector{Float64},
                            config::Dict{String, Any},
                            window::AbstractString)
     n = size(distance_matrix, 1)
@@ -271,13 +366,14 @@ function choose_clustering(distance_matrix::Matrix{Float64},
         silhouette_by_k[k] = silhouette
         valid_k_mask[k] = 1
         if best === nothing || silhouette > best["best_silhouette"]
-            medians = cluster_score_medians(state_score, fit["assignments"], k)
+            medians = cluster_joint_rank_medians(joint_rank_score, fit["assignments"], k)
             best = Dict{String, Any}(
                 "chosen_k" => k,
                 "best_silhouette" => silhouette,
                 "assignments" => fit["assignments"],
                 "cluster_sizes" => cluster_sizes,
                 "cluster_medoids" => fit["medoids"],
+                "cluster_joint_rank_medians" => medians,
                 "cluster_score_medians" => medians,
                 "cluster_order" => sortperm(medians),
                 "is_effectively_unimodal" => silhouette < config["silhouette_threshold"],
@@ -296,7 +392,8 @@ function choose_clustering(distance_matrix::Matrix{Float64},
             "assignments" => assignments,
             "cluster_sizes" => [n],
             "cluster_medoids" => [medoid],
-            "cluster_score_medians" => [median(state_score)],
+            "cluster_joint_rank_medians" => [median(joint_rank_score)],
+            "cluster_score_medians" => [median(joint_rank_score)],
             "cluster_order" => [1],
             "is_effectively_unimodal" => true,
             "silhouette_by_k" => silhouette_by_k,
@@ -307,8 +404,18 @@ function choose_clustering(distance_matrix::Matrix{Float64},
     return best
 end
 
+"""
+    window_seed_offset(window)
+
+Create a deterministic per-window seed offset for k-medoids restarts.
+"""
 window_seed_offset(window::AbstractString) = sum(Int(c) for c in codeunits(window))
 
+"""
+    fit_kmedoids(distance_matrix, k, seed_base, num_restarts, max_iter)
+
+Fit k-medoids to a precomputed distance matrix using deterministic restarts.
+"""
 function fit_kmedoids(distance_matrix::Matrix{Float64},
                       k::Int,
                       seed_base::Integer,
@@ -353,6 +460,12 @@ function fit_kmedoids(distance_matrix::Matrix{Float64},
     return best
 end
 
+"""
+    init_medoids(distance_matrix, k, rng)
+
+Initialize k-medoids using a farthest-first strategy after a random first
+medoid.
+"""
 function init_medoids(distance_matrix::Matrix{Float64}, k::Int, rng::AbstractRNG)
     n = size(distance_matrix, 1)
     medoids = Int[rand(rng, 1:n)]
@@ -373,6 +486,11 @@ function init_medoids(distance_matrix::Matrix{Float64}, k::Int, rng::AbstractRNG
     return medoids
 end
 
+"""
+    assign_to_medoids(distance_matrix, medoids)
+
+Assign every sample to the nearest current medoid.
+"""
 function assign_to_medoids(distance_matrix::Matrix{Float64}, medoids::Vector{Int})
     n = size(distance_matrix, 1)
     assignments = zeros(Int, n)
@@ -383,6 +501,11 @@ function assign_to_medoids(distance_matrix::Matrix{Float64}, medoids::Vector{Int
     return assignments
 end
 
+"""
+    update_medoids(distance_matrix, assignments, k)
+
+Update each cluster's medoid by minimizing within-cluster total distance.
+"""
 function update_medoids(distance_matrix::Matrix{Float64}, assignments::Vector{Int}, k::Int)
     medoids = Int[]
     for cluster_id in 1:k
@@ -393,14 +516,29 @@ function update_medoids(distance_matrix::Matrix{Float64}, assignments::Vector{In
     return medoids
 end
 
+"""
+    choose_medoid(indices, distance_matrix)
+
+Choose the index with minimum total distance to all other candidate indices.
+"""
 function choose_medoid(indices::Vector{Int}, distance_matrix::Matrix{Float64})
     costs = [sum(distance_matrix[idx, indices]) for idx in indices]
     return indices[argmin(costs)]
 end
 
+"""
+    total_kmedoids_cost(distance_matrix, assignments, medoids)
+
+Return the total within-cluster distance to assigned medoids.
+"""
 total_kmedoids_cost(distance_matrix::Matrix{Float64}, assignments::Vector{Int}, medoids::Vector{Int}) =
     sum(distance_matrix[i, medoids[assignments[i]]] for i in eachindex(assignments))
 
+"""
+    average_silhouette(distance_matrix, assignments, k)
+
+Compute the average silhouette score for a clustering on a distance matrix.
+"""
 function average_silhouette(distance_matrix::Matrix{Float64}, assignments::Vector{Int}, k::Int)
     k == 1 && return 0.0
     clusters = [findall(assignments .== cluster_id) for cluster_id in 1:k]
@@ -424,53 +562,81 @@ function average_silhouette(distance_matrix::Matrix{Float64}, assignments::Vecto
     return mean(sil)
 end
 
+"""
+    counts_from_assignments(assignments, k)
+
+Count the number of samples assigned to each cluster id.
+"""
 counts_from_assignments(assignments::Vector{Int}, k::Int) = [count(==(cluster_id), assignments) for cluster_id in 1:k]
 
-function cluster_score_medians(state_score::Vector{Float64}, assignments::Vector{Int}, k::Int)
+"""
+    cluster_joint_rank_medians(joint_rank_score, assignments, k)
+
+Compute each cluster's median joint rank score for low-to-high ordering.
+"""
+function cluster_joint_rank_medians(joint_rank_score::Vector{Float64}, assignments::Vector{Int}, k::Int)
     medians = zeros(Float64, k)
     for cluster_id in 1:k
         members = findall(assignments .== cluster_id)
-        medians[cluster_id] = median(state_score[members])
+        medians[cluster_id] = median(joint_rank_score[members])
     end
     return medians
 end
 
-function build_state_libraries(state_score::Vector{Float64},
+"""
+    cluster_score_medians(state_score, assignments, k)
+
+Backward-compatible alias for `cluster_joint_rank_medians`.
+"""
+cluster_score_medians(state_score::Vector{Float64}, assignments::Vector{Int}, k::Int) =
+    cluster_joint_rank_medians(state_score, assignments, k)
+
+"""
+    build_state_libraries(joint_rank_score, assignments, config)
+
+Construct low and high state libraries with cluster-aware target-mass
+selection.
+
+For multi-cluster windows, extreme ordered clusters are included first and only
+the needed part of a boundary cluster is added to reach the target state
+fraction.
+"""
+function build_state_libraries(joint_rank_score::Vector{Float64},
                                assignments::Vector{Int},
-                               distance_matrix::Matrix{Float64},
-                               global_medoid_index::Int,
                                config::Dict{String, Any})
-    n = length(state_score)
+    n = length(joint_rank_score)
     n_target = max(1, ceil(Int, config["state_fraction"] * n))
 
     chosen_k = maximum(assignments)
     if chosen_k == 1
-        score_order = sortperm(state_score)
+        score_order = sortperm(joint_rank_score)
         low_indices = score_order[1:n_target]
         low_set = Set(low_indices)
         high_candidates = [idx for idx in reverse(score_order) if !(idx in low_set)]
         high_indices = high_candidates[1:min(n_target, length(high_candidates))]
     else
-        medians = cluster_score_medians(state_score, assignments, chosen_k)
+        medians = cluster_joint_rank_medians(joint_rank_score, assignments, chosen_k)
         cluster_order = sortperm(medians)
-        low_indices = select_regime_aware_state(cluster_order, assignments, state_score, n_target)
-        high_indices = select_regime_aware_state(reverse(cluster_order), assignments, state_score, n_target;
+        low_indices = select_cluster_aware_state(cluster_order, assignments, joint_rank_score, n_target)
+        high_indices = select_cluster_aware_state(reverse(cluster_order), assignments, joint_rank_score, n_target;
                                                  descending = true,
                                                  excluded = Set(low_indices))
     end
 
-    central_indices = choose_central_indices(global_medoid_index, distance_matrix, n_target;
-                                             excluded = Set(vcat(low_indices, high_indices)))
     return Dict{String, Any}(
         "low_indices" => unique(low_indices),
         "high_indices" => unique(high_indices),
-        "central_indices" => unique(central_indices),
     )
 end
 
-function select_regime_aware_state(cluster_order,
+"""
+    select_cluster_aware_state(cluster_order, assignments, joint_rank_score, n_target; descending=false, excluded=Set())
+
+Select samples from ordered clusters until the requested target count is met.
+"""
+function select_cluster_aware_state(cluster_order,
                                    assignments::Vector{Int},
-                                   state_score::Vector{Float64},
+                                   joint_rank_score::Vector{Float64},
                                    n_target::Int;
                                    descending::Bool = false,
                                    excluded::Set{Int} = Set{Int}())
@@ -483,52 +649,68 @@ function select_regime_aware_state(cluster_order,
                    if assignments[idx] == cluster_id && !(idx in excluded)]
         isempty(members) && continue
 
-        ordered_members = members[sortperm(state_score[members], rev = descending)]
+        ordered_members = members[sortperm(joint_rank_score[members], rev = descending)]
         append!(selected, ordered_members[1:min(remaining, length(ordered_members))])
     end
     return sort(unique(selected))
 end
 
-function choose_central_indices(global_medoid_index::Int,
-                                distance_matrix::Matrix{Float64},
-                                n_target::Int;
-                                excluded::Set{Int} = Set{Int}())
-    order = sortperm(vec(distance_matrix[global_medoid_index, :]))
-    candidates = [idx for idx in order if !(idx in excluded)]
-    isempty(candidates) && return order[1:min(n_target, length(order))]
-    return candidates[1:min(n_target, length(candidates))]
-end
+"""
+    state_record(label, indices, joint_rank_score, distance_matrix, cluster_assignments, config; descending=false)
 
+Summarize one low/high state library with ordered indices, medoid, and
+perturbation pools.
+"""
 function state_record(label::AbstractString,
                       indices::Vector{Int},
-                      state_score::Vector{Float64},
+                      joint_rank_score::Vector{Float64},
                       distance_matrix::Matrix{Float64},
+                      cluster_assignments::Vector{Int},
                       config::Dict{String, Any};
                       descending::Bool = false)
     isempty(indices) && error("State library $label is empty")
-    ordered = descending ? indices[sortperm(state_score[indices], rev = true)] :
-                           indices[sortperm(state_score[indices])]
+    ordered = descending ? indices[sortperm(joint_rank_score[indices], rev = true)] :
+                           indices[sortperm(joint_rank_score[indices])]
     medoid_index = choose_medoid(indices, distance_matrix)
-    small_neighbors = nearest_neighbors(medoid_index, indices, distance_matrix, config["small_neighbor_fraction"])
-    large_neighbors = nearest_neighbors(medoid_index, indices, distance_matrix, config["large_neighbor_fraction"])
+    medoid_cluster_id = cluster_assignments[medoid_index]
+    local_pool_candidates = [idx for idx in indices if cluster_assignments[idx] == medoid_cluster_id]
+    local_pool = local_pool_indices(medoid_index, local_pool_candidates, distance_matrix,
+                                    config["local_pool_fraction"], config["local_pool_min_count"])
+    state_wide_pool = sort(unique(indices))
     return Dict{String, Any}(
         "indices" => indices,
         "ordered_indices" => ordered,
         "medoid_index" => medoid_index,
-        "small_neighbors" => small_neighbors,
-        "large_neighbors" => large_neighbors,
+        "medoid_cluster_id" => medoid_cluster_id,
+        "local_pool_candidates" => local_pool_candidates,
+        "local_pool" => local_pool,
+        "state_wide_pool" => state_wide_pool,
     )
 end
 
-function nearest_neighbors(target_index::Int,
-                           candidates::Vector{Int},
-                           distance_matrix::Matrix{Float64},
-                           fraction::Float64)
-    n_keep = max(1, ceil(Int, fraction * length(candidates)))
+"""
+    local_pool_indices(target_index, candidates, distance_matrix, fraction, min_count)
+
+Select the nearest samples to a state medoid within the cluster-preserving
+candidate set.
+"""
+function local_pool_indices(target_index::Int,
+                            candidates::Vector{Int},
+                            distance_matrix::Matrix{Float64},
+                            fraction::Float64,
+                            min_count::Int)
+    isempty(candidates) && return Int[]
+    n_fraction = ceil(Int, fraction * length(candidates))
+    n_keep = min(length(candidates), max(min_count, n_fraction))
     ordered = sort(candidates; by = idx -> distance_matrix[target_index, idx])
     return ordered[1:n_keep]
 end
 
+"""
+    mean_vector(values, indices)
+
+Return the component-wise mean vector over selected rows.
+"""
 function mean_vector(values::Matrix{Float64}, indices::Vector{Int})
     return vec(mean(values[indices, :]; dims = 1))
 end

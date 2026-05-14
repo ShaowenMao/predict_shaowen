@@ -1,13 +1,13 @@
 #!/usr/bin/env julia
 
 using Pkg
-Pkg.activate(normpath(joinpath(@__DIR__, "..", "..")))
+Pkg.activate(normpath(joinpath(@__DIR__, "..", "..", "..")))
 
 using CairoMakie
 using Printf
 
-include(joinpath(@__DIR__, "..", "lib", "level2_io.jl"))
-include(joinpath(@__DIR__, "..", "lib", "level2_plotting.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_io.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_plotting.jl"))
 
 using .Level2IO
 using .Level2Plotting
@@ -55,11 +55,11 @@ end
 
 function print_help()
     println("Usage:")
-    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/plot_level2_joint_regimes.jl [options]")
+    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/03_review_joint_clusters/plot_joint_clusters.jl [options]")
     println()
     println("Options:")
     println("  --state-root <path>    Root folder containing built Level 2 state MAT files")
-    println("  --output-dir <path>    Folder where regime-only figures are saved")
+    println("  --output-dir <path>    Folder where joint-cluster figures are saved")
     println("  --max-points <n>       Max plotted points in scatter panels (default: 1400)")
     println("  --seed <n>             Base random seed for downsampling (default: 1729)")
     println("  -h, --help             Show this help")
@@ -68,7 +68,7 @@ end
 function main(args::Vector{String})
     opt = parse_args(args)
     state_root = normpath(opt["state-root"])
-    output_root = isempty(opt["output-dir"]) ? joinpath(state_root, "figures", "joint_regimes") :
+    output_root = isempty(opt["output-dir"]) ? joinpath(state_root, "figures", "joint_clusters") :
                   normpath(opt["output-dir"])
     mkpath(output_root)
 
@@ -86,17 +86,17 @@ function main(args::Vector{String})
         pairwise_fig = build_pairwise_figure(state, max_points, seed + 100 * widx)
         pca_fig = build_pca_figure(state, max_points, seed + 100 * widx)
         resize_to_layout!(pca_fig)
-        save(joinpath(output_root, "$(window)_joint_regimes_pairwise.png"), pairwise_fig)
-        save_optional_pdf(joinpath(output_root, "$(window)_joint_regimes_pairwise.pdf"), pairwise_fig)
-        save(joinpath(output_root, "$(window)_joint_regimes_pca.png"), pca_fig)
-        save_optional_pdf(joinpath(output_root, "$(window)_joint_regimes_pca.pdf"), pca_fig)
+        save(joinpath(output_root, "$(window)_joint_clusters_pairwise.png"), pairwise_fig)
+        save_optional_pdf(joinpath(output_root, "$(window)_joint_clusters_pairwise.pdf"), pairwise_fig)
+        save(joinpath(output_root, "$(window)_joint_clusters_pca.png"), pca_fig)
+        save_optional_pdf(joinpath(output_root, "$(window)_joint_clusters_pca.pdf"), pca_fig)
     end
 
     combined_fig = build_all_windows_pairwise_grid(states, max_points, seed + 1000)
-    save(joinpath(output_root, "all_windows_joint_regimes_pairwise_grid.png"), combined_fig)
-    save_optional_pdf(joinpath(output_root, "all_windows_joint_regimes_pairwise_grid.pdf"), combined_fig)
+    save(joinpath(output_root, "all_windows_joint_clusters_pairwise_grid.png"), combined_fig)
+    save_optional_pdf(joinpath(output_root, "all_windows_joint_clusters_pairwise_grid.pdf"), combined_fig)
 
-    println("Saved joint regime figures to $output_root")
+    println("Saved joint cluster figures to $output_root")
 end
 
 function save_optional_pdf(path::AbstractString, fig::Figure)
@@ -157,7 +157,7 @@ function build_pairwise_figure(state::Dict{String, Any}, max_points::Int, seed::
         colsize!(fig.layout, panel_idx, Relative(1 / 3))
     end
     Label(fig[0, 2],
-          "$window joint regimes in raw log10(k) space | metric = $metric_label | K = $chosen_k | silhouette = $silhouette",
+          "$window joint clusters in raw log10(k) space | metric = $metric_label | K = $chosen_k | silhouette = $silhouette",
           fontsize = 24,
           font = :bold,
           halign = :center,
@@ -175,7 +175,7 @@ function build_pairwise_figure(state::Dict{String, Any}, max_points::Int, seed::
            labelsize = 22)
 
     Label(fig[3, :],
-          "Point color = regime membership from Step 2.3. Large outlined circles = cluster medoids.",
+          "Point color = joint-cluster membership from Step 2.3. Large outlined circles = cluster medoids.",
           fontsize = 22)
 
     return fig
@@ -196,7 +196,7 @@ function build_pca_figure(state::Dict{String, Any}, max_points::Int, seed::Int)
 
     fig = Figure(size = (1050, 980))
     Label(fig[0, :],
-          "$window joint regimes in local normal-score PCA | metric = $metric_label | K = $chosen_k | silhouette = $silhouette",
+          "$window joint clusters in local normal-score PCA | metric = $metric_label | K = $chosen_k | silhouette = $silhouette",
           fontsize = 24,
           font = :bold)
 
@@ -254,7 +254,7 @@ function build_all_windows_pairwise_grid(states::Dict{String, Dict{String, Any}}
     colgap!(fig.layout, 18)
 
     Label(fig[1, 1:6],
-          "All-window joint regimes in raw log10(k) space | metric = $metric_text",
+          "All-window joint clusters in raw log10(k) space | metric = $metric_text",
           fontsize = title_font_size,
           font = :bold,
           halign = :center,
@@ -323,8 +323,8 @@ function build_all_windows_pairwise_grid(states::Dict{String, Dict{String, Any}}
               tellwidth = false)
     end
 
-    max_regimes = maximum(length(Level2Plotting.vector_int(states[window]["cluster_order"])) for window in windows)
-    legend_elements, legend_labels = build_combined_legend_content(max_regimes)
+    max_clusters = maximum(length(Level2Plotting.vector_int(states[window]["cluster_order"])) for window in windows)
+    legend_elements, legend_labels = build_combined_legend_content(max_clusters)
     Legend(fig[9, 1:6], legend_elements, legend_labels;
            orientation = :horizontal,
            framevisible = false,
@@ -335,7 +335,7 @@ function build_all_windows_pairwise_grid(states::Dict{String, Dict{String, Any}}
            labelsize = header_font_size)
 
     Label(fig[10, 1:6],
-          "Within each window, regime numbers are ordered from lower to higher median state score.",
+          "Within each window, cluster numbers are ordered from lower to higher median joint rank score.",
           fontsize = axis_font_size,
           halign = :center,
           tellwidth = false)
@@ -358,16 +358,16 @@ function build_all_windows_pairwise_grid(states::Dict{String, Dict{String, Any}}
     return fig
 end
 
-function build_combined_legend_content(max_regimes::Int)
+function build_combined_legend_content(max_clusters::Int)
     elements = CairoMakie.LegendElement[]
     labels = String[]
-    for rank in 1:max_regimes
+    for rank in 1:max_clusters
         push!(elements,
               MarkerElement(color = Level2Plotting.CLUSTER_COLORS[rank],
                             marker = :circle,
                             markersize = 22,
                             strokecolor = :transparent))
-        push!(labels, "Regime $rank")
+        push!(labels, "Cluster $rank")
     end
     push!(elements,
           MarkerElement(color = :white,
@@ -431,7 +431,7 @@ function build_legend_content(cluster_sizes)
                             marker = :circle,
                             markersize = 18,
                             strokecolor = :transparent))
-        push!(labels, "Regime $rank (n = $size_value)")
+        push!(labels, "Cluster $rank (n = $size_value)")
     end
     push!(elements,
           MarkerElement(color = :white,

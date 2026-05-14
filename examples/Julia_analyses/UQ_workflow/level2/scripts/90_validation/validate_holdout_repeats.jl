@@ -1,13 +1,13 @@
 #!/usr/bin/env julia
 
 using Pkg
-Pkg.activate(normpath(joinpath(@__DIR__, "..", "..")))
+Pkg.activate(normpath(joinpath(@__DIR__, "..", "..", "..")))
 
 using Printf
 using MAT: matread
 
-include(joinpath(@__DIR__, "..", "lib", "level2_io.jl"))
-include(joinpath(@__DIR__, "..", "lib", "level2_core.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_io.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_core.jl"))
 
 using .Level2IO
 using .Level2Core
@@ -42,7 +42,7 @@ end
 
 function print_help()
     println("Usage:")
-    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/validate_level2_window_states.jl [options]")
+    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/90_validation/validate_holdout_repeats.jl [options]")
     println()
     println("Options:")
     println("  --config <path>           Level 2 TOML config")
@@ -115,11 +115,9 @@ function main(args::Vector{String})
                 metrics["global_medoid_distance"],
                 metrics["low_medoid_distance"],
                 metrics["high_medoid_distance"],
-                metrics["central_medoid_distance"],
                 metrics["global_mean_distance"],
                 metrics["low_mean_distance"],
                 metrics["high_mean_distance"],
-                metrics["central_mean_distance"],
             ]
             push!(window_pair_rows, row)
             push!(pair_rows, row)
@@ -139,13 +137,13 @@ function main(args::Vector{String})
                        ["window", "repeat_id", "same_k", "same_unimodality", "reference_k",
                         "holdout_k", "reference_silhouette", "holdout_silhouette",
                         "abs_silhouette_delta", "global_medoid_distance", "low_medoid_distance",
-                        "high_medoid_distance", "central_medoid_distance", "global_mean_distance",
-                        "low_mean_distance", "high_mean_distance", "central_mean_distance"],
+                        "high_medoid_distance", "global_mean_distance",
+                        "low_mean_distance", "high_mean_distance"],
                        pair_rows)
     Level2IO.write_csv(joinpath(table_root, "holdout_validation_summary.csv"),
                        ["window", "same_k_rate", "same_unimodality_rate", "mean_abs_silhouette_delta",
                         "mean_global_medoid_distance", "mean_low_medoid_distance",
-                        "mean_high_medoid_distance", "mean_central_medoid_distance"],
+                        "mean_high_medoid_distance"],
                        summary_rows)
     Level2IO.write_text_lines(joinpath(report_root, "level2_validation_report.txt"), report_lines)
 
@@ -159,7 +157,6 @@ function summarize_window_validation(window::AbstractString, rows::Vector{Vector
     mean_global_medoid_distance = mean(parse.(Float64, getindex.(rows, 10)))
     mean_low_medoid_distance = mean(parse.(Float64, getindex.(rows, 11)))
     mean_high_medoid_distance = mean(parse.(Float64, getindex.(rows, 12)))
-    mean_central_medoid_distance = mean(parse.(Float64, getindex.(rows, 13)))
 
     return [
         window,
@@ -169,7 +166,6 @@ function summarize_window_validation(window::AbstractString, rows::Vector{Vector
         string(round(mean_global_medoid_distance, digits = 6)),
         string(round(mean_low_medoid_distance, digits = 6)),
         string(round(mean_high_medoid_distance, digits = 6)),
-        string(round(mean_central_medoid_distance, digits = 6)),
     ]
 end
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env julia
 
 using Pkg
-Pkg.activate(normpath(joinpath(@__DIR__, "..", "..")))
+Pkg.activate(normpath(joinpath(@__DIR__, "..", "..", "..")))
 
 using CairoMakie
 
-include(joinpath(@__DIR__, "..", "lib", "level2_io.jl"))
-include(joinpath(@__DIR__, "..", "lib", "level2_plotting.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_io.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_plotting.jl"))
 
 using .Level2IO
 using .Level2Plotting
@@ -40,7 +40,7 @@ end
 
 function print_help()
     println("Usage:")
-    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/plot_level2_window_grouping_3d.jl [options]")
+    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/03_review_joint_clusters/plot_joint_clusters_3d.jl [options]")
     println()
     println("Options:")
     println("  --state-root <path>    Root folder containing built Level 2 state MAT files")
@@ -172,11 +172,11 @@ end
 function marker_guide_text(state::Dict{String, Any})
     cluster_sizes = Level2Plotting.ordered_cluster_sizes(state)
     lines = [
-        "Point colors = cluster membership from Step 2.3, ordered from lower to higher median state score.",
-        "Blue/red point clouds are the detected joint regimes for K = $(Level2Plotting.int_scalar(state["chosen_k"])).",
+          "Point colors = cluster membership from Step 2.3, ordered from lower to higher median joint rank score.",
+          "Colored point clouds are the detected joint clusters for K = $(Level2Plotting.int_scalar(state["chosen_k"])).",
         "Colored triangles = cluster medoids.",
         "Black star = global medoid for the whole window library.",
-        "Colored diamonds = state medoids for low, central, and high libraries.",
+          "Colored diamonds = state medoids for low and high libraries.",
         "Ordered cluster sizes = $(join(cluster_sizes, ", ")).",
     ]
     return join(lines, "\n")

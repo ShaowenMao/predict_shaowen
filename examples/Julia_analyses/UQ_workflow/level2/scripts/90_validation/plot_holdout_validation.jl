@@ -1,13 +1,13 @@
 #!/usr/bin/env julia
 
 using Pkg
-Pkg.activate(normpath(joinpath(@__DIR__, "..", "..")))
+Pkg.activate(normpath(joinpath(@__DIR__, "..", "..", "..")))
 
 using CairoMakie
 using Statistics
 
-include(joinpath(@__DIR__, "..", "lib", "level2_io.jl"))
-include(joinpath(@__DIR__, "..", "lib", "level2_plotting.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_io.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_plotting.jl"))
 
 using .Level2IO
 using .Level2Plotting
@@ -39,7 +39,7 @@ end
 
 function print_help()
     println("Usage:")
-    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/plot_level2_holdout_validation.jl [options]")
+    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/90_validation/plot_holdout_validation.jl [options]")
     println()
     println("Options:")
     println("  --validation-root <path>    Root folder containing validation CSV outputs")
@@ -77,7 +77,6 @@ function build_validation_summary_figure(table)
     global_d = Level2Plotting.csv_numeric_column(table, "mean_global_medoid_distance")
     low_d = Level2Plotting.csv_numeric_column(table, "mean_low_medoid_distance")
     high_d = Level2Plotting.csv_numeric_column(table, "mean_high_medoid_distance")
-    central_d = Level2Plotting.csv_numeric_column(table, "mean_central_medoid_distance")
 
     fig = Figure(size = (1900, 900))
     Label(fig[0, :], "Holdout validation summary", fontsize = 24, font = :bold)
@@ -113,7 +112,6 @@ function build_validation_summary_figure(table)
         (global_d, "global", :black),
         (low_d, "low", Level2Plotting.STATE_COLORS["low"]),
         (high_d, "high", Level2Plotting.STATE_COLORS["high"]),
-        (central_d, "central", Level2Plotting.STATE_COLORS["central"]),
     ))
         barplot!(ax_dist, x, values,
                  dodge = fill(rank, length(x)),
@@ -130,7 +128,6 @@ function build_validation_summary_figure(table)
         "mean_global_medoid_distance",
         "mean_low_medoid_distance",
         "mean_high_medoid_distance",
-        "mean_central_medoid_distance",
     ]
     metric_values = hcat(
         same_k,
@@ -139,7 +136,6 @@ function build_validation_summary_figure(table)
         global_d,
         low_d,
         high_d,
-        central_d,
     )
     ax_heat = Axis(fig[2, 1:3],
                    title = "Validation metric heatmap",
@@ -161,7 +157,6 @@ function build_validation_pairs_figure(table)
         "global_medoid_distance",
         "low_medoid_distance",
         "high_medoid_distance",
-        "central_medoid_distance",
     ]
 
     fig = Figure(size = (2000, 1100))
@@ -196,11 +191,6 @@ function build_validation_pairs_figure(table)
                 push!(colors, RGBAf(Level2Plotting.STATE_COLORS["high"].r,
                                    Level2Plotting.STATE_COLORS["high"].g,
                                    Level2Plotting.STATE_COLORS["high"].b,
-                                   0.75))
-            elseif metric == "central_medoid_distance"
-                push!(colors, RGBAf(Level2Plotting.STATE_COLORS["central"].r,
-                                   Level2Plotting.STATE_COLORS["central"].g,
-                                   Level2Plotting.STATE_COLORS["central"].b,
                                    0.75))
             elseif metric == "global_medoid_distance"
                 push!(colors, RGBAf(0, 0, 0, 0.75))

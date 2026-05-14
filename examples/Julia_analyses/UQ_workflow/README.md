@@ -26,18 +26,17 @@ Level 2 validation.
 - `configs/`: workflow constants and proxy manifests
 - `level1/`: placeholder notes for future geology-level inputs
 - `level2/lib/`: shared Julia helpers for Level 2
-- `level2/scripts/`: executable Julia scripts for building, summarizing, and
-  validating Level 2 window-state objects
+- `level2/workflow/`: modular Level 2 driver, config, and step files
+- `level2/scripts/`: executable review, export, sampling, and validation
+  utilities used by the modular driver
 - `level2/outputs/`: default in-repo output location
 - `level3/`: placeholder notes for future coupling scripts
 
 ## Recommended entry points
 
-- Pre-Step-2.2 marginal histogram screening in `log10(k)` space:
-  `level2/scripts/plot_marginal_hist_screening.jl`
-- Build proxy Level 2 objects:
-  `level2/scripts/build_level2_window_states.jl`
-- Summarize built objects:
-  `level2/scripts/summarize_level2_window_states.jl`
+- Run the full modular Level 2 workflow:
+  `level2/workflow/run_level2_workflow.jl`
+- Configure Level 2 run toggles and user-facing parameters:
+  `level2/workflow/level2_workflow_config.toml`
 - Validate against holdout repeats:
-  `level2/scripts/validate_level2_window_states.jl`
+  `level2/scripts/90_validation/validate_holdout_repeats.jl`

@@ -1,0 +1,37 @@
+[paths]
+base_config = "../../configs/level2_defaults.toml"
+manifest = "../../configs/level2_proxy_manifest.csv"
+output_root = "D:/codex_gom/UQ_workflow/level2_modular_workflow"
+
+[run]
+screen_input_data = true
+build_level2_objects = true
+export_tables = true
+plot_joint_clusters = true
+plot_joint_clusters_3d = false
+plot_state_libraries = true
+plot_perturbation_pools = true
+run_sampling_test = true
+run_validation = false
+run_joint_cluster_sensitivity = false
+run_joint_cluster_bootstrap = false
+
+[level2]
+distance_metric = "log_unit"
+min_cluster_fraction = 0.05
+min_cluster_size = 10
+state_fraction = 0.20
+max_k = 5
+silhouette_threshold = 0.25
+weights = [1.0, 1.0, 1.0]
+distance_weights = [1.0, 1.0, 1.0]
+
+[perturbation]
+local_pool_fraction = 0.10
+local_pool_min_count = 25
+
+[plotting]
+state_violin_fixed_count_density_reference = 560.0
+local_pool_violin_fixed_count_density_reference = 120.0
+state_wide_pool_violin_fixed_count_density_reference = 560.0
+

@@ -1,29 +1,29 @@
 #!/usr/bin/env julia
 
 using Pkg
-Pkg.activate(normpath(joinpath(@__DIR__, "..", "..")))
+Pkg.activate(normpath(joinpath(@__DIR__, "..", "..", "..")))
 
 using CairoMakie
 using Printf
 
-include(joinpath(@__DIR__, "..", "lib", "level2_io.jl"))
-include(joinpath(@__DIR__, "..", "lib", "level2_plotting.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_io.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_plotting.jl"))
 
 using .Level2IO
 using .Level2Plotting
 
 const STATE_LABELS = Dict(
     "low" => "Low",
-    "central" => "Central",
     "high" => "High",
 )
-const NEIGHBORHOOD_LABELS = Dict(
-    "small" => "Small-neighbor",
-    "large" => "Large-neighbor",
+const STATE_ORDER = ("low", "high")
+const POOL_LABELS = Dict(
+    "local" => "Local perturbation pool",
+    "state_wide" => "State-wide perturbation pool",
 )
-const NEIGHBORHOOD_DESCRIPTIONS = Dict(
-    "small" => "nearest 10% within each state library",
-    "large" => "nearest 35% within each state library",
+const POOL_DESCRIPTIONS = Dict(
+    "local" => "medoid-centered samples within the medoid-cluster part of each state",
+    "state_wide" => "all samples in each full low/high state library",
 )
 const COMPONENT_AXIS_LABELS = (
     "log10(kxx [mD])",
@@ -33,13 +33,18 @@ const COMPONENT_AXIS_LABELS = (
 const FIXED_Y_LIMS = (-7.1, 2.1)
 const FIXED_Y_TICKS = [-7.0, -4.0, -1.0, 2.0]
 const FIXED_Y_TICK_LABELS = ["-7", "-4", "-1", "2"]
+const PANEL_WIDTH = 430
+const PANEL_ASPECT = 3 / 2
+const PANEL_HEIGHT = round(Int, PANEL_WIDTH / PANEL_ASPECT)
 
 panel_label(index::Integer) = "($(Char(Int('a') + index - 1)))"
 
 function parse_args(args::Vector{String})
     options = Dict(
+        "config" => Level2IO.default_config_path(),
         "state-root" => normpath(joinpath(Level2IO.default_level2_output_root(), "g_ref")),
         "output-dir" => "",
+        "fixed-count-density-reference" => "",
     )
 
     i = 1
@@ -63,38 +68,70 @@ end
 
 function print_help()
     println("Usage:")
-    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/plot_level2_neighbor_component_distributions.jl [options]")
+    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/05_review_perturbation_pools/plot_perturbation_pool_distributions.jl [options]")
     println()
     println("Options:")
+    println("  --config <path>        Level 2 TOML config with [plotting] defaults")
     println("  --state-root <path>    Root folder containing built Level 2 state MAT files")
-    println("  --output-dir <path>    Folder where neighborhood component violin figures are saved")
+    println("  --output-dir <path>    Folder where perturbation-pool component violin figures are saved")
+    println("  --fixed-count-density-reference <value>")
+    println("                         Fixed density*count reference for cross-panel violin width scaling")
+    println("                         Overrides the config default for both local and state-wide figures")
     println("  -h, --help             Show this help")
 end
 
 function main(args::Vector{String})
     opt = parse_args(args)
+    config = Level2IO.read_level2_config(opt["config"])
     state_root = normpath(opt["state-root"])
-    output_root = isempty(opt["output-dir"]) ? joinpath(state_root, "figures", "neighbor_component_distributions") :
+    output_root = isempty(opt["output-dir"]) ? joinpath(state_root, "figures", "perturbation_pool_distributions") :
                   normpath(opt["output-dir"])
+    fixed_count_density_reference_override = isempty(opt["fixed-count-density-reference"]) ?
+        NaN :
+        parse(Float64, opt["fixed-count-density-reference"])
+    isnan(fixed_count_density_reference_override) || fixed_count_density_reference_override > 0 ||
+        error("--fixed-count-density-reference must be positive")
     mkpath(output_root)
 
     Level2Plotting.activate_plot_theme!()
 
     states = load_states(state_root)
 
-    for neighborhood in ("small", "large")
-        combined_fig = build_all_windows_neighbor_component_grid(states, neighborhood)
-        save(joinpath(output_root, "all_windows_$(neighborhood)_neighbor_component_violins_medoids.png"), combined_fig)
-        save_optional_pdf(joinpath(output_root, "all_windows_$(neighborhood)_neighbor_component_violins_medoids.pdf"), combined_fig)
+    for pool in ("local", "state_wide")
+        fixed_count_density_reference = isnan(fixed_count_density_reference_override) ?
+            default_fixed_count_density_reference(pool, config) :
+            fixed_count_density_reference_override
+        combined_fig = build_all_windows_perturbation_pool_component_grid(
+            states,
+            pool;
+            fixed_count_density_reference = fixed_count_density_reference,
+        )
+        save(joinpath(output_root, "all_windows_$(pool)_perturbation_pool_component_violins_low_high_medoids.png"), combined_fig)
+        save_optional_pdf(joinpath(output_root, "all_windows_$(pool)_perturbation_pool_component_violins_low_high_medoids.pdf"), combined_fig)
 
         for (widx, window) in enumerate(Level2IO.FIXED_WINDOWS)
-            fig = build_window_neighbor_component_figure(states[window], widx, neighborhood)
-            save(joinpath(output_root, "$(window)_$(neighborhood)_neighbor_component_violins_medoids.png"), fig)
-            save_optional_pdf(joinpath(output_root, "$(window)_$(neighborhood)_neighbor_component_violins_medoids.pdf"), fig)
+            fig = build_window_perturbation_pool_component_figure(
+                states[window],
+                widx,
+                pool;
+                fixed_count_density_reference = fixed_count_density_reference,
+            )
+            save(joinpath(output_root, "$(window)_$(pool)_perturbation_pool_component_violins_low_high_medoids.png"), fig)
+            save_optional_pdf(joinpath(output_root, "$(window)_$(pool)_perturbation_pool_component_violins_low_high_medoids.pdf"), fig)
         end
     end
 
-    println("Saved Step 2.7 neighborhood component figures to $output_root")
+    println("Saved Step 2.7 perturbation-pool component figures to $output_root")
+end
+
+function default_fixed_count_density_reference(pool::AbstractString,
+                                               config::Dict{String, Any})
+    if pool == "local"
+        return Float64(config["local_pool_violin_fixed_count_density_reference"])
+    elseif pool == "state_wide"
+        return Float64(config["state_wide_pool_violin_fixed_count_density_reference"])
+    end
+    error("Unknown perturbation pool: $pool")
 end
 
 function save_optional_pdf(path::AbstractString, fig::Figure)
@@ -115,24 +152,24 @@ function load_states(state_root::AbstractString)
     return states
 end
 
-function build_all_windows_neighbor_component_grid(states::Dict{String, Dict{String, Any}},
-                                                   neighborhood::AbstractString)
+function build_all_windows_perturbation_pool_component_grid(states::Dict{String, Dict{String, Any}},
+                                                            pool::AbstractString;
+                                                            fixed_count_density_reference::Real)
     windows = Level2IO.FIXED_WINDOWS
     title_font_size = 42
     header_font_size = 34
     axis_font_size = 34
     tick_font_size = 34
-    panel_size = 430
-    title_label = NEIGHBORHOOD_LABELS[neighborhood]
+    title_label = POOL_LABELS[pool]
 
     fig = Figure(size = (3900, 2180),
                  figure_padding = (24, 24, 18, 18),
                  backgroundcolor = :white)
-    rowgap!(fig.layout, 14)
+    rowgap!(fig.layout, 5)
     colgap!(fig.layout, 18)
 
     Label(fig[1, 1:6],
-          "$title_label component distributions and medoids by window",
+          "Fixed-scale low and high $(lowercase(title_label)) distributions by window",
           fontsize = title_font_size,
           font = :bold,
           halign = :center,
@@ -170,14 +207,15 @@ function build_all_windows_neighbor_component_grid(states::Dict{String, Dict{Str
                       ygridwidth = 1.0,
                       topspinevisible = false,
                       rightspinevisible = false,
-                      xticks = (1:3, [STATE_LABELS[label] for label in Level2Plotting.STATE_ORDER]),
+                      xticks = (1:2, [STATE_LABELS[label] for label in STATE_ORDER]),
                       yticks = (FIXED_Y_TICKS, FIXED_Y_TICK_LABELS),
-                      aspect = AxisAspect(1))
+                      aspect = AxisAspect(PANEL_ASPECT))
 
-            add_neighbor_component_violins!(ax, state, component_idx, neighborhood;
-                                            violin_width = 0.72,
-                                            medoid_markersize = 24)
-            xlims!(ax, 0.4, 3.6)
+            add_fixed_scale_pool_violins!(ax, state, component_idx, pool;
+                                          violin_width = 0.72,
+                                          fixed_count_density_reference = fixed_count_density_reference,
+                                          medoid_markersize = 24)
+            xlims!(ax, 0.4, 2.6)
             ylims!(ax, FIXED_Y_LIMS...)
             add_panel_label!(ax, panel_label((component_idx - 1) * length(windows) + widx);
                              fontsize = axis_font_size)
@@ -191,7 +229,7 @@ function build_all_windows_neighbor_component_grid(states::Dict{String, Dict{Str
         end
     end
 
-    legend_elements, legend_labels = build_neighbor_distribution_legend()
+    legend_elements, legend_labels = build_pool_distribution_legend()
     Legend(fig[8, 1:6], legend_elements, legend_labels;
            orientation = :horizontal,
            framevisible = false,
@@ -202,7 +240,9 @@ function build_all_windows_neighbor_component_grid(states::Dict{String, Dict{Str
            labelsize = header_font_size)
 
     Label(fig[9, 1:6],
-          "Violins show only $(NEIGHBORHOOD_DESCRIPTIONS[neighborhood]); gold diamonds show the state medoid.",
+          @sprintf("Violins show %s; gold diamonds show state medoids. Fixed density-count reference = %.0f.",
+                   POOL_DESCRIPTIONS[pool],
+                   fixed_count_density_reference),
           fontsize = axis_font_size,
           halign = :center,
           tellwidth = false)
@@ -210,33 +250,34 @@ function build_all_windows_neighbor_component_grid(states::Dict{String, Dict{Str
     rowsize!(fig.layout, 1, Fixed(70))
     rowsize!(fig.layout, 2, Fixed(88))
     for row in component_rows
-        rowsize!(fig.layout, row, Fixed(panel_size))
+        rowsize!(fig.layout, row, Fixed(PANEL_HEIGHT))
     end
-    rowsize!(fig.layout, 4, Fixed(40))
-    rowsize!(fig.layout, 6, Fixed(40))
+    rowsize!(fig.layout, 4, Fixed(13))
+    rowsize!(fig.layout, 6, Fixed(13))
     rowsize!(fig.layout, 8, Fixed(70))
     rowsize!(fig.layout, 9, Fixed(50))
     for col in 1:6
-        colsize!(fig.layout, col, Fixed(panel_size))
+        colsize!(fig.layout, col, Fixed(PANEL_WIDTH))
     end
     resize_to_layout!(fig)
 
     return fig
 end
 
-function build_window_neighbor_component_figure(state::Dict{String, Any},
-                                                window_index::Int,
-                                                neighborhood::AbstractString)
+function build_window_perturbation_pool_component_figure(state::Dict{String, Any},
+                                                         window_index::Int,
+                                                         pool::AbstractString;
+                                                         fixed_count_density_reference::Real)
     window = String(state["window"])
     chosen_k = Level2Plotting.int_scalar(state["chosen_k"])
     silhouette = Level2Plotting.float_scalar(state["best_silhouette"])
-    title_label = NEIGHBORHOOD_LABELS[neighborhood]
+    title_label = POOL_LABELS[pool]
 
     title_font_size = 34
     axis_font_size = 26
     tick_font_size = 24
 
-    fig = Figure(size = (1900, 760),
+    fig = Figure(size = (1900, 640),
                  figure_padding = (22, 22, 16, 16),
                  backgroundcolor = :white)
     rowgap!(fig.layout, 12)
@@ -266,14 +307,15 @@ function build_window_neighbor_component_figure(state::Dict{String, Any},
                   ygridwidth = 1.0,
                   topspinevisible = false,
                   rightspinevisible = false,
-                  xticks = (1:3, [STATE_LABELS[label] for label in Level2Plotting.STATE_ORDER]),
+                  xticks = (1:2, [STATE_LABELS[label] for label in STATE_ORDER]),
                   yticks = (FIXED_Y_TICKS, FIXED_Y_TICK_LABELS),
-                  aspect = AxisAspect(1))
+                  aspect = AxisAspect(PANEL_ASPECT))
 
-        add_neighbor_component_violins!(ax, state, component_idx, neighborhood;
-                                        violin_width = 0.72,
-                                        medoid_markersize = 22)
-        xlims!(ax, 0.4, 3.6)
+        add_fixed_scale_pool_violins!(ax, state, component_idx, pool;
+                                      violin_width = 0.72,
+                                      fixed_count_density_reference = fixed_count_density_reference,
+                                      medoid_markersize = 22)
+        xlims!(ax, 0.4, 2.6)
         ylims!(ax, FIXED_Y_LIMS...)
         add_panel_label!(ax, panel_label(component_idx); fontsize = axis_font_size)
         if component_idx != 1
@@ -281,7 +323,7 @@ function build_window_neighbor_component_figure(state::Dict{String, Any},
         end
     end
 
-    legend_elements, legend_labels = build_neighbor_distribution_legend()
+    legend_elements, legend_labels = build_pool_distribution_legend()
     Legend(fig[3, 1:3], legend_elements, legend_labels;
            orientation = :horizontal,
            framevisible = false,
@@ -292,31 +334,45 @@ function build_window_neighbor_component_figure(state::Dict{String, Any},
            labelsize = tick_font_size)
 
     rowsize!(fig.layout, 1, Fixed(66))
-    rowsize!(fig.layout, 2, Fixed(430))
+    rowsize!(fig.layout, 2, Fixed(PANEL_HEIGHT))
     rowsize!(fig.layout, 3, Fixed(70))
     for col in 1:3
-        colsize!(fig.layout, col, Fixed(430))
+        colsize!(fig.layout, col, Fixed(PANEL_WIDTH))
     end
     resize_to_layout!(fig)
 
     return fig
 end
 
-function add_neighbor_component_violins!(ax,
-                                         state::Dict{String, Any},
-                                         component_idx::Int,
-                                         neighborhood::AbstractString;
-                                         violin_width::Real,
-                                         medoid_markersize::Real)
-    for (state_idx, label) in enumerate(Level2Plotting.STATE_ORDER)
-        values = component_neighbor_values(state, label, neighborhood, component_idx)
-        xs = fill(Float64(state_idx), length(values))
-        violin!(ax, xs, values;
-                color = (Level2Plotting.STATE_COLORS[label], 0.72),
-                width = violin_width,
-                strokecolor = :black,
-                strokewidth = 1.0)
+function add_fixed_scale_pool_violins!(ax,
+                                       state::Dict{String, Any},
+                                       component_idx::Int,
+                                       pool::AbstractString;
+                                       violin_width::Real,
+                                       fixed_count_density_reference::Real,
+                                       medoid_markersize::Real)
+    all_x = Float64[]
+    all_y = Float64[]
+    all_colors = RGBAf[]
 
+    for (state_idx, label) in enumerate(STATE_ORDER)
+        values = component_pool_values(state, label, pool, component_idx)
+        base_color = Level2Plotting.STATE_COLORS[label]
+        state_color = RGBAf(base_color.r, base_color.g, base_color.b, 0.72)
+        append!(all_x, fill(Float64(state_idx), length(values)))
+        append!(all_y, values)
+        append!(all_colors, fill(state_color, length(values)))
+    end
+
+    violin!(ax, all_x, all_y;
+            color = all_colors,
+            width = violin_width,
+            scale = :count,
+            max_density = fixed_count_density_reference,
+            strokecolor = :black,
+            strokewidth = 1.0)
+
+    for (state_idx, label) in enumerate(STATE_ORDER)
         medoid_value = Level2Plotting.medoid_component_values(state, label)[component_idx]
         scatter!(ax,
                  [state_idx],
@@ -329,19 +385,19 @@ function add_neighbor_component_violins!(ax,
     end
 end
 
-function component_neighbor_values(state::Dict{String, Any},
-                                   label::AbstractString,
-                                   neighborhood::AbstractString,
-                                   component_idx::Int)
+function component_pool_values(state::Dict{String, Any},
+                               label::AbstractString,
+                               pool::AbstractString,
+                               component_idx::Int)
     log_perms = Level2Plotting.matrix_float(state["log_perms"])
-    indices = Level2Plotting.vector_int(state["$(label)_$(neighborhood)_neighbors"])
+    indices = Level2Plotting.vector_int(state["$(label)_$(pool)_pool"])
     return vec(log_perms[indices, component_idx])
 end
 
-function build_neighbor_distribution_legend()
+function build_pool_distribution_legend()
     elements = CairoMakie.LegendElement[]
     labels = String[]
-    for label in Level2Plotting.STATE_ORDER
+    for label in STATE_ORDER
         push!(elements,
               PolyElement(color = (Level2Plotting.STATE_COLORS[label], 0.72),
                           strokecolor = :black,

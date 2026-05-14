@@ -1,13 +1,13 @@
 #!/usr/bin/env julia
 
 using Pkg
-Pkg.activate(normpath(joinpath(@__DIR__, "..", "..")))
+Pkg.activate(normpath(joinpath(@__DIR__, "..", "..", "..")))
 
 using CairoMakie
 using Printf
 
-include(joinpath(@__DIR__, "..", "lib", "level2_io.jl"))
-include(joinpath(@__DIR__, "..", "lib", "level2_plotting.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_io.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_plotting.jl"))
 
 using .Level2IO
 using .Level2Plotting
@@ -25,7 +25,6 @@ const COMPONENT_AXIS_LABELS = (
 const FIXED_Y_LIMS = (-7.1, 2.1)
 const FIXED_Y_TICKS = [-7.0, -4.0, -1.0, 2.0]
 const FIXED_Y_TICK_LABELS = ["-7", "-4", "-1", "2"]
-const DEFAULT_FIXED_COUNT_DENSITY_REFERENCE = 1200.0
 const PANEL_WIDTH = 430
 const PANEL_ASPECT = 3 / 2
 const PANEL_HEIGHT = round(Int, PANEL_WIDTH / PANEL_ASPECT)
@@ -34,9 +33,10 @@ panel_label(index::Integer) = "($(Char(Int('a') + index - 1)))"
 
 function parse_args(args::Vector{String})
     options = Dict(
+        "config" => Level2IO.default_config_path(),
         "state-root" => normpath(joinpath(Level2IO.default_level2_output_root(), "g_ref")),
         "output-dir" => "",
-        "fixed-count-density-reference" => string(DEFAULT_FIXED_COUNT_DENSITY_REFERENCE),
+        "fixed-count-density-reference" => "",
     )
 
     i = 1
@@ -60,22 +60,26 @@ end
 
 function print_help()
     println("Usage:")
-    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/plot_level2_state_component_distributions.jl [options]")
+    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/04_review_state_libraries/plot_state_library_distributions.jl [options]")
     println()
     println("Options:")
+    println("  --config <path>        Level 2 TOML config with [plotting] defaults")
     println("  --state-root <path>    Root folder containing built Level 2 state MAT files")
     println("  --output-dir <path>    Folder where the default state component violin figure is saved")
     println("  --fixed-count-density-reference <value>")
-    println("                         Fixed density*count reference for cross-panel violin width scaling")
+    println("                         Override config fixed density*count reference for cross-panel violin width scaling")
     println("  -h, --help             Show this help")
 end
 
 function main(args::Vector{String})
     opt = parse_args(args)
+    config = Level2IO.read_level2_config(opt["config"])
     state_root = normpath(opt["state-root"])
     output_root = isempty(opt["output-dir"]) ? joinpath(state_root, "figures", "state_component_distributions") :
                   normpath(opt["output-dir"])
-    fixed_count_density_reference = parse(Float64, opt["fixed-count-density-reference"])
+    fixed_count_density_reference = isempty(opt["fixed-count-density-reference"]) ?
+        Float64(config["state_violin_fixed_count_density_reference"]) :
+        parse(Float64, opt["fixed-count-density-reference"])
     fixed_count_density_reference > 0 || error("--fixed-count-density-reference must be positive")
     mkpath(output_root)
 

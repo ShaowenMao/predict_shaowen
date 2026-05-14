@@ -1,15 +1,15 @@
 #!/usr/bin/env julia
 
 using Pkg
-Pkg.activate(normpath(joinpath(@__DIR__, "..", "..")))
+Pkg.activate(normpath(joinpath(@__DIR__, "..", "..", "..")))
 
 using CairoMakie
 using Printf
 using Statistics
 
-include(joinpath(@__DIR__, "..", "lib", "level2_io.jl"))
-include(joinpath(@__DIR__, "..", "lib", "level2_core.jl"))
-include(joinpath(@__DIR__, "..", "lib", "level2_plotting.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_io.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_core.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_plotting.jl"))
 
 using .Level2IO
 using .Level2Core
@@ -61,7 +61,7 @@ end
 
 function print_help()
     println("Usage:")
-    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/plot_level2_joint_regime_sensitivity.jl [options]")
+    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/03_review_joint_clusters/run_joint_cluster_sensitivity.jl [options]")
     println()
     println("Options:")
     println("  --config <path>       Level 2 TOML config")
@@ -84,7 +84,7 @@ function main(args::Vector{String})
         error("Baseline fraction $baseline_fraction must be included in --fractions")
 
     output_root = isempty(opt["output-dir"]) ?
-        normpath(joinpath(Level2IO.default_level2_output_root(), config["geology_id"], "figures", "joint_regimes_sensitivity")) :
+        normpath(joinpath(Level2IO.default_level2_output_root(), config["geology_id"], "figures", "joint_clusters_sensitivity")) :
         normpath(opt["output-dir"])
     table_root = joinpath(output_root, "tables")
     overview_root = joinpath(output_root, "overview")
@@ -114,26 +114,26 @@ function main(args::Vector{String})
                                                   cfg)
             window_states[proxy["window"]] = state
             fig = build_sensitivity_pairwise_figure(state, fraction, max_points, seed + 100 * widx)
-            save(joinpath(fraction_dir, "$(proxy["window"])_$(fraction_label)_joint_regimes_pairwise.png"), fig)
+            save(joinpath(fraction_dir, "$(proxy["window"])_$(fraction_label)_joint_clusters_pairwise.png"), fig)
         end
         states_by_fraction[fraction] = window_states
     end
 
     summary_rows, silhouette_rows = build_summary_rows(states_by_fraction, fractions, baseline_fraction)
-    Level2IO.write_csv(joinpath(table_root, "joint_regime_sensitivity_summary.csv"),
+    Level2IO.write_csv(joinpath(table_root, "joint_cluster_sensitivity_summary.csv"),
                        ["window", "min_cluster_fraction", "chosen_k", "best_silhouette",
                         "is_effectively_unimodal", "cluster_sizes", "min_required_size",
                         "same_k_as_baseline", "same_unimodality_as_baseline",
                         "same_cluster_size_count_as_baseline", "assignment_agreement_with_baseline"],
                        summary_rows)
-    Level2IO.write_csv(joinpath(table_root, "joint_regime_sensitivity_silhouette_by_k.csv"),
+    Level2IO.write_csv(joinpath(table_root, "joint_cluster_sensitivity_silhouette_by_k.csv"),
                        ["window", "min_cluster_fraction", "k", "valid_k", "silhouette"],
                        silhouette_rows)
 
     overview_fig = build_sensitivity_overview_figure(states_by_fraction, fractions)
-    save(joinpath(overview_root, "joint_regime_sensitivity_overview.png"), overview_fig)
+    save(joinpath(overview_root, "joint_cluster_sensitivity_overview.png"), overview_fig)
 
-    println("Saved joint regime sensitivity outputs to $output_root")
+    println("Saved joint cluster sensitivity outputs to $output_root")
 end
 
 function parse_fraction_list(text::AbstractString)
@@ -258,7 +258,7 @@ function build_sensitivity_pairwise_figure(state::Dict{String, Any},
     end
 
     Label(fig[0, 2],
-          @sprintf("%s joint regimes | min cluster fraction = %.2f | K = %d | silhouette = %.4f",
+          @sprintf("%s joint clusters | min cluster fraction = %.2f | K = %d | silhouette = %.4f",
                    window, fraction, chosen_k, silhouette),
           fontsize = 24,
           font = :bold,
@@ -277,7 +277,7 @@ function build_sensitivity_pairwise_figure(state::Dict{String, Any},
            labelsize = 22)
 
     Label(fig[3, :],
-          "Sensitivity figure only. Point color = regime membership. Large outlined circles = cluster medoids.",
+          "Sensitivity figure only. Point color = joint-cluster membership. Large outlined circles = cluster medoids.",
           fontsize = 22)
 
     return fig
@@ -316,7 +316,7 @@ function build_legend_content(cluster_sizes)
                             marker = :circle,
                             markersize = 18,
                             strokecolor = :transparent))
-        push!(labels, "Regime $rank (n = $size_value)")
+        push!(labels, "Cluster $rank (n = $size_value)")
     end
     push!(elements,
           MarkerElement(color = :white,
@@ -373,7 +373,7 @@ function build_sensitivity_overview_figure(states_by_fraction, fractions)
     text!(title_axis, 0.5, 0.5;
           space = :relative,
           align = (:center, :center),
-          text = "Joint regime sensitivity to minimum cluster fraction",
+          text = "Joint cluster sensitivity to minimum cluster fraction",
           fontsize = 24,
           font = :bold,
           color = :black)

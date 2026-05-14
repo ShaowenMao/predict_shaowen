@@ -4,8 +4,8 @@ fixed_windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"]
 
 [level2]
 state_fraction = 0.20
-small_neighbor_fraction = 0.10
-large_neighbor_fraction = 0.35
+local_pool_fraction = 0.10
+local_pool_min_count = 25
 weights = [1.0, 1.0, 1.0]
 distance_metric = "log_unit"
 distance_weights = [1.0, 1.0, 1.0]
@@ -19,3 +19,8 @@ num_restarts = 4
 
 [validation]
 holdout_repeats = [2, 3, 4, 5]
+
+[plotting]
+state_violin_fixed_count_density_reference = 560.0
+local_pool_violin_fixed_count_density_reference = 120.0
+state_wide_pool_violin_fixed_count_density_reference = 560.0

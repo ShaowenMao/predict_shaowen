@@ -1,14 +1,14 @@
 #!/usr/bin/env julia
 
 using Pkg
-Pkg.activate(normpath(joinpath(@__DIR__, "..", "..")))
+Pkg.activate(normpath(joinpath(@__DIR__, "..", "..", "..")))
 
 using CairoMakie
 using Statistics
 using Printf
 
-include(joinpath(@__DIR__, "..", "lib", "level2_io.jl"))
-include(joinpath(@__DIR__, "..", "lib", "level2_plotting.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_io.jl"))
+include(joinpath(@__DIR__, "..", "..", "lib", "level2_plotting.jl"))
 
 using .Level2IO
 using .Level2Plotting
@@ -51,7 +51,7 @@ end
 
 function print_help()
     println("Usage:")
-    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/plot_marginal_hist_screening.jl [options]")
+    println("  julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/scripts/00_screen_input_data/plot_marginal_hist_screening.jl [options]")
     println()
     println("Options:")
     println("  --config <path>                 Level 2 TOML config")
@@ -72,11 +72,9 @@ function main(args::Vector{String})
         normpath(joinpath(Level2IO.default_level2_output_root(), config["geology_id"], "figures", "marginal_hist_screening")) :
         normpath(opt["output-dir"])
     window_figure_root = joinpath(output_root, "window_figures")
-    overview_root = joinpath(output_root, "overview")
     combined_root = joinpath(output_root, "combined")
     table_root = joinpath(output_root, "tables")
     mkpath(window_figure_root)
-    mkpath(overview_root)
     mkpath(combined_root)
     mkpath(table_root)
 
@@ -93,10 +91,6 @@ function main(args::Vector{String})
         save(joinpath(window_figure_root, "$(window)_marginal_hist_screening.pdf"), fig)
         append!(summary_rows, build_summary_rows(proxy, bin_specs))
     end
-
-    overview_fig = build_overview_figure(proxies, bin_specs)
-    save(joinpath(overview_root, "marginal_hist_screening_overview.png"), overview_fig)
-    save(joinpath(overview_root, "marginal_hist_screening_overview.pdf"), overview_fig)
 
     combined_fig = build_combined_publication_figure(proxies, bin_specs)
     save(joinpath(combined_root, "all_windows_marginal_histograms_grid.png"), combined_fig)
@@ -391,68 +385,6 @@ function build_combined_publication_figure(proxies, bin_specs)
 
     colgap!(fig.layout, 24)
     rowgap!(fig.layout, 18)
-    return fig
-end
-
-function build_overview_figure(proxies, bin_specs)
-    fig = Figure(size = (1850, 2200))
-    Label(fig[0, :], "Marginal histogram overview across the six fixed windows", fontsize = 24, font = :bold)
-
-    ymax = maximum(begin
-        _, probs = histogram_probabilities(vec(proxy["log_perms"][:, ic]), bin_specs[ic].edges)
-        maximum(probs)
-    end for proxy in proxies for ic in 1:3)
-
-    for ic in 1:3
-        Label(fig[1, ic], COMPONENT_LABELS[ic], fontsize = 20, font = :bold)
-    end
-
-    for (iw, proxy) in enumerate(proxies)
-        window = proxy["window"]
-        values = proxy["log_perms"]
-        for ic in 1:3
-            spec = bin_specs[ic]
-            v = vec(values[:, ic])
-            stats = component_stats(v)
-            _, probs = histogram_probabilities(v, spec.edges)
-            ax = Axis(fig[iw + 1, ic],
-                      xlabel = iw == length(proxies) ? spec.label : "",
-                      ylabel = ic == 1 ? "$(window)\nProbability" : "",
-                      xlabelsize = 16,
-                      ylabelsize = 15,
-                      xticklabelsize = 11,
-                      yticklabelsize = 11,
-                      topspinevisible = false,
-                      rightspinevisible = false,
-                      xticks = (LOGK_TICKS, LOGK_TICK_LABELS))
-
-            barplot!(ax, spec.centers, probs;
-                     width = 0.92 .* spec.widths,
-                     color = (RGBf(0.35, 0.38, 0.42), 0.86),
-                     strokecolor = (RGBf(0.15, 0.16, 0.18), 0.45),
-                     strokewidth = 0.4)
-
-            vlines!(ax, [stats.q25];
-                    color = RGBf(0.55, 0.55, 0.55),
-                    linestyle = :dash,
-                    linewidth = 1.3)
-            vlines!(ax, [stats.median];
-                    color = RGBf(0.82, 0.24, 0.20),
-                    linestyle = :solid,
-                    linewidth = 1.8)
-            vlines!(ax, [stats.q75];
-                    color = RGBf(0.55, 0.55, 0.55),
-                    linestyle = :dash,
-                    linewidth = 1.3)
-
-            xlims!(ax, LOGK_LIMITS...)
-            ylims!(ax, 0.0, 1.08 * ymax)
-        end
-    end
-
-    Label(fig[length(proxies) + 2, :],
-          "All windows share the same component-specific bin edges to make shape comparisons easier.",
-          fontsize = 17)
     return fig
 end
 
