@@ -1,0 +1,39 @@
+[workflow]
+geology_id = "g_ref"
+fixed_windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"]
+
+[paths]
+level2_state_root = "D:/codex_gom/UQ_workflow/level2_modular_test"
+output_root = "D:/codex_gom/UQ_workflow/level3_workflow"
+
+[run]
+load_level2_states = true
+build_window_similarity_groups = true
+make_grouping_distance_figures = true
+run_bootstrap_grouping_qa = false
+make_bootstrap_grouping_figures = false
+make_similarity_group_figure = true
+build_multiple_window_permeability_cases = true
+make_multiple_window_permeability_case_figure = true
+
+[level3]
+distance_metric = "energy_log_unit"
+normalization = "mean_internal_spread"
+pairwise_sample_size = 0
+random_seed = 1729
+
+[level3.grouping]
+grouping_mode = "full_data"
+similarity_threshold = 0.25
+
+[level3.bootstrap]
+bootstrap_count = 100
+bootstrap_sample_size = 2000
+similarity_threshold = 0.25
+stable_pair_probability = 0.80
+random_seed = 1729
+show_progress = true
+
+[figures]
+similarity_threshold = 0.25
+formats = ["png", "pdf"]
