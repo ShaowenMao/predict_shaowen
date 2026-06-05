@@ -15,14 +15,14 @@ from low to high after the k-medoids fit. The returned dictionary contains:
 function step02_detect_joint_clusters(window_data::Dict{String, Any},
                                       config::Dict{String, Any})
     log_perms = Matrix{Float64}(window_data["log_perms"])
-    local_ranks = Level2Core.compute_local_ranks(log_perms)
-    local_normal_scores = Level2Core.compute_local_normal_scores(local_ranks)
-    joint_rank_score = Level2Core.compute_joint_rank_score(local_ranks, Float64.(config["weights"]))
-    distance_info = Level2Core.build_distance_matrix(log_perms, local_normal_scores, config)
-    cluster_info = Level2Core.choose_clustering(distance_info["distance_matrix"],
-                                                joint_rank_score,
-                                                config,
-                                                window_data["window"])
+    local_ranks = Level2Ranks.compute_local_ranks(log_perms)
+    local_normal_scores = Level2Ranks.compute_local_normal_scores(local_ranks)
+    joint_rank_score = Level2Ranks.compute_joint_rank_score(local_ranks, Float64.(config["weights"]))
+    distance_info = Level2Distances.build_distance_matrix(log_perms, local_normal_scores, config)
+    cluster_info = Level2Clustering.choose_clustering(distance_info["distance_matrix"],
+                                                      joint_rank_score,
+                                                      config,
+                                                      window_data["window"])
 
     return Dict{String, Any}(
         "distance_info" => distance_info,

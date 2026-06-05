@@ -22,11 +22,11 @@ function step06_build_perturbation_pools(state_libraries::Dict{String, Any},
         medoid_index = Int(medoids["$(label)_medoid_index"])
         medoid_cluster_id = assignments[medoid_index]
         candidates = [idx for idx in state_indices if assignments[idx] == medoid_cluster_id]
-        local_pool = Level2Core.local_pool_indices(medoid_index,
-                                                   candidates,
-                                                   distance_matrix,
-                                                   Float64(config["local_pool_fraction"]),
-                                                   Int(config["local_pool_min_count"]))
+        local_pool = Level2StateLibraries.local_pool_indices(medoid_index,
+                                                             candidates,
+                                                             distance_matrix,
+                                                             Float64(config["local_pool_fraction"]),
+                                                             Int(config["local_pool_min_count"]))
 
         result["$(label)_local_pool_candidates"] = candidates
         result["$(label)_local_pool"] = local_pool

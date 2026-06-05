@@ -5,7 +5,7 @@ Input/output utilities for the Level 2 UQ workflow.
 
 This module resolves repository-relative paths, reads TOML/CSV configuration
 files, loads PREDICT MAT libraries, saves Level 2 state objects, and writes
-CSV/text outputs used by review and sampling scripts.
+CSV/text outputs used by output and sampling tasks.
 """
 module Level2IO
 

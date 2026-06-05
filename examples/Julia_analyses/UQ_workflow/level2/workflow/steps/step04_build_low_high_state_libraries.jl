@@ -14,7 +14,7 @@ function step04_build_low_high_state_libraries(rank_step::Dict{String, Any},
                                                config::Dict{String, Any})
     joint_rank_score = vec(Float64.(rank_step["joint_rank_score"]))
     assignments = vec(Int.(cluster_step["cluster_info"]["assignments"]))
-    state_info = Level2Core.build_state_libraries(joint_rank_score, assignments, config)
+    state_info = Level2StateLibraries.build_state_libraries(joint_rank_score, assignments, config)
 
     low_indices = sort(unique(vec(Int.(state_info["low_indices"]))))
     high_indices = sort(unique(vec(Int.(state_info["high_indices"]))))

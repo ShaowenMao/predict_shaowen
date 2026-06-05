@@ -1,7 +1,7 @@
 """
     Level2Plotting
 
-Shared plotting and table-reading helpers for Level 2 review scripts.
+Shared plotting and table-reading helpers for Level 2 output tasks.
 
 The module centralizes component labels, state colors, cluster colors, MAT
 value conversion helpers, PCA projection, cluster-order utilities, and simple

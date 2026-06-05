@@ -6,10 +6,18 @@ Pkg.activate(normpath(joinpath(@__DIR__, "..", "..")))
 using TOML
 
 include(joinpath(@__DIR__, "..", "lib", "level2_io.jl"))
-include(joinpath(@__DIR__, "..", "lib", "level2_core.jl"))
+include(joinpath(@__DIR__, "..", "lib", "level2_ranks.jl"))
+include(joinpath(@__DIR__, "..", "lib", "level2_distances.jl"))
+include(joinpath(@__DIR__, "..", "lib", "level2_clustering.jl"))
+include(joinpath(@__DIR__, "..", "lib", "level2_state_libraries.jl"))
+include(joinpath(@__DIR__, "..", "lib", "level2_state_object.jl"))
 
 using .Level2IO
-using .Level2Core
+using .Level2Ranks
+using .Level2Distances
+using .Level2Clustering
+using .Level2StateLibraries
+using .Level2StateObject
 
 """
     LEVEL2_WORKFLOW_DOC
@@ -30,9 +38,7 @@ include(joinpath(@__DIR__, "steps", "step04_build_low_high_state_libraries.jl"))
 include(joinpath(@__DIR__, "steps", "step05_choose_state_medoids.jl"))
 include(joinpath(@__DIR__, "steps", "step06_build_perturbation_pools.jl"))
 include(joinpath(@__DIR__, "steps", "step07_save_level2_object.jl"))
-include(joinpath(@__DIR__, "review", "run_level2_tables.jl"))
-include(joinpath(@__DIR__, "review", "run_level2_figures.jl"))
-include(joinpath(@__DIR__, "review", "run_level2_sampling_test.jl"))
+include(joinpath(@__DIR__, "steps", "step08_generate_level2_outputs.jl"))
 
 """
     parse_args(args)
@@ -205,7 +211,7 @@ function main(args::Vector{String})
 
     if Bool(get(run_cfg, "screen_input_data", false))
         println("Step 00: screening raw marginal histograms")
-        run_input_screening_figure(workflow)
+        step08_generate_input_screening(workflow)
     end
 
     if Bool(get(run_cfg, "build_level2_objects", true))
@@ -214,8 +220,8 @@ function main(args::Vector{String})
     end
 
     if Bool(get(run_cfg, "export_tables", true))
-        println("Review: exporting Level 2 tables")
-        run_level2_tables(workflow)
+        println("Step 08: exporting Level 2 tables")
+        step08_export_level2_tables(workflow)
     end
 
     if Bool(get(run_cfg, "plot_joint_clusters", true)) ||
@@ -224,17 +230,18 @@ function main(args::Vector{String})
        Bool(get(run_cfg, "plot_perturbation_pools", true)) ||
        Bool(get(run_cfg, "run_joint_cluster_sensitivity", false)) ||
        Bool(get(run_cfg, "run_joint_cluster_bootstrap", false))
-        println("Review: generating Level 2 figures")
-        run_level2_figures(workflow)
+        println("Step 08: generating Level 2 figures")
+        step08_generate_level2_figures(workflow)
     end
 
     if Bool(get(run_cfg, "run_sampling_test", true))
-        println("Review: running Level 2 sampling smoke test")
-        run_level2_sampling_test(workflow)
+        println("Step 08: running Level 2 sampling smoke test")
+        step08_run_level2_sampling_test(workflow)
     end
 
     if Bool(get(run_cfg, "run_validation", false))
-        @warn "run_validation is reserved for future modular validation. Use scripts/90_validation for now."
+        println("Step 08: running Level 2 holdout validation")
+        step08_run_level2_validation(workflow)
     end
 
     println("Completed modular Level 2 workflow at $output_root")

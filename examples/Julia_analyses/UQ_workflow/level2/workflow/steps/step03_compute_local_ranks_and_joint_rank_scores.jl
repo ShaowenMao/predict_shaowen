@@ -22,9 +22,9 @@ function step03_compute_local_ranks_and_joint_rank_scores(window_data::Dict{Stri
     end
 
     log_perms = Matrix{Float64}(window_data["log_perms"])
-    local_ranks = Level2Core.compute_local_ranks(log_perms)
-    local_normal_scores = Level2Core.compute_local_normal_scores(local_ranks)
-    joint_rank_score = Level2Core.compute_joint_rank_score(local_ranks, Float64.(config["weights"]))
+    local_ranks = Level2Ranks.compute_local_ranks(log_perms)
+    local_normal_scores = Level2Ranks.compute_local_normal_scores(local_ranks)
+    joint_rank_score = Level2Ranks.compute_joint_rank_score(local_ranks, Float64.(config["weights"]))
 
     return Dict{String, Any}(
         "local_ranks" => local_ranks,

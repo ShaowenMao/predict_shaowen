@@ -14,9 +14,9 @@ function step05_choose_state_medoids(state_libraries::Dict{String, Any},
     assignments = vec(Int.(cluster_step["cluster_info"]["assignments"]))
     n = size(distance_matrix, 1)
 
-    low_medoid_index = Level2Core.choose_medoid(vec(Int.(state_libraries["low_indices"])), distance_matrix)
-    high_medoid_index = Level2Core.choose_medoid(vec(Int.(state_libraries["high_indices"])), distance_matrix)
-    global_medoid_index = Level2Core.choose_medoid(collect(1:n), distance_matrix)
+    low_medoid_index = Level2Clustering.choose_medoid(vec(Int.(state_libraries["low_indices"])), distance_matrix)
+    high_medoid_index = Level2Clustering.choose_medoid(vec(Int.(state_libraries["high_indices"])), distance_matrix)
+    global_medoid_index = Level2Clustering.choose_medoid(collect(1:n), distance_matrix)
 
     return Dict{String, Any}(
         "global_medoid_index" => global_medoid_index,

@@ -35,39 +35,30 @@ workflow/
   run_level2_workflow.jl
   level2_workflow_config.toml
   steps/
-  review/
-
-scripts/
-  00_screen_input_data/
-    plot_marginal_hist_screening.jl
-
-  02_export_tables/
-    export_level2_tables.jl
-
-  03_review_joint_clusters/
-    plot_joint_clusters.jl
-    plot_joint_clusters_3d.jl
-    run_joint_cluster_sensitivity.jl
-    run_joint_cluster_bootstrap.jl
-
-  04_review_state_libraries/
-    plot_state_library_distributions.jl
-
-  05_review_perturbation_pools/
-    plot_perturbation_pool_distributions.jl
-
-  06_sampling_rules/
-    select_window_samples.jl
-
-  90_validation/
-    validate_holdout_repeats.jl
-    plot_holdout_validation.jl
+    step01_load_window_library.jl
+    ...
+    step08_generate_level2_outputs.jl
 ```
 
-Shared code lives in `lib/`. The modular driver in `workflow/` is the main
-entry point. The `scripts/` folder now contains review, export, validation, and
-sampling utilities that the modular workflow can call, rather than a second
-independent builder.
+Shared code lives in `lib/` and now follows the same focused-module style as
+Level 3:
+
+- `level2_ranks.jl`: local ranks, local normal scores, and joint rank scores.
+- `level2_distances.jl`: physical log-space distance matrices.
+- `level2_clustering.jl`: k-medoids clustering, silhouettes, and cluster order.
+- `level2_state_libraries.jl`: low/high state libraries, medoids, and pools.
+- `level2_state_object.jl`: assembles focused Step 2 outputs into the
+  canonical saved Level 2 state-object schema.
+- `level2_io.jl`, `level2_plotting.jl`, and `level2_selection.jl`: data I/O,
+  visualization helpers, and sampling rules.
+- `level2_output_*.jl`: table, figure, and sampling-output generators.
+- `level2_validation*.jl`: optional holdout-repeat validation outputs.
+
+The modular driver in `workflow/` is the main entry point. Workflow steps live
+in `workflow/steps/`, while reusable table, figure, sampling, and validation
+logic lives in `lib/`. This keeps the Level 2 folder consistent with Level 3:
+`lib/` contains reusable functions and `workflow/steps/` contains the execution
+sequence.
 
 Recommended Level 2 execution flow:
 
@@ -77,32 +68,34 @@ Run the modular driver:
 julia --project=examples/Julia_analyses/UQ_workflow examples/Julia_analyses/UQ_workflow/level2/workflow/run_level2_workflow.jl
 ```
 
-The workflow config controls which review outputs are generated:
+The workflow config controls which outputs are generated:
 
 ```text
 workflow/level2_workflow_config.toml
 ```
 
-Use individual scripts only when rerunning one specific review task:
+Use individual `lib/level2_output_*.jl` files only when rerunning one specific
+output outside the full workflow:
 
-- `scripts/00_screen_input_data/plot_marginal_hist_screening.jl` for raw
-  marginal histogram screening.
-- `scripts/02_export_tables/export_level2_tables.jl` for CSV summaries.
-- `scripts/03_review_joint_clusters/plot_joint_clusters.jl` for the main
-  Step 2.3 joint-cluster figures.
-- `scripts/03_review_joint_clusters/plot_joint_clusters_3d.jl` for
-  supplementary 3D joint-cluster views.
-- `scripts/03_review_joint_clusters/run_joint_cluster_sensitivity.jl` for
-  minimum-cluster-fraction sensitivity checks.
-- `scripts/03_review_joint_clusters/run_joint_cluster_bootstrap.jl` for
-  optional cluster-stability bootstrap checks.
-- `scripts/04_review_state_libraries/plot_state_library_distributions.jl` for
-  low/high state-library violin figures.
-- `scripts/05_review_perturbation_pools/plot_perturbation_pool_distributions.jl`
-  for local/state-wide perturbation-pool figures.
-- `scripts/06_sampling_rules/select_window_samples.jl` for sampling tests or
-  field-scale design preparation.
-- `scripts/90_validation/` for holdout-repeat validation.
+- `lib/level2_output_marginal_histograms.jl` for raw marginal histogram
+  screening.
+- `lib/level2_output_tables.jl` for CSV summaries.
+- `lib/level2_output_joint_clusters.jl` for the main Step 2.3 joint-cluster
+  figures.
+- `lib/level2_output_joint_clusters_3d.jl` for supplementary 3D joint-cluster
+  views.
+- `lib/level2_output_cluster_sensitivity.jl` for minimum-cluster-fraction
+  sensitivity checks.
+- `lib/level2_output_cluster_bootstrap.jl` for optional cluster-stability
+  bootstrap checks.
+- `lib/level2_output_state_libraries.jl` for low/high state-library violin
+  figures.
+- `lib/level2_output_perturbation_pools.jl` for local/state-wide
+  perturbation-pool figures.
+- `lib/level2_output_sampling_test.jl` for sampling tests or field-scale design
+  preparation.
+- `lib/level2_validation.jl` and `lib/level2_validation_figures.jl` for
+  holdout-repeat validation.
 
 Step 2.8 selection design CSV:
 
