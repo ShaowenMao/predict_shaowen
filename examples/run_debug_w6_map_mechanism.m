@@ -3,6 +3,6 @@
 % Run this after syncing the repo on the desktop with MRST. The output CSVs
 % are intentionally written outside the repo by default.
 
-debug_w6_map_mechanism( ...
-    'D:\codex_gom\w6_map_mechanism_debug', ...
-    'Nsim', 80);
+outputDir = fullfile(pwd, 'results', 'w6_map_mechanism_debug');
+
+debug_w6_map_mechanism(outputDir, 'Nsim', 80);
