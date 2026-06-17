@@ -15,6 +15,7 @@ make_bootstrap_grouping_figures = false
 make_similarity_group_figure = true
 build_multiple_window_permeability_cases = true
 make_multiple_window_permeability_case_figure = true
+sample_multiple_window_permeability_cases = true
 
 [level3]
 distance_metric = "energy_log_unit"
@@ -33,6 +34,9 @@ similarity_threshold = 0.25
 stable_pair_probability = 0.80
 random_seed = 1729
 show_progress = true
+
+[level3.sampling]
+random_seed = 1729
 
 [figures]
 similarity_threshold = 0.25

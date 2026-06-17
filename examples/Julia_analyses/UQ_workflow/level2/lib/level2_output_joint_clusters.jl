@@ -21,7 +21,7 @@ const PAIRWISE_AXIS_LABELS = ("log10(kxx [mD])",
 const PANEL_LABELS = ("(a)", "(b)", "(c)")
 const FIXED_TICKS = [-7.0, -4.0, -1.0, 2.0]
 const FIXED_TICK_LABELS = ["-7", "-4", "-1", "2"]
-const FIXED_LIMS = (-7.1, 2.1)
+const FIXED_LIMS = (-7.1, 2.5)
 
 panel_label(index::Integer) = "($(Char(Int('a') + index - 1)))"
 

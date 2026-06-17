@@ -67,6 +67,7 @@ function read_level3_config(path::AbstractString;
     level3 = get(raw, "level3", Dict{String, Any}())
     grouping = get(level3, "grouping", Dict{String, Any}())
     bootstrap = get(level3, "bootstrap", Dict{String, Any}())
+    sampling = get(level3, "sampling", Dict{String, Any}())
     run_cfg = get(raw, "run", Dict{String, Any}())
     figures = get(raw, "figures", Dict{String, Any}())
 
@@ -100,6 +101,7 @@ function read_level3_config(path::AbstractString;
         "stable_pair_probability_threshold" => Float64(get(bootstrap, "stable_pair_probability", 0.80)),
         "bootstrap_random_seed" => Int(get(bootstrap, "random_seed", Int(get(level3, "random_seed", 1729)))),
         "bootstrap_show_progress" => Bool(get(bootstrap, "show_progress", true)),
+        "sampling_random_seed" => Int(get(sampling, "random_seed", Int(get(level3, "random_seed", 1729)))),
         "figure_similarity_threshold" => Float64(get(figures, "similarity_threshold", 0.25)),
         "figure_formats" => String.(get(figures, "formats", ["png", "pdf"])),
         "run_load_level2_states" => Bool(get(run_cfg, "load_level2_states", true)),
@@ -110,6 +112,7 @@ function read_level3_config(path::AbstractString;
         "run_make_similarity_group_figure" => Bool(get(run_cfg, "make_similarity_group_figure", true)),
         "run_build_multiple_window_permeability_cases" => Bool(get(run_cfg, "build_multiple_window_permeability_cases", true)),
         "run_make_multiple_window_permeability_case_figure" => Bool(get(run_cfg, "make_multiple_window_permeability_case_figure", true)),
+        "run_sample_multiple_window_permeability_cases" => Bool(get(run_cfg, "sample_multiple_window_permeability_cases", true)),
     )
 end
 

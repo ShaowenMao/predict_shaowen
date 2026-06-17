@@ -1,0 +1,84 @@
+[paths]
+predict_data_root = "../../../thickness_scenario_data"
+output_root = "D:/codex_gom/UQ_workflow/three_level_sampling_162"
+level2_driver = "../level2/workflow/run_level2_workflow.jl"
+level3_driver = "../level3/workflow/run_level3_workflow.jl"
+
+[workflow]
+fixed_windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"]
+
+[run]
+run_level2 = true
+run_level3 = true
+resume = true
+stop_on_error = true
+max_geologies = 0
+
+[level2.run]
+screen_input_data = false
+build_level2_objects = true
+export_tables = true
+plot_joint_clusters = false
+plot_joint_clusters_3d = false
+plot_state_libraries = false
+plot_perturbation_pools = false
+run_sampling_test = false
+run_validation = false
+run_joint_cluster_sensitivity = false
+run_joint_cluster_bootstrap = false
+
+[level2]
+state_fraction = 0.20
+local_pool_fraction = 0.10
+local_pool_min_count = 25
+weights = [1.0, 1.0, 1.0]
+distance_metric = "log_unit"
+distance_weights = [1.0, 1.0, 1.0]
+max_k = 5
+silhouette_threshold = 0.25
+min_cluster_fraction = 0.05
+min_cluster_size = 10
+random_seed = 1729
+max_kmedoids_iter = 40
+num_restarts = 4
+
+[level2.plotting]
+state_violin_fixed_count_density_reference = 560.0
+local_pool_violin_fixed_count_density_reference = 120.0
+state_wide_pool_violin_fixed_count_density_reference = 560.0
+
+[level3.run]
+load_level2_states = true
+build_window_similarity_groups = true
+make_grouping_distance_figures = false
+run_bootstrap_grouping_qa = false
+make_bootstrap_grouping_figures = false
+make_similarity_group_figure = false
+build_multiple_window_permeability_cases = true
+make_multiple_window_permeability_case_figure = false
+sample_multiple_window_permeability_cases = true
+
+[level3]
+distance_metric = "energy_log_unit"
+normalization = "mean_internal_spread"
+pairwise_sample_size = 0
+random_seed = 1729
+
+[level3.grouping]
+grouping_mode = "full_data"
+similarity_threshold = 0.25
+
+[level3.bootstrap]
+bootstrap_count = 100
+bootstrap_sample_size = 2000
+similarity_threshold = 0.25
+stable_pair_probability = 0.80
+random_seed = 1729
+show_progress = true
+
+[level3.sampling]
+random_seed = 1729
+
+[level3.figures]
+similarity_threshold = 0.25
+formats = ["png", "pdf"]

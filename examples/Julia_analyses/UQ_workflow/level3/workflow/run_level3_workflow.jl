@@ -9,6 +9,7 @@ include(joinpath(@__DIR__, "..", "lib", "level3_bootstrap.jl"))
 include(joinpath(@__DIR__, "..", "lib", "level3_grouping.jl"))
 include(joinpath(@__DIR__, "..", "lib", "level3_permeability_cases.jl"))
 include(joinpath(@__DIR__, "..", "lib", "level3_plotting.jl"))
+include(joinpath(@__DIR__, "..", "..", "level2", "lib", "level2_selection.jl"))
 
 using .Level3IO
 using .Level3Distances
@@ -16,10 +17,12 @@ using .Level3Bootstrap
 using .Level3Grouping
 using .Level3PermeabilityCases
 using .Level3Plotting
+using .Level2Selection
 
 include(joinpath(@__DIR__, "steps", "step01_load_level2_states.jl"))
 include(joinpath(@__DIR__, "steps", "step02_build_window_similarity_groups.jl"))
 include(joinpath(@__DIR__, "steps", "step03_build_multiple_window_permeability_cases.jl"))
+include(joinpath(@__DIR__, "steps", "step04_sample_multiple_window_permeability_cases.jl"))
 
 """
     parse_args(args)
@@ -151,6 +154,16 @@ function main(args::Vector{String})
                     formats = String.(config["figure_formats"]),
                 )
                 save_figure_manifest(joinpath(table_root, "step03_multiple_window_permeability_case_figure_manifest.csv"), figure_paths)
+            end
+
+            if Bool(config["run_sample_multiple_window_permeability_cases"])
+                println("Step 04: sampling multiple-window permeability cases")
+                sampled_result = step04_sample_multiple_window_permeability_cases(
+                    level2_states,
+                    case_result,
+                    config,
+                )
+                save_sampled_multiple_window_permeability_outputs(sampled_result, config, table_root, report_root)
             end
         end
     end
@@ -463,6 +476,122 @@ function save_multiple_window_permeability_case_outputs(case_result::Dict{String
         "  multiple_window_permeability_window_assignments.csv",
     ]
     Level3IO.write_text_lines(joinpath(report_root, "level3_step03_multiple_window_permeability_cases_report.txt"), report)
+end
+
+"""
+    save_sampled_multiple_window_permeability_outputs(sampled_result, config, table_root, report_root)
+
+Write Step 4 sampled numeric permeability assignments. The long table has one
+row per case-window pair; the wide table has one row per multiple-window case.
+"""
+function save_sampled_multiple_window_permeability_outputs(sampled_result::Dict{String, Any},
+                                                           config::Dict{String, Any},
+                                                           table_root::AbstractString,
+                                                           report_root::AbstractString)
+    sampled_rows = Vector{Dict{String, Any}}(sampled_result["sampled_rows"])
+    long_rows = Vector{Vector{String}}()
+    for row in sampled_rows
+        push!(long_rows, [
+            string(row["geology_id"]),
+            string(row["case_id"]),
+            string(row["case_name"]),
+            string(row["case_category"]),
+            string(row["case_strength"]),
+            string(row["pattern_name"]),
+            string(row["orientation"]),
+            string(row["group_split_id"]),
+            string(row["window"]),
+            string(row["similarity_group"]),
+            string(row["assigned_state"]),
+            string(row["sampling_mode"]),
+            string(row["sampling_pool"]),
+            string(row["selected_sample_index"]),
+            string(row["source_pool"]),
+            string(row["source_pool_size"]),
+            string(row["random_seed"]),
+            metric_string(row["log_kxx"]),
+            metric_string(row["log_kyy"]),
+            metric_string(row["log_kzz"]),
+            metric_string(row["perm_kxx"]),
+            metric_string(row["perm_kyy"]),
+            metric_string(row["perm_kzz"]),
+        ])
+    end
+    long_header = ["geology_id", "case_id", "case_name", "case_category",
+                   "case_strength", "pattern_name", "orientation",
+                   "group_split_id", "window", "similarity_group",
+                   "assigned_state", "sampling_mode", "sampling_pool",
+                   "selected_sample_index", "source_pool", "source_pool_size",
+                   "random_seed", "log_kxx", "log_kyy", "log_kzz",
+                   "perm_kxx", "perm_kyy", "perm_kzz"]
+    Level3IO.write_csv(joinpath(table_root, "multiple_window_permeability_sampled_values.csv"),
+                       long_header,
+                       long_rows)
+
+    wide_header, wide_rows = sampled_case_matrix_rows(sampled_rows, String.(config["fixed_windows"]))
+    Level3IO.write_csv(joinpath(table_root, "multiple_window_permeability_sampled_case_matrix.csv"),
+                       wide_header,
+                       wide_rows)
+
+    report = String[
+        "Level 3 step 4 sampled multiple-window permeability report",
+        "created_at = $(Level3IO.timestamp_string())",
+        "geology_id = $(config["geology_id"])",
+        "sampling_random_seed = $(sampled_result["random_seed"])",
+        "case_count = $(sampled_result["case_count"])",
+        "case_window_row_count = $(length(sampled_rows))",
+        "",
+        "Generated tables:",
+        "  multiple_window_permeability_sampled_values.csv",
+        "  multiple_window_permeability_sampled_case_matrix.csv",
+    ]
+    Level3IO.write_text_lines(joinpath(report_root, "level3_step04_sampled_multiple_window_permeability_report.txt"), report)
+end
+
+"""
+    sampled_case_matrix_rows(sampled_rows, windows)
+
+Convert sampled long rows into one wide row per multiple-window permeability
+case.
+"""
+function sampled_case_matrix_rows(sampled_rows::Vector{Dict{String, Any}},
+                                  windows::Vector{String})
+    base_header = ["geology_id", "case_id", "case_name", "case_category",
+                   "case_strength", "pattern_name", "orientation",
+                   "group_split_id", "random_seed"]
+    window_fields = ["selected_sample_index", "assigned_state", "sampling_pool",
+                     "log_kxx", "log_kyy", "log_kzz", "perm_kxx", "perm_kyy", "perm_kzz"]
+    header = copy(base_header)
+    for window in windows
+        append!(header, ["$(window)_$(field)" for field in window_fields])
+    end
+
+    rows_by_case = Dict{String, Vector{Dict{String, Any}}}()
+    for row in sampled_rows
+        key = string(row["case_id"])
+        if !haskey(rows_by_case, key)
+            rows_by_case[key] = Dict{String, Any}[]
+        end
+        push!(rows_by_case[key], row)
+    end
+
+    rows = Vector{Vector{String}}()
+    for case_id in sort(collect(keys(rows_by_case)); by = value -> parse(Int, value))
+        case_rows = rows_by_case[case_id]
+        by_window = Dict(string(row["window"]) => row for row in case_rows)
+        first_row = first(case_rows)
+        out = [string(first_row[key]) for key in base_header]
+        for window in windows
+            haskey(by_window, window) || error("Missing sampled row for case $case_id, window $window")
+            row = by_window[window]
+            for field in window_fields
+                value = row[field]
+                push!(out, value isa AbstractFloat ? metric_string(value) : string(value))
+            end
+        end
+        push!(rows, out)
+    end
+    return header, rows
 end
 
 function metric_string(value)
