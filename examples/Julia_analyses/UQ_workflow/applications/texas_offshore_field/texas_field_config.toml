@@ -1,0 +1,25 @@
+[paths]
+summary_root = "D:/codex_gom/UQ_workflow/three_level_sampling_162/summary"
+level2_root = "D:/codex_gom/UQ_workflow/three_level_sampling_162/level2"
+output_root = "D:/codex_gom/UQ_workflow/texas_offshore_field_sampling"
+
+[workflow]
+fixed_windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"]
+
+[field]
+num_slices = 87
+shared_slice_groups = [[43, 44]]
+
+[sampling]
+random_seed = 20260617
+
+[outputs]
+export_mat = true
+validate_mat = true
+
+[run]
+max_geologies = 0
+case_ids = []
+only_geology = ""
+list_only = false
+overwrite = true
