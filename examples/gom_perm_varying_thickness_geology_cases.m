@@ -24,6 +24,18 @@ function results = gom_perm_varying_thickness_geology_cases(outputDir, varargin)
 %   'ThicknessScenarioFile'  - optional CSV with columns:
 %                              ScenarioLabel, Window, FWPattern, HWPattern.
 %                              Default: '' uses the six hard-coded designs.
+%   'GeologyCaseIndices'     - optional canonical geology case indices to
+%                              keep after building the geology case table.
+%                              Useful for running case 019 without changing
+%                              its label or seed definition.
+%   'SmearOverlapRule'       - clay-smear overlap rule passed to
+%                              Fault2D.placeMaterials. Use 'random' for the
+%                              legacy uniform-random rule or 'geologic' for
+%                              deterministic geology-aware overlap selection.
+%                              Use 'cell_union_psmear' for a moderated
+%                              cell-union rule that realizes each clay source
+%                              according to Psmear before unioning active
+%                              smear cells.
 %
 % Output structure:
 %   outputDir/
@@ -63,6 +75,9 @@ parser.addParameter('BatchSize', 200, @(x) isnumeric(x) && isscalar(x) && x >= 1
 parser.addParameter('ThicknessScenarios', [], ...
                     @(x) isempty(x) || isnumeric(x) || iscell(x) || ischar(x) || isstring(x));
 parser.addParameter('ThicknessScenarioFile', '', @(x) ischar(x) || isstring(x));
+parser.addParameter('GeologyCaseIndices', [], ...
+                    @(x) isempty(x) || (isnumeric(x) && isvector(x)));
+parser.addParameter('SmearOverlapRule', 'random', @(x) ischar(x) || isstring(x));
 parser.parse(varargin{:});
 opt = parser.Results;
 
@@ -98,6 +113,7 @@ ensureFolder(dataDir);
 ensureFolder(tableDir);
 
 geologyCaseTable = buildGeologyCaseDefinitionTable(faultingDepths, sandVclValues, clayVclValues);
+geologyCaseTable = filterGeologyCaseTable(geologyCaseTable, opt.GeologyCaseIndices);
 thicknessScenarioTable = loadThicknessScenarioTable(opt.ThicknessScenarioFile);
 thicknessScenarioTable = filterThicknessScenarios(thicknessScenarioTable, opt.ThicknessScenarios);
 validateThicknessScenarioTable(thicknessScenarioTable, windows);
@@ -155,6 +171,7 @@ for iscen = 1:numel(scenarioIds)
                 'TargetN', opt.Nsim, ...
                 'SeedBase', seedBase, ...
                 'CorrCoef', opt.CorrCoef, ...
+                'SmearOverlapRule', char(opt.SmearOverlapRule), ...
                 'FaultingDepth', caseInfo.FaultingDepth, ...
                 'SandVcl', caseInfo.SandVcl, ...
                 'ClayVcl', caseInfo.ClayVcl);
@@ -177,7 +194,8 @@ for iscen = 1:numel(scenarioIds)
                 [perms, meta] = runWindowPermSamplesResumable( ...
                     mySect, variedWindowOpt, opt.Nsim, opt.CorrCoef, U, ...
                     opt.UseParallel, seedBase, opt.ShowProgress, label, ...
-                    progressFile, expected, opt.Resume, opt.BatchSize);
+                    progressFile, expected, opt.Resume, opt.BatchSize, ...
+                    opt.SmearOverlapRule);
                 saveFinalRunCheckpoint(checkpointFile, perms, meta, expected);
                 if opt.ShowProgress
                     fprintf('  %s %s %s: saved %s\n', ...
@@ -262,6 +280,20 @@ end
 
 caseTable = cell2table(rows, 'VariableNames', ...
     {'CaseIndex', 'CaseLabel', 'FaultingDepth', 'SandVcl', 'ClayVcl'});
+end
+
+
+function caseTable = filterGeologyCaseTable(caseTable, requestedCaseIndices)
+% Keep selected canonical geology cases without renumbering them.
+
+if isempty(requestedCaseIndices)
+    return
+end
+
+requestedCaseIndices = requestedCaseIndices(:)';
+keep = ismember(caseTable.CaseIndex, requestedCaseIndices);
+caseTable = caseTable(keep, :);
+assert(~isempty(caseTable), 'No requested GeologyCaseIndices were found.')
 end
 
 
@@ -476,7 +508,7 @@ mySect = mySect.getMatPropDistr();
 end
 
 
-function [perms, meta] = runWindowPermSamplesResumable(mySect, windowOpt, targetN, rho, U, useParallel, seedBase, showProgress, label, progressFile, checkpointInfo, resume, batchSize)
+function [perms, meta] = runWindowPermSamplesResumable(mySect, windowOpt, targetN, rho, U, useParallel, seedBase, showProgress, label, progressFile, checkpointInfo, resume, batchSize, smearOverlapRule)
 % Generate exactly targetN valid permeability samples with resumable batches.
 
 state = initializeRunState(targetN, seedBase);
@@ -493,7 +525,8 @@ while state.NumValid < targetN
     currentBatchN = min(batchSize, remaining);
     batchSeedBase = seedBase + state.NumAttempts;
     batchPerms = runWindowPermSampleBatch(mySect, windowOpt, currentBatchN, rho, U, ...
-                                          useParallel, batchSeedBase);
+                                          useParallel, batchSeedBase, ...
+                                          smearOverlapRule);
     [validPerms, rejectedThisBatch] = sanitizeBatchPerms(batchPerms);
     takeCount = min(remaining, size(validPerms, 1));
     if takeCount > 0
@@ -528,6 +561,7 @@ meta.NumAttempts = state.NumAttempts;
 meta.NumRejected = state.NumRejected;
 meta.AcceptanceRatio = targetN / state.NumAttempts;
 meta.SeedBase = seedBase;
+meta.SmearOverlapRule = char(smearOverlapRule);
 meta.CompletedOn = char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss'));
 
 if exist(progressFile, 'file')
@@ -549,25 +583,27 @@ state.SeedBase = seedBase;
 end
 
 
-function perms = runWindowPermSampleBatch(mySect, windowOpt, Nsim, rho, U, useParallel, seedBase)
+function perms = runWindowPermSampleBatch(mySect, windowOpt, Nsim, rho, U, useParallel, seedBase, smearOverlapRule)
 % Generate one batch of permeability realizations.
 
 perms = nan(Nsim, 3);
 if useParallel
     parfor n = 1:Nsim
         rng(seedBase + n - 1, 'twister');
-        perms(n, :) = runSingleWindowPermRealization(mySect, windowOpt, rho, U);
+        perms(n, :) = runSingleWindowPermRealization(mySect, windowOpt, rho, U, ...
+                                                     smearOverlapRule);
     end
 else
     for n = 1:Nsim
         rng(seedBase + n - 1, 'twister');
-        perms(n, :) = runSingleWindowPermRealization(mySect, windowOpt, rho, U);
+        perms(n, :) = runSingleWindowPermRealization(mySect, windowOpt, rho, U, ...
+                                                     smearOverlapRule);
     end
 end
 end
 
 
-function perm = runSingleWindowPermRealization(mySect, windowOpt, rho, U)
+function perm = runSingleWindowPermRealization(mySect, windowOpt, rho, U, smearOverlapRule)
 % Run one 3D realization and return only the upscaled permeability in mD.
 
 perm = nan(1, 3);
@@ -595,7 +631,8 @@ try
         end
 
         smear = Smear(mySect, myFaultSection, G, 1);
-        myFaultSection = myFaultSection.placeMaterials(mySect, smear, G);
+        myFaultSection = myFaultSection.placeMaterials( ...
+            mySect, smear, G, 'SmearOverlapRule', smearOverlapRule);
         myFault = myFault.assignExtrudedVals(G, myFaultSection, k);
     end
 
