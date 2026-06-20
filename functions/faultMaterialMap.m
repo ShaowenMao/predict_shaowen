@@ -1,4 +1,4 @@
-function M = faultMaterialMap(G, FS, smear)
+function M = faultMaterialMap(G, FS, smear, varargin)
 %
 % -----------------------------SUMMARY------------------------------------
 % This function takes as inputs the Grid structure (G), faulted section (FS)
@@ -15,8 +15,14 @@ function M = faultMaterialMap(G, FS, smear)
 % Each smear (which occupies a given number of diagonals in M.vals as well
 % as the simulation grid) is initialized around the middle of the
 % corresponding unit in the FW or HW. The number of diagonals are decided
-% based on the corresponding thickness. In case of clay smear overlaps,
-% a single parent is selected according to a uniform PMF (random).
+% based on the corresponding thickness. In case of clay smear overlaps, a
+% single parent is selected using the requested overlap rule. The legacy
+% default is a uniform random selection. The geology-aware option selects
+% the source with the largest expected smear coverage, with source proximity
+% used as a tie-breaker. The cell-union-psmear option is a moderated
+% cell-based rule: each source first realizes its own discontinuous smear
+% according to Psmear, and the final clay mask is the union of those active
+% source masks.
 %
 % **Reminder**: Directly superposed sand layers (consecutive in FW or HW)
 % should be collapsed in FW and HW variables. That is, FW, for example,
@@ -34,6 +40,22 @@ function M = faultMaterialMap(G, FS, smear)
 % G   = MRST Grid structure
 % FS  = FaultedSection object with valid fields.
 % smear = Smear object with valid fields.
+%
+% OPTIONAL INPUTS:
+%   SmearOverlapRule = how to assign a parent clay source when multiple
+%                      smear domains overlap in the same diagonal group.
+%                      'random'             : legacy uniform random source
+%                                             selection.
+%                      'geologic'           : deterministic source selection
+%                                             using largest nDiag*Psmear,
+%                                             then nearest source-layer
+%                                             center as tie-breaker.
+%                      'cell_union_psmear'  : Psmear-controlled cell union.
+%                                             Each source first realizes an
+%                                             active smear mask using the
+%                                             existing object-placement
+%                                             logic; active masks are then
+%                                             unioned cell-by-cell.
 %
 % ------------------------------OUTPUT------------------------------------
 % M = matrix structure. Contains the following fields:
@@ -111,6 +133,11 @@ function M = faultMaterialMap(G, FS, smear)
 %   
 %__________________________________________________________________________
 
+% Optional inputs
+opt.SmearOverlapRule = 'random';
+opt = merge_options_relaxed(opt, varargin{:});
+smearOverlapRule = normalizeSmearOverlapRule(opt.SmearOverlapRule);
+
 % Initial values to Matrix structure
 if G.griddim == 3
     %id_dim = 2; % extruded grid
@@ -125,6 +152,7 @@ M.unit        = FS.ParentId;                    % Unit domain of each group (par
 M.isclay      = [FS.FW.IsClay, FS.HW.IsClay];   % total units and clay or not  
 M.unitIn      = M.unit;                         % For reference (unchanged)
 M.isclayIn    = M.isclay;                       % "
+M.smearOverlapRule = smearOverlapRule;
 idc           = find(M.isclay);
         
 
@@ -188,12 +216,20 @@ if sum(M.nDiag) >= sum(M.nDiagTot) % smear may occupy the full fault area
     end
 end
 
+if strcmp(smearOverlapRule, 'cell_union_psmear')
+    M = buildCellUnionPsmearMap(M, G, FS, smear, id_dim);
+    return
+end
+
 
 % 1.5 Unit selection in each diagonal group, accounting for potential 
-%     overlaps: Randomly select unit in overlapping areas. Note that, in 
-%     case of overlaps, this may lead to the same unit appearing more than 
-%     once and non-consecutively. Moreover, units may no longer be centered 
-%     with respect to source layer in HW or FW (only in case of overlaps).
+%     overlaps. With the legacy random rule, a single candidate source is
+%     selected uniformly in overlapping areas. With the geology-aware rule,
+%     the candidate with the largest expected smear coverage is selected,
+%     and source proximity is used as a deterministic tie-breaker. Note
+%     that, in case of overlaps, this may lead to the same unit appearing
+%     more than once and non-consecutively. Moreover, units may no longer be
+%     centered with respect to source layer in HW or FW.
 
 % Find all units potentially present in each diagonal
 nDiag = sum(G.cartDims(1:2)) - 1;
@@ -221,8 +257,9 @@ for n = 1:size(diagsGroup, 1)
     repeatedUnitNonConsec = false;
     vals = unique(Omap(diagsGroup(n, 1), :));  
     vals(vals == 0) = [];
-    idSelectedUnit = randi(numel(vals), 1);
-    unitGroup(n) = vals(idSelectedUnit);
+    unitGroup(n) = selectSmearOverlapUnit(vals, diagsGroup(n, :), M, ...
+                                          smear, G, id_dim, ...
+                                          smearOverlapRule);
     if isnan(DiagBot(unitGroup(n)))                     % new unit
         DiagBot(unitGroup(n)) = diagsGroup(n, 1) - G.cartDims(id_dim);
         DiagTop(unitGroup(n)) = diagsGroup(n, 2) - G.cartDims(id_dim);
@@ -466,4 +503,271 @@ end
 M.units = transpose(M.units);
 % M.vals also needs to be transposed. We do it later in placeSmearObjects.
 
+end
+
+function rule = normalizeSmearOverlapRule(ruleIn)
+%NORMALIZESMEAROVERLAPRULE Return canonical clay-smear overlap rule name.
+
+if isstring(ruleIn)
+    ruleIn = char(ruleIn);
+end
+if ~ischar(ruleIn)
+    error('SmearOverlapRule must be a character vector or string scalar.')
+end
+
+rule = lower(strtrim(ruleIn));
+switch rule
+    case {'random', 'legacy', 'uniform_random'}
+        rule = 'random';
+    case {'geologic', 'geological', 'geology_aware', ...
+          'deterministic_geologic'}
+        rule = 'geologic';
+    case {'cell_union_psmear', 'cell-union-psmear', ...
+          'union_psmear', 'cell_based_union_psmear', ...
+          'psmear_cell_union'}
+        rule = 'cell_union_psmear';
+    otherwise
+        error(['Unknown SmearOverlapRule "%s". Use "random" or ' ...
+               '"geologic", or "cell_union_psmear".'], ruleIn)
+end
+end
+
+function M = buildCellUnionPsmearMap(M, G, FS, smear, id_dim)
+%BUILDCELLUNIONPSMEARMAP Build a Psmear-controlled cell-wise smear map.
+%
+% Each clay source first realizes its own active smear mask using the same
+% object-based placement logic used by the legacy workflow. The final clay
+% map is the union of those active source masks. If multiple active sources
+% occupy one cell, the nearest source layer supplies the parent material.
+
+n = G.cartDims(id_dim);
+[rowId, colId] = ndgrid(1:n, 1:n);
+cellDiag = rowId - colId;
+
+pSmearByUnit = zeros(1, max(M.unitIn));
+pSmear = smear.Psmear;
+pSmear(~isfinite(pSmear)) = 0;
+pSmearByUnit(M.isclayIn) = pSmear;
+actualPByUnit = zeros(size(pSmearByUnit));
+
+clayUnits = M.unitIn(M.isclayIn);
+clayMask = false(n, n);
+unitMap = zeros(n, n);
+bestDistance = inf(n, n);
+
+for i = 1:numel(clayUnits)
+    unitId = clayUnits(i);
+    if M.nDiag(unitId) <= 0 || pSmearByUnit(unitId) <= 0
+        continue
+    end
+
+    candidateMask = sourceCellMask(M, G, FS, unitId, id_dim);
+    if ~any(candidateMask(:))
+        continue
+    end
+
+    if pSmearByUnit(unitId) >= 1
+        activeMask = candidateMask;
+        actualPByUnit(unitId) = 1;
+    else
+        [activeMask, actualPByUnit(unitId)] = buildSourcePsmearActiveMask( ...
+            M, G, FS, smear, unitId, candidateMask);
+    end
+
+    if ~any(activeMask(:))
+        continue
+    end
+
+    sourceDistance = abs(cellDiag - M.layerDiagCenter(unitId));
+    tie = abs(sourceDistance - bestDistance) <= 1e-12 & ...
+          (unitMap == 0 | unitId < unitMap);
+    update = activeMask & (sourceDistance < bestDistance | tie);
+
+    clayMask = clayMask | activeMask;
+    unitMap(update) = unitId;
+    bestDistance(update) = sourceDistance(update);
+end
+
+sandUnitMap = nearestSandUnitMap(M, cellDiag);
+if any(~clayMask(:)) && any(sandUnitMap(:) == 0)
+    error(['cell_union_psmear requires at least one sand parent unit ' ...
+           'when some cells are not occupied by clay smear.'])
+end
+unitMap(~clayMask) = sandUnitMap(~clayMask);
+
+if any(clayMask(:) & unitMap(:) == 0)
+    error('cell_union_psmear failed to assign a parent unit to clay cells.')
+end
+
+M.vals = clayMask;
+M.units = unitMap;
+M.cellBasedFinal = true;
+M.cellDiag = cellDiag;
+M.cellBasedRuleDescription = ['Psmear-controlled cell-wise clay-source ' ...
+    'union with nearest-source parent assignment for overlapping active ' ...
+    'clay cells.'];
+M.PsmearByUnit = pSmearByUnit;
+M.actualPsmearByUnit = actualPByUnit;
+
+appearingUnits = unique(unitMap(:))';
+appearingUnits(appearingUnits == 0) = [];
+M.unit = appearingUnits;
+M.isclay = ismember(M.unit, M.unitIn(M.isclayIn));
+M.nDiag = nan(1, numel(M.unit));
+M.DiagBot = nan(1, numel(M.unit));
+M.DiagTop = nan(1, numel(M.unit));
+M.clayDiagBot = [];
+M.divLayerDiag = [];
+M.unitInClayGaps = nan(1, numel(M.unit));
+M.windowTop = nan(1, numel(M.unit));
+M.windowBot = nan(1, numel(M.unit));
+
+appearingClayUnits = unique(unitMap(clayMask))';
+appearingClayUnits(appearingClayUnits == 0) = [];
+M.Psmear = pSmearByUnit(appearingClayUnits);
+M.P = [M.Psmear; actualPByUnit(appearingClayUnits)];
+
+inputClayUnits = M.unitIn(M.isclayIn);
+M.idSmearInRemoved = find(~ismember(inputClayUnits, appearingClayUnits));
+end
+
+function [activeMask, actualP] = buildSourcePsmearActiveMask(M, G, FS, ...
+    smear, unitId, candidateMask)
+%BUILDSOURCEPSMEARACTIVEMASK Realize one source's discontinuous smear.
+
+[idBot, idTop] = sourceWindowBounds(M, G, FS, unitId);
+
+Msource = struct();
+Msource.vals = false(size(M.vals));
+Msource.units = zeros(size(M.units));
+Msource.unit = unitId;
+Msource.isclay = true;
+Msource.unitIn = M.unitIn;
+Msource.isclayIn = M.isclayIn;
+Msource.nDiag = M.nDiag(unitId);
+Msource.DiagBot = M.DiagBot(unitId);
+Msource.DiagTop = M.DiagTop(unitId);
+Msource.Psmear = pSmearForUnit(M, smear, unitId);
+Msource.windowBot = idBot;
+Msource.windowTop = idTop;
+
+Msource = placeSmearObjects(Msource, smear, FS, G, 0.025, 0);
+activeMask = logical(Msource.vals) & candidateMask;
+actualP = sum(activeMask(:)) / max(1, sum(candidateMask(:)));
+end
+
+function p = pSmearForUnit(M, smear, unitId)
+%PSMEARFORUNIT Return Psmear for one input clay source unit.
+
+pByUnit = zeros(1, max(M.unitIn));
+p = smear.Psmear;
+p(~isfinite(p)) = 0;
+pByUnit(M.isclayIn) = p;
+p = pByUnit(unitId);
+end
+
+function mask = sourceCellMask(M, G, FS, unitId, id_dim)
+%SOURCECELLMASK Return final-orientation cells reachable by one clay source.
+
+n = G.cartDims(id_dim);
+diagBot = M.DiagBot(unitId);
+diagTop = M.DiagTop(unitId);
+nDiag = diagTop - diagBot + 1;
+
+if nDiag <= 0
+    mask = false(n, n);
+    return
+end
+
+if ~ismember(unitId, M.unitIn(M.isclayIn))
+    mask = false(n, n);
+    return
+end
+[idBot, idTop] = sourceWindowBounds(M, G, FS, unitId);
+
+diagVals = false(G.cartDims(end), nDiag);
+diagVals(idBot:idTop, :) = true;
+diagVals = flipud(diagVals);
+maskPreTranspose = full(spdiags(diagVals, -diagTop:-diagBot, false(n)));
+mask = transpose(maskPreTranspose);
+end
+
+function [idBot, idTop] = sourceWindowBounds(M, G, FS, unitId)
+%SOURCEWINDOWBOUNDS Return bottom/top cell ids reachable by one clay source.
+
+if ismember(unitId, FS.FW.Id)
+    idTop = round((M.layerTop(unitId) / ...
+                  (G.cartDims(end)*G.cellDim(end))) * G.cartDims(end));
+    idTop(idTop > G.cartDims(end)) = G.cartDims(end);
+    idBot = 1;
+else
+    idTop = G.cartDims(end);
+    idBot = round((M.layerBot(unitId) / ...
+                  (G.cartDims(end)*G.cellDim(end))) * G.cartDims(end));
+    idBot(idBot == 0) = 1;
+end
+end
+
+function unitMap = nearestSandUnitMap(M, cellDiag)
+%NEARESTSANDUNITMAP Assign each cell to the closest sand source layer.
+
+sandUnits = M.unitIn(~M.isclayIn);
+unitMap = zeros(size(cellDiag));
+if isempty(sandUnits)
+    return
+end
+
+bestDistance = inf(size(cellDiag));
+for i = 1:numel(sandUnits)
+    unitId = sandUnits(i);
+    sourceDistance = abs(cellDiag - M.layerDiagCenter(unitId));
+    tie = abs(sourceDistance - bestDistance) <= 1e-12 & ...
+          (unitMap == 0 | unitId < unitMap);
+    update = sourceDistance < bestDistance | tie;
+    unitMap(update) = unitId;
+    bestDistance(update) = sourceDistance(update);
+end
+end
+
+function unitId = selectSmearOverlapUnit(vals, diagGroup, M, smear, G, ...
+                                         id_dim, rule)
+%SELECTSMEAROVERLAPUNIT Select one parent clay source for an overlap group.
+%
+% The random rule preserves the original PREDICT behavior. The geology-aware
+% rule first selects the source with the largest expected smear coverage,
+% nDiag * Psmear. If that is tied, it selects the source whose original
+% layer-center diagonal is closest to the disputed diagonal group center.
+
+if isscalar(vals)
+    unitId = vals;
+    return
+end
+
+switch rule
+    case 'random'
+        unitId = vals(randi(numel(vals), 1));
+        
+    case 'geologic'
+        pSmearByUnit = zeros(1, max(M.unitIn));
+        pSmear = smear.Psmear;
+        pSmear(~isfinite(pSmear)) = 0;
+        pSmearByUnit(M.isclayIn) = pSmear;
+        nDiagScore = M.nDiag(vals);
+        nDiagScore(~isfinite(nDiagScore)) = 0;
+        coverageScore = nDiagScore .* pSmearByUnit(vals);
+        maxScore = max(coverageScore);
+        scoreTol = max(1e-12, 1e-10*max(1, abs(maxScore)));
+        candidateIds = vals(abs(coverageScore - maxScore) <= scoreTol);
+        
+        if numel(candidateIds) > 1
+            groupCenter = mean(diagGroup) - G.cartDims(id_dim);
+            sourceDistance = abs(M.layerDiagCenter(candidateIds) - groupCenter);
+            minDistance = min(sourceDistance);
+            distanceTol = max(1e-12, 1e-10*max(1, abs(minDistance)));
+            candidateIds = candidateIds(abs(sourceDistance - minDistance) <= ...
+                                        distanceTol);
+        end
+        
+        unitId = min(candidateIds); % final deterministic tie-breaker
+end
 end

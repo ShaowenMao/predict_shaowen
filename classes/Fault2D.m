@@ -222,7 +222,7 @@ classdef Fault2D
                                                    obj.MatProps.thick);
         end
         
-        function obj = placeMaterials(obj, FS, smear, G)
+        function obj = placeMaterials(obj, FS, smear, G, varargin)
             %
             % Place materials in the fault zone, assign permeabilities to
             % each fault material. See documentation in used functions 
@@ -233,6 +233,16 @@ classdef Fault2D
             %   FS:     An instance of FaultedSection
             %   smear:  An instance of Smear
             %   G:      fault grid (corresponding MRST grid structure)
+            %
+            % OPTIONAL INPUT:
+            %   SmearOverlapRule = clay-smear overlap handling passed to
+            %                      faultMaterialMap. Use 'random' for the
+            %                      legacy uniform-random rule or 'geologic'
+            %                      for deterministic geology-aware selection.
+            %                      Use 'cell_union_psmear' for a moderated
+            %                      cell-union rule that realizes each clay
+            %                      source according to Psmear before
+            %                      unioning active smear cells.
             %
             % OUTPUT: 
             %   property "MatMap" added to obj, with corresponding 
@@ -245,10 +255,16 @@ classdef Fault2D
             
             % Mapping matrix (material in each grid cell)
             % MatMap makes this object somewhat heavy on RAM.
-            obj.MatMap = faultMaterialMap(G, FS, smear);
+            obj.MatMap = faultMaterialMap(G, FS, smear, varargin{:});
             
             % Smear placement (object simulation)
-            if any(obj.MatMap.Psmear < 1)
+            if isfield(obj.MatMap, 'cellBasedFinal') && obj.MatMap.cellBasedFinal
+                % Cell-based union returns a final cell-wise map.
+                % It should not be passed through the diagonal object placer.
+                if ~isfield(obj.MatMap, 'P') || isempty(obj.MatMap.P)
+                    obj.MatMap.P = [obj.MatMap.Psmear; obj.MatMap.Psmear];
+                end
+            elseif any(obj.MatMap.Psmear < 1)
                     tol = 0.025;
                     obj.MatMap = placeSmearObjects(obj.MatMap, smear, FS, ...
                                                    G, tol, 0);
@@ -375,9 +391,9 @@ classdef Fault2D
            c = colorbar;
            set(c,'YTick', [0 1]);
            if unique(idGrid) == 0
-               caxis([0 0.1]);
+               clim([0 0.1]);
            elseif unique(idGrid) == 1
-               caxis([0.9 1]);
+               clim([0.9 1]);
            end
            %xlabel('$x$ [m]', latx{:}); ylabel('$z$ [m]', latx{:})
            set(gca,'fontSize', 10)
@@ -390,8 +406,8 @@ classdef Fault2D
                        'EdgeAlpha', 0);
            xlim([0 obj.MatProps.thick]); ylim([0 obj.Disp]); 
            axis off
-           c = colorbar;
-           caxis([0 1]);
+           colorbar;
+           clim([0 1]);
            set(gca,'fontSize', 10)
            %c.Label.Interpreter = 'latex'; 
            %c.Label.String = '$n$ [-]';
@@ -408,8 +424,8 @@ classdef Fault2D
                        'EdgeAlpha', 0);
            xlim([0 obj.MatProps.thick]); ylim([0 obj.Disp]); 
            axis off
-           c = colorbar;
-           caxis([0 max([max(rock.poro), 0.25])]);
+           colorbar;
+           clim([0 max([max(rock.poro), 0.25])]);
            set(gca,'fontSize', 10)
            %c.Label.Interpreter = 'latex'; 
            %c.Label.String = '$n$ [-]';
@@ -426,7 +442,7 @@ classdef Fault2D
            xlim([0 obj.MatProps.thick]); ylim([0 obj.Disp]); %axis off
            c = colorbar;
            %if ~any(obj.MatMap.isclay)
-                caxis([min(log10(rock.perm(:,1)/(milli*darcy))) ...
+                clim([min(log10(rock.perm(:,1)/(milli*darcy))) ...
                        max(log10(rock.perm(:,3)/(milli*darcy)))]);
            %else
            %    caxis([min(log10(rock.perm(:,1)/(milli*darcy))) 2]);
@@ -463,7 +479,7 @@ classdef Fault2D
            axis off
            c = colorbar;
            %if ~any(obj.MatMap.isclay) % if there is sand
-               caxis([min(log10(rock.perm(:,1)/(milli*darcy))) ...
+               clim([min(log10(rock.perm(:,1)/(milli*darcy))) ...
                       max(log10(rock.perm(:,3)/(milli*darcy)))]);
            %else
            %   caxis([min(log10(rock.perm(:,1)/(milli*darcy))) 2]);

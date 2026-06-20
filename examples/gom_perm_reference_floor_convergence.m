@@ -41,6 +41,9 @@ function results = gom_perm_reference_floor_convergence(outputDir, varargin)
 %                     Default: 30
 %   'Windows'       - paper windows. Default: {'famp1',...,'famp6'}
 %   'CorrCoef'      - copula correlation coefficient. Default: 0.6
+%   'SmearOverlapRule' - clay-smear overlap rule passed to Fault2D.
+%                     Default: 'random'. Use 'cell_union_psmear' for the
+%                     cell-wise union rule moderated by P(smear).
 %   'BaseSeed'      - deterministic seed base. Default: 1729
 %   'UseParallel'   - run realizations with parfor. Default: false
 %   'NumWorkers'    - requested pool size when auto-starting. Default: []
@@ -73,6 +76,8 @@ parser.addParameter('NumRepeats', 30, @(x) isnumeric(x) && isscalar(x) && x >= 1
 parser.addParameter('Windows', {'famp1', 'famp2', 'famp3', 'famp4', 'famp5', 'famp6'}, ...
                     @(x) iscell(x) || isstring(x));
 parser.addParameter('CorrCoef', 0.6, @(x) isnumeric(x) && isscalar(x));
+parser.addParameter('SmearOverlapRule', 'random', ...
+                    @(x) ischar(x) || (isstring(x) && isscalar(x)));
 parser.addParameter('BaseSeed', 1729, @(x) isnumeric(x) && isscalar(x));
 parser.addParameter('UseParallel', false, @(x) islogical(x) && isscalar(x));
 parser.addParameter('NumWorkers', [], @(x) isempty(x) || (isnumeric(x) && isscalar(x) && x >= 1));
@@ -82,6 +87,7 @@ parser.addParameter('MakePlots', true, @(x) islogical(x) && isscalar(x));
 parser.addParameter('BinEdges', linspace(-7, 3, 25), @(x) isnumeric(x) && isvector(x) && numel(x) >= 3);
 parser.parse(varargin{:});
 opt = parser.Results;
+opt.SmearOverlapRule = normalizeSmearOverlapRuleForConvergence(opt.SmearOverlapRule);
 
 testNsims = sortUniqueNumericVector(opt.TestNsims(:)');
 assert(all(testNsims < opt.ReferenceNsim), ...
@@ -144,6 +150,7 @@ for iw = 1:numWindows
     ensureFolder(smallRunDir);
 
     windowOpt = getWindowOptions(window);
+    windowOpt.SmearOverlapRule = opt.SmearOverlapRule;
     mySect = buildFaultedSection(windowOpt);
 
     referencePerms = cell(numRefs, 1);
@@ -158,6 +165,7 @@ for iw = 1:numWindows
                           'TargetN', opt.ReferenceNsim, ...
                           'SeedBase', refSeed, ...
                           'CorrCoef', opt.CorrCoef, ...
+                          'SmearOverlapRule', opt.SmearOverlapRule, ...
                           'ReferenceId', ir, 'Nsim', NaN, 'Repeat', NaN);
         if opt.Resume
             [referencePerms{ir}, referenceMeta{ir}, loadedFromCheckpoint] = ...
@@ -220,6 +228,7 @@ for iw = 1:numWindows
                               'TargetN', nCurrent, ...
                               'SeedBase', runSeed, ...
                               'CorrCoef', opt.CorrCoef, ...
+                              'SmearOverlapRule', opt.SmearOverlapRule, ...
                               'ReferenceId', NaN, 'Nsim', nCurrent, ...
                               'Repeat', irpt);
             if opt.Resume
@@ -408,6 +417,7 @@ meta.NumAttempts = numAttempts;
 meta.NumRejected = numRejected;
 meta.AcceptanceRatio = targetN / numAttempts;
 meta.SeedBase = seedBase;
+meta.SmearOverlapRule = getWindowSmearOverlapRule(windowOpt);
 end
 
 
@@ -432,6 +442,7 @@ end
 function perm = runSingleWindowPermRealization(mySect, windowOpt, rho, U)
 % Run one 3D realization and return only the upscaled permeability in mD.
 
+smearOverlapRule = getWindowSmearOverlapRule(windowOpt);
 nSeg = getNSeg(mySect.Vcl, mySect.IsClayVcl, mySect.DepthFaulting);
 myFaultSection = Fault2D(mySect, windowOpt.fDip);
 myFault = Fault3D(myFaultSection, mySect);
@@ -454,7 +465,8 @@ for k = 1:numel(myFault.SegLen)
     end
 
     smear = Smear(mySect, myFaultSection, G, 1);
-    myFaultSection = myFaultSection.placeMaterials(mySect, smear, G);
+    myFaultSection = myFaultSection.placeMaterials(mySect, smear, G, ...
+        'SmearOverlapRule', smearOverlapRule);
     myFault = myFault.assignExtrudedVals(G, myFaultSection, k);
 end
 
@@ -754,7 +766,8 @@ for ir = 1:numel(referenceMeta)
     meta = referenceMeta{ir};
     rows(end+1, :) = {window, 'Reference', ir, NaN, NaN, ...
                       meta.TargetN, meta.NumAttempts, meta.NumRejected, ...
-                      meta.AcceptanceRatio, meta.SeedBase}; %#ok<AGROW>
+                      meta.AcceptanceRatio, meta.SeedBase, ...
+                      checkpointSmearOverlapRule(meta)}; %#ok<AGROW>
 end
 
 for it = 1:numel(testNsims)
@@ -762,13 +775,15 @@ for it = 1:numel(testNsims)
         meta = smallMeta{it, irpt};
         rows(end+1, :) = {window, 'SmallRun', NaN, testNsims(it), irpt, ...
                           meta.TargetN, meta.NumAttempts, meta.NumRejected, ...
-                          meta.AcceptanceRatio, meta.SeedBase}; %#ok<AGROW>
+                          meta.AcceptanceRatio, meta.SeedBase, ...
+                          checkpointSmearOverlapRule(meta)}; %#ok<AGROW>
     end
 end
 
 tbl = cell2table(rows, 'VariableNames', ...
     {'Window', 'EnsembleType', 'ReferenceId', 'Nsim', 'Repeat', ...
-     'TargetN', 'NumAttempts', 'NumRejected', 'AcceptanceRatio', 'SeedBase'});
+     'TargetN', 'NumAttempts', 'NumRejected', 'AcceptanceRatio', ...
+     'SeedBase', 'SmearOverlapRule'});
 end
 
 
@@ -783,6 +798,56 @@ function seed = makeSmallRunSeed(baseSeed, windowId, testId, repeatId)
 % Deterministic seed for each repeated small ensemble.
 
 seed = baseSeed + 100000000*windowId + 1000000*(100 + testId) + 10000*repeatId;
+end
+
+
+function rule = getWindowSmearOverlapRule(windowOpt)
+% Return the canonical smear-overlap rule for a window option structure.
+
+if isfield(windowOpt, 'SmearOverlapRule')
+    rule = normalizeSmearOverlapRuleForConvergence(windowOpt.SmearOverlapRule);
+else
+    rule = 'random';
+end
+end
+
+
+function rule = checkpointSmearOverlapRule(info)
+% Return checkpoint rule, treating older untagged checkpoints as legacy.
+
+if isfield(info, 'SmearOverlapRule')
+    rule = normalizeSmearOverlapRuleForConvergence(info.SmearOverlapRule);
+else
+    rule = 'random';
+end
+end
+
+
+function rule = normalizeSmearOverlapRuleForConvergence(ruleIn)
+% Return canonical smear-overlap rule names used by faultMaterialMap.
+
+if isstring(ruleIn)
+    ruleIn = char(ruleIn);
+end
+if ~ischar(ruleIn)
+    error('SmearOverlapRule must be a character vector or string scalar.')
+end
+
+rule = lower(strtrim(ruleIn));
+switch rule
+    case {'random', 'legacy', 'uniform_random'}
+        rule = 'random';
+    case {'geologic', 'geological', 'geology_aware', ...
+          'deterministic_geologic'}
+        rule = 'geologic';
+    case {'cell_union_psmear', 'cell-union-psmear', ...
+          'cell_union_p_smear', 'cell-union-p-smear', ...
+          'psmear_union'}
+        rule = 'cell_union_psmear';
+    otherwise
+        error(['Unknown SmearOverlapRule "%s". Use "random", ' ...
+               '"geologic", or "cell_union_psmear".'], ruleIn)
+end
 end
 
 
@@ -846,6 +911,8 @@ tf = strcmpi(string(checkpointInfo.Kind), string(expected.Kind)) && ...
      isequaln(checkpointInfo.TargetN, expected.TargetN) && ...
      isequaln(checkpointInfo.SeedBase, expected.SeedBase) && ...
      isequaln(checkpointInfo.CorrCoef, expected.CorrCoef) && ...
+     strcmpi(string(checkpointSmearOverlapRule(checkpointInfo)), ...
+             string(checkpointSmearOverlapRule(expected))) && ...
      isequaln(checkpointInfo.ReferenceId, expected.ReferenceId) && ...
      isequaln(checkpointInfo.Nsim, expected.Nsim) && ...
      isequaln(checkpointInfo.Repeat, expected.Repeat);
