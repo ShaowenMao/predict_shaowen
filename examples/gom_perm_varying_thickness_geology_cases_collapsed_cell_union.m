@@ -193,6 +193,8 @@ for iscen = 1:numel(scenarioIds)
                 'SeedBase', seedBase, ...
                 'CorrCoef', opt.CorrCoef, ...
                 'SmearOverlapRule', char(opt.SmearOverlapRule), ...
+                'CollapseAdjacentLithology', true, ...
+                'AcceptedSeedTracking', true, ...
                 'FaultingDepth', caseInfo.FaultingDepth, ...
                 'SandVcl', caseInfo.SandVcl, ...
                 'ClayVcl', caseInfo.ClayVcl);
@@ -646,14 +648,20 @@ while state.NumValid < targetN
     remaining = targetN - state.NumValid;
     currentBatchN = min(batchSize, remaining);
     batchSeedBase = seedBase + state.NumAttempts;
+    batchAttemptIndices = state.NumAttempts + (1:currentBatchN);
+    batchSeeds = batchSeedBase + (0:(currentBatchN-1));
     batchPerms = runWindowPermSampleBatch(mySect, windowOpt, currentBatchN, rho, U, ...
                                           useParallel, batchSeedBase, ...
                                           smearOverlapRule);
-    [validPerms, rejectedThisBatch] = sanitizeBatchPerms(batchPerms);
+    [validPerms, rejectedThisBatch, validMask] = sanitizeBatchPerms(batchPerms);
+    validSeeds = batchSeeds(validMask);
+    validAttemptIndices = batchAttemptIndices(validMask);
     takeCount = min(remaining, size(validPerms, 1));
     if takeCount > 0
         insertIds = state.NumValid + (1:takeCount);
         state.Perms(insertIds, :) = validPerms(1:takeCount, :);
+        state.AcceptedSeeds(insertIds) = validSeeds(1:takeCount);
+        state.AcceptedAttemptIndices(insertIds) = validAttemptIndices(1:takeCount);
         state.NumValid = state.NumValid + takeCount;
     end
 
@@ -683,6 +691,8 @@ meta.NumAttempts = state.NumAttempts;
 meta.NumRejected = state.NumRejected;
 meta.AcceptanceRatio = targetN / state.NumAttempts;
 meta.SeedBase = seedBase;
+meta.AcceptedSeeds = state.AcceptedSeeds(1:targetN);
+meta.AcceptedAttemptIndices = state.AcceptedAttemptIndices(1:targetN);
 meta.SmearOverlapRule = char(smearOverlapRule);
 meta.CompletedOn = char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss'));
 
@@ -697,6 +707,8 @@ function state = initializeRunState(targetN, seedBase)
 
 state = struct();
 state.Perms = nan(targetN, 3);
+state.AcceptedSeeds = nan(targetN, 1);
+state.AcceptedAttemptIndices = nan(targetN, 1);
 state.NumValid = 0;
 state.NumAttempts = 0;
 state.NumRejected = 0;
@@ -768,12 +780,12 @@ end
 end
 
 
-function [validPerms, numRejected] = sanitizeBatchPerms(perms)
+function [validPerms, numRejected, validMask] = sanitizeBatchPerms(perms)
 % Keep only finite positive permeability realizations.
 
-mask = all(perms > 0, 2) & all(isfinite(perms), 2);
-validPerms = perms(mask, :);
-numRejected = sum(~mask);
+validMask = all(perms > 0, 2) & all(isfinite(perms), 2);
+validPerms = perms(validMask, :);
+numRejected = sum(~validMask);
 end
 
 
@@ -846,7 +858,8 @@ if ~isRunCheckpointCompatible(S.checkpointInfo, expected)
     return
 end
 
-requiredFields = {'Perms', 'NumValid', 'NumAttempts', 'NumRejected', 'BatchId', 'SeedBase'};
+requiredFields = {'Perms', 'AcceptedSeeds', 'AcceptedAttemptIndices', ...
+                  'NumValid', 'NumAttempts', 'NumRejected', 'BatchId', 'SeedBase'};
 for i = 1:numel(requiredFields)
     if ~isfield(S.state, requiredFields{i})
         warning('Progress checkpoint %s is incomplete. Restarting that case.', filePath)
@@ -877,6 +890,12 @@ if numValid > 0
         warning('Progress checkpoint %s contains invalid stored permeability values. Restarting that case.', filePath)
         return
     end
+    acceptedSeedBlock = S.state.AcceptedSeeds(1:numValid);
+    acceptedAttemptBlock = S.state.AcceptedAttemptIndices(1:numValid);
+    if any(~isfinite(acceptedSeedBlock)) || any(~isfinite(acceptedAttemptBlock))
+        warning('Progress checkpoint %s is missing accepted seed tracking. Restarting that case.', filePath)
+        return
+    end
 end
 
 state = S.state;
@@ -892,6 +911,8 @@ requiredFields = {'Kind', 'ScenarioIndex', 'ScenarioLabel', 'ScenarioName', ...
                   'FWPattern', 'HWPattern', 'FWThickness', 'HWThickness', ...
                   'FWZmax', 'HWZmax', 'CaseIndex', 'CaseLabel', ...
                   'TargetN', 'SeedBase', 'CorrCoef', 'SmearOverlapRule', ...
+                  'CollapseAdjacentLithology', ...
+                  'AcceptedSeedTracking', ...
                   'FaultingDepth', 'SandVcl', 'ClayVcl'};
 for i = 1:numel(requiredFields)
     if ~isfield(checkpointInfo, requiredFields{i})
@@ -919,6 +940,10 @@ tf = strcmpi(string(checkpointInfo.Kind), string(expected.Kind)) && ...
      isequaln(checkpointInfo.SeedBase, expected.SeedBase) && ...
      isequaln(checkpointInfo.CorrCoef, expected.CorrCoef) && ...
      strcmpi(string(checkpointInfo.SmearOverlapRule), string(expected.SmearOverlapRule)) && ...
+     isequaln(logical(checkpointInfo.CollapseAdjacentLithology), ...
+              logical(expected.CollapseAdjacentLithology)) && ...
+     isequaln(logical(checkpointInfo.AcceptedSeedTracking), ...
+              logical(expected.AcceptedSeedTracking)) && ...
      isequaln(checkpointInfo.FaultingDepth, expected.FaultingDepth) && ...
      isequaln(checkpointInfo.SandVcl, expected.SandVcl) && ...
      isequaln(checkpointInfo.ClayVcl, expected.ClayVcl);
