@@ -13,8 +13,7 @@ For each geology:
 - the same 10 multiple-window case designs are used on every slice;
 - each slice draw group independently samples actual joint PREDICT
   realizations from the assigned Level 2 pools;
-- slices 43 and 44 share one draw group by default, so the 87 field slices
-  correspond to 86 independent draw groups.
+- all 87 field slices use independent draw groups by default.
 
 Run a small smoke test:
 
@@ -35,9 +34,9 @@ julia --project=examples/Julia_analyses/UQ_workflow `
 Main outputs:
 
 - `texas_field_unique_draw_values.csv`: one row per
-  geology/case/draw-group/window before expanding shared slices.
+  geology/case/draw-group/window.
 - `texas_field_slice_window_values.csv`: one row per
-  geology/case/slice/window after expanding shared slices.
+  geology/case/slice/window.
 - `texas_field_slice_case_matrix.csv`: one row per geology/case/slice, with
   all six window permeability vectors in wide format.
 - `texas_field_slice_draw_groups.csv`: mapping from field slices to draw

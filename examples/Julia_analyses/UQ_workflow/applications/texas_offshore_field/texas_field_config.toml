@@ -8,7 +8,7 @@ fixed_windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"]
 
 [field]
 num_slices = 87
-shared_slice_groups = [[43, 44]]
+shared_slice_groups = []
 
 [sampling]
 random_seed = 20260617
