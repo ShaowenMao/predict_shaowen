@@ -25,6 +25,7 @@ parser.addParameter('Windows', {'famp1','famp2','famp3','famp4','famp5','famp6'}
     @(x) iscell(x) || isstring(x));
 parser.addParameter('MapWindows', {'famp2','famp5','famp6'}, ...
     @(x) iscell(x) || isstring(x));
+parser.addParameter('Setups', {}, @(x) iscell(x) || isstring(x));
 parser.addParameter('BaseSeed', 271828, @(x) isnumeric(x) && isscalar(x));
 parser.addParameter('CorrCoef', 0, @(x) isnumeric(x) && isscalar(x));
 parser.addParameter('FigureDpi', 220, @(x) isnumeric(x) && isscalar(x));
@@ -33,6 +34,7 @@ parser.parse(varargin{:});
 opt = parser.Results;
 opt.Windows = cellstr(string(opt.Windows));
 opt.MapWindows = cellstr(string(opt.MapWindows));
+opt.Setups = cellstr(string(opt.Setups));
 opt.Nsim = round(opt.Nsim);
 opt.ShowProgress = logical(opt.ShowProgress);
 
@@ -47,6 +49,7 @@ dirs = makeOutputDirs(outputDir);
 caseInfo = makeCase019Info();
 scenarioRows = buildScenario05MediumNonuniformRows();
 setups = buildComparisonSetups();
+setups = filterSetups(setups, opt.Setups);
 U = makeUpscalingOptions();
 
 summaryRows = {};
@@ -164,6 +167,23 @@ setups(4).ShortLabel = 'Cell-union collapsed';
 setups(4).Description = 'Cell-union Psmear rule with adjacent equal lithologies collapsed.';
 setups(4).SmearOverlapRule = 'cell_union_psmear';
 setups(4).CollapseAdjacent = true;
+end
+
+
+function setups = filterSetups(setups, requestedLabels)
+if isempty(requestedLabels)
+    return
+end
+
+labels = string({setups.Label});
+keep = false(size(labels));
+for i = 1:numel(requestedLabels)
+    label = string(requestedLabels{i});
+    match = strcmpi(labels, label);
+    assert(any(match), 'Unknown setup label "%s".', label)
+    keep = keep | match;
+end
+setups = setups(keep);
 end
 
 
@@ -637,11 +657,19 @@ end
 function plotMedianDifferenceHeatmap(summaryTable, figDir, opt)
 windows = opt.Windows;
 components = {'kxx', 'kyy', 'kzz'};
-setups = {'legacy_thin', 'legacy_collapsed', 'cell_union_thin', 'cell_union_collapsed'};
-setupLabels = {'Legacy thin', 'Legacy collapsed', 'Cell-union thin', 'Cell-union collapsed'};
+allSetups = {'legacy_thin', 'legacy_collapsed', 'cell_union_thin', 'cell_union_collapsed'};
+allSetupLabels = {'Legacy thin', 'Legacy collapsed', 'Cell-union thin', 'Cell-union collapsed'};
+presentSetups = unique(summaryTable.Setup, 'stable');
 baseline = 'legacy_thin';
+if ~any(strcmp(presentSetups, baseline))
+    baseline = char(presentSetups(1));
+end
+compareSetups = presentSetups(~strcmp(presentSetups, baseline));
+if isempty(compareSetups)
+    return
+end
 
-vals = nan(numel(setups)-1, numel(windows)*numel(components));
+vals = nan(numel(compareSetups), numel(windows)*numel(components));
 labels = strings(1, numel(windows)*numel(components));
 col = 0;
 for iw = 1:numel(windows)
@@ -652,12 +680,25 @@ for iw = 1:numel(windows)
             strcmp(summaryTable.Window, windows{iw}) & ...
             strcmp(summaryTable.Component, components{ic});
         baseValue = summaryTable.MedianLog10K(baseMask);
-        for isetup = 2:numel(setups)
-            mask = strcmp(summaryTable.Setup, setups{isetup}) & ...
+        for isetup = 1:numel(compareSetups)
+            mask = strcmp(summaryTable.Setup, compareSetups{isetup}) & ...
                 strcmp(summaryTable.Window, windows{iw}) & ...
                 strcmp(summaryTable.Component, components{ic});
-            vals(isetup-1, col) = summaryTable.MedianLog10K(mask) - baseValue;
+            vals(isetup, col) = summaryTable.MedianLog10K(mask) - baseValue;
         end
+    end
+end
+
+[~, baselineIdx] = ismember(baseline, allSetups);
+baselineLabel = baseline;
+if baselineIdx > 0
+    baselineLabel = allSetupLabels{baselineIdx};
+end
+compareLabels = compareSetups;
+for i = 1:numel(compareLabels)
+    [~, setupIdx] = ismember(compareSetups{i}, allSetups);
+    if setupIdx > 0
+        compareLabels{i} = allSetupLabels{setupIdx};
     end
 end
 
@@ -670,9 +711,9 @@ if mx == 0 || ~isfinite(mx)
 end
 clim([-mx mx]);
 cb = colorbar;
-cb.Label.String = '\Delta median log10(k) relative to legacy thin';
+cb.Label.String = sprintf('\\Delta median log10(k) relative to %s', baselineLabel);
 set(gca, 'XTick', 1:numel(labels), 'XTickLabel', labels, ...
-    'YTick', 1:(numel(setups)-1), 'YTickLabel', setupLabels(2:end), ...
+    'YTick', 1:numel(compareLabels), 'YTickLabel', compareLabels, ...
     'FontSize', 13, 'TickLabelInterpreter', 'none')
 xtickangle(45)
 for r = 1:size(vals, 1)
@@ -682,7 +723,7 @@ for r = 1:size(vals, 1)
             'Color', textColorForValue(vals(r, c), mx));
     end
 end
-title('Median permeability change from legacy-thin baseline', ...
+title(sprintf('Median permeability change from %s baseline', baselineLabel), ...
     'FontSize', 21, 'FontWeight', 'bold')
 exportgraphics(fig, fullfile(figDir, 'case019_median_difference_heatmap.png'), ...
     'Resolution', opt.FigureDpi);
