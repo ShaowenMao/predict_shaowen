@@ -29,6 +29,10 @@ function summaryTable = replay_selected_predict_realizations(selectionCsv, outpu
 %                        from the source production metadata when present.
 %   'CollapseAdjacentLithology' - 'auto' (default), true, or false. In
 %                        'auto' mode this is read from source metadata.
+%   'PredictCodeRoot' - optional repository root containing the PREDICT
+%                       code version that generated the source data. This
+%                       is useful when replaying older production runs
+%                       after the working repository has changed.
 %
 % Saved fields:
 %   replay.G              - MRST fine grid.
@@ -67,12 +71,13 @@ parser.addParameter('BaseSeed', 1729, @(x) isnumeric(x) && isscalar(x));
 parser.addParameter('SmearOverlapRule', 'auto', @(x) ischar(x) || isstring(x));
 parser.addParameter('CollapseAdjacentLithology', 'auto', ...
                     @(x) ischar(x) || isstring(x) || (islogical(x) && isscalar(x)));
+parser.addParameter('PredictCodeRoot', '', @(x) ischar(x) || isstring(x));
 parser.addParameter('VerifyToleranceLog10', 1e-8, @(x) isnumeric(x) && isscalar(x) && x > 0);
 parser.addParameter('RequireDirectReplay', false, @(x) islogical(x) && isscalar(x));
 parser.parse(varargin{:});
 opt = parser.Results;
 
-setupPredictPaths();
+setupPredictPaths(opt.PredictCodeRoot);
 assert(exist('mrstModule', 'file') == 2, ...
        ['MRST is not on the MATLAB path. Run startup.m in your MRST ' ...
         'folder before replaying PREDICT realizations.'])
@@ -152,12 +157,16 @@ fprintf('Saved replay summary: %s\n', summaryCsv);
 end
 
 
-function setupPredictPaths()
+function setupPredictPaths(predictCodeRoot)
 % Add repository folders needed by the PREDICT examples.
 
 thisFile = mfilename('fullpath');
 examplesDir = fileparts(thisFile);
-repoRoot = fileparts(examplesDir);
+if strlength(string(predictCodeRoot)) > 0
+    repoRoot = char(predictCodeRoot);
+else
+    repoRoot = fileparts(examplesDir);
+end
 pathsToAdd = {repoRoot, ...
               fullfile(repoRoot, 'classes'), ...
               fullfile(repoRoot, 'functions'), ...
@@ -165,7 +174,7 @@ pathsToAdd = {repoRoot, ...
               fullfile(repoRoot, 'utils', 'mrst-based')};
 for i = 1:numel(pathsToAdd)
     if exist(pathsToAdd{i}, 'dir')
-        addpath(pathsToAdd{i});
+        addpath(pathsToAdd{i}, '-begin');
     end
 end
 end
@@ -554,8 +563,15 @@ try
         end
 
         smear = Smear(mySect, myFaultSection, G, 1);
-        myFaultSection = myFaultSection.placeMaterials( ...
-            mySect, smear, G, 'SmearOverlapRule', smearOverlapRule);
+        if strcmpi(string(smearOverlapRule), "random")
+            % Older production PREDICT versions did not expose
+            % SmearOverlapRule as a name-value argument; their default
+            % behavior is the legacy random-overlap rule.
+            myFaultSection = myFaultSection.placeMaterials(mySect, smear, G);
+        else
+            myFaultSection = myFaultSection.placeMaterials( ...
+                mySect, smear, G, 'SmearOverlapRule', smearOverlapRule);
+        end
 
         sectionDetails(k).MatProps = myFaultSection.MatProps;
         sectionDetails(k).MatMap = myFaultSection.MatMap;
