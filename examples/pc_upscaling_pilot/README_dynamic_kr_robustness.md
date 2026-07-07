@@ -1,9 +1,57 @@
-# Dynamic Kr Upscaling Robustness Controls
+# Production Pc and Dynamic Kr Upscaling Notes
 
-This folder contains the full-87 dynamic relative-permeability upscaling
-driver and a supervised runner for rare MRST solver stalls.
+This folder contains the production-oriented full-87 upscaling workflow for
+the representative median-sand-ratio Level-3 examples. The intended path is:
 
-## Main Driver
+1. replay the exact selected PREDICT realizations;
+2. upscale Pc with the invasion-percolation workflow;
+3. upscale Kr with the dynamic workflow.
+
+Fast proxy Pc workflows and capillary-limit Kr screening workflows were
+removed from this folder so the codebase points to the rigorous path.
+
+## Replay Preparation
+
+Run:
+
+```matlab
+prepare_full87_replay_median_examples
+```
+
+This writes the replay table consumed by both production upscaling scripts:
+
+```text
+D:\codex_gom\UQ_workflow\full87_replay_median_examples\tables\
+replay_summary_with_full87_context_s05_c012_cases_01_03_04_07.csv
+```
+
+Useful environment overrides:
+
+- `FULL87_REPLAY_OUTPUT_ROOT`
+- `FULL87_REPLAY_FIELD_SAMPLING_CSV`
+- `FULL87_REPLAY_DATA_ROOT`
+- `PREDICT_REPLAY_CODE_ROOT`
+- `FULL87_REPLAY_MAX_ROWS`
+
+## Pc Upscaling
+
+Run:
+
+```matlab
+run_pc_upscaling_ip_median_examples_full87
+```
+
+This is the connectivity-based invasion-percolation Pc workflow. For a smoke
+test:
+
+```matlab
+setenv('PC_IP_MAX_ROWS', '1')
+run_pc_upscaling_ip_median_examples_full87
+```
+
+Clear `PC_IP_MAX_ROWS` for the full run.
+
+## Dynamic Kr Upscaling
 
 Run:
 

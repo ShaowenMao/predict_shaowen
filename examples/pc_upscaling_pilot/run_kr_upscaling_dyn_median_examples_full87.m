@@ -39,7 +39,7 @@ cfg.caseToken = "cases_01_03_04_07";
 cfg.windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"];
 cfg.sgGrid = linspace(0.02, 0.68, 80);
 cfg.sourceRoot = fullfile('D:', 'codex_gom', 'UQ_workflow', ...
-    'pc_upscaling_median_examples_full87');
+    'full87_replay_median_examples');
 cfg.replaySummaryCsv = fullfile(cfg.sourceRoot, 'tables', ...
     'replay_summary_with_full87_context_s05_c012_cases_01_03_04_07.csv');
 cfg.upscalingZip = fullfile(repoRoot, 'upscaling.zip');

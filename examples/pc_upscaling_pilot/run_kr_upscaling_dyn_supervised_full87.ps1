@@ -20,7 +20,7 @@ Typical smoke test:
 
 Typical production:
   $env:KR_DYN_CURVE_TIMEOUT_SECONDS = "7200"
-  $env:KR_DYN_1D_METHOD = "transport"
+  $env:KR_DYN_FALLBACK_1D_AD_SOLVER = "robust"
   .\run_kr_upscaling_dyn_supervised_full87.ps1 -BuildAggregate
 #>
 
@@ -39,7 +39,7 @@ $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..")
-$sourceRoot = Join-Path "D:\codex_gom\UQ_workflow" "pc_upscaling_median_examples_full87"
+$sourceRoot = Join-Path "D:\codex_gom\UQ_workflow" "full87_replay_median_examples"
 $replaySummaryCsv = Join-Path $sourceRoot "tables\replay_summary_with_full87_context_s05_c012_cases_01_03_04_07.csv"
 
 if (-not (Test-Path -LiteralPath $replaySummaryCsv)) {

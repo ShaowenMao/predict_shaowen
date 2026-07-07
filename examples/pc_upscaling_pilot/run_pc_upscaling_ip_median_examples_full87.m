@@ -1,7 +1,7 @@
-%RUN_PC_UPSCALING_IP_CASE01_FULL87 Invasion-percolation Pc upscaling.
+%RUN_PC_UPSCALING_IP_MEDIAN_EXAMPLES_FULL87 Invasion-percolation Pc upscaling.
 %
-% This script uses the same replayed PREDICT realizations as the full-87
-% median-sand-ratio Pc pilot, but computes Pc curves with a connectivity
+% This script uses replayed PREDICT realizations from the full-87 replay
+% preparation step and computes Pc curves with a connectivity
 % invasion-percolation calculation equivalent to the original t = 1
 % threshold sweep:
 %
@@ -10,19 +10,22 @@
 %   geologic case: case_012_zf0500_svcl010_cvcl060
 %   Level-3 cases: 01, 03, 04, and 07
 %
-% The material Pc functions are kept deterministic and consistent with the
-% calibrated ordinary test: sand is Leverett-scaled from the reference sand
-% curve, and clay is scaled from the GoM clay Pce(log10(k)) model at the
-% median uncertainty quantile. The key change is the Pc upscaling mechanism:
-% gas saturation only increases after a connected invasion path forms.
+% The material Pc functions are deterministic: sand is Leverett-scaled from
+% the reference sand curve, and clay is scaled from the GoM clay
+% Pce(log10(k)) model at the median uncertainty quantile. The key Pc
+% upscaling mechanism is connectivity-based: gas saturation only increases
+% after a connected invasion path forms.
+%
+% First prepare replay inputs:
+%   prepare_full87_replay_median_examples
 %
 % For a quick smoke test, run:
 %   setenv('PC_IP_MAX_ROWS','1')
-%   run_pc_upscaling_ip_case01_full87
+%   run_pc_upscaling_ip_median_examples_full87
 %
 % For the full case, clear that variable:
 %   setenv('PC_IP_MAX_ROWS','')
-%   run_pc_upscaling_ip_case01_full87
+%   run_pc_upscaling_ip_median_examples_full87
 
 clear; clc;
 
@@ -37,11 +40,9 @@ cfg.caseToken = "cases_01_03_04_07";
 cfg.windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"];
 cfg.sgGrid = linspace(0.02, 0.68, 80);
 cfg.sourceRoot = fullfile('D:', 'codex_gom', 'UQ_workflow', ...
-    'pc_upscaling_median_examples_full87');
+    'full87_replay_median_examples');
 cfg.replaySummaryCsv = fullfile(cfg.sourceRoot, 'tables', ...
     'replay_summary_with_full87_context_s05_c012_cases_01_03_04_07.csv');
-cfg.calibratedOrdinaryRoot = fullfile('D:', 'codex_gom', 'UQ_workflow', ...
-    'pc_upscaling_calibrated_median_examples_full87');
 cfg.upscalingZip = fullfile(repoRoot, 'upscaling.zip');
 cfg.upscalingRoot = fullfile('D:', 'codex_gom', 'tmp_upscaling_zip_inspect');
 cfg.mrstRoot = fullfile('C:', 'Users', 'Shaow', 'OneDrive', 'MIT', ...
@@ -133,9 +134,8 @@ save(fullfile(cfg.tableDir, ...
 fprintf('Saved IP medoid summary: %s\n', medoidSummaryCsv);
 fprintf('Saved IP distance summary: %s\n', distanceSummaryCsv);
 
-fprintf('\n=== Generate IP figures and ordinary-vs-IP comparison ===\n')
+fprintf('\n=== Generate IP figures ===\n')
 makeIpFigures(curveMat, results, cfg);
-compareIpAndOrdinaryIfAvailable(curveMat, results, cfg);
 
 fprintf('\nFull invasion-percolation cases %s Pc upscaling complete.\n', ...
     cfg.caseToken)
@@ -458,7 +458,6 @@ idrem = false(numel(pcVal), 1);
 idPercolation = [];
 sLast = 0;
 firstBottomPc = NaN;
-firstBottomSg = NaN;
 
 for k = 2:numel(pcVal)
     pcv = pcVal(k);
@@ -874,119 +873,6 @@ sgtitle('Validated invasion-percolation medoid Pc levels by case and window', ..
     'FontSize', 22, 'FontWeight', 'bold');
 saveFigureBoth(fig, cfg.figureDir, ...
     sprintf('s05_c012_%s_ip_medoid_pc_levels', cfg.caseToken));
-end
-
-
-function compareIpAndOrdinaryIfAvailable(ipCurveMat, ipResults, cfg)
-% Compare IP medoid curves to calibrated ordinary medoid curves if present.
-
-ordinaryMatFile = fullfile(cfg.calibratedOrdinaryRoot, 'curves', ...
-    'pc_curves_s05_c012_cases_01_03_04_07_calibrated_full87.mat');
-ordinaryResultsFile = fullfile(cfg.calibratedOrdinaryRoot, 'tables', ...
-    'pc_medoid_results_s05_c012_cases_01_03_04_07_calibrated_full87.mat');
-if exist(ordinaryMatFile, 'file') ~= 2 || exist(ordinaryResultsFile, 'file') ~= 2
-    warning('Calibrated ordinary results not found; skipping IP-vs-ordinary comparison.');
-    return
-end
-
-O = load(ordinaryMatFile, 'curveMat');
-R = load(ordinaryResultsFile, 'results');
-ordinaryMat = O.curveMat;
-ordinaryResults = R.results;
-
-availableWindows = unique(string(ipResults.MedoidSummary.Window));
-if numel(intersect(availableWindows, cfg.windows)) < numel(cfg.windows)
-    warning('IP medoid results are partial; skipping IP-vs-ordinary comparison.');
-    return
-end
-
-rows = cell(numel(cfg.level3CaseIds) * numel(cfg.windows), 16);
-row = 0;
-for c = 1:numel(cfg.level3CaseIds)
-    caseId = cfg.level3CaseIds(c);
-    fig = figure('Color', 'w', 'Position', [80 80 1700 900]);
-    tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
-    caseName = "";
-    for w = 1:numel(cfg.windows)
-        windowName = cfg.windows(w);
-        ipMask = ipResults.MedoidSummary.Level3CaseId == caseId & ...
-            ipResults.MedoidSummary.Window == windowName;
-        ipMedoidId = ipResults.MedoidSummary.MedoidCurveId(ipMask);
-        ordMask = ordinaryResults.MedoidSummary.Level3CaseId == caseId & ...
-            ordinaryResults.MedoidSummary.Window == windowName;
-        ordMedoidId = ordinaryResults.MedoidSummary.MedoidCurveId(ordMask);
-        if isempty(ipMedoidId) || isempty(ordMedoidId)
-            warning('Missing IP or ordinary medoid for case %02d %s; skipping.', ...
-                caseId, windowName);
-            continue
-        end
-
-        ipCurve = ipCurveMat.pcPa(ipMedoidId, :);
-        ordCurve = ordinaryMat.pcPa(ordMedoidId, :);
-        ipNorm = normalizeAtSg(ipCurveMat.sgGrid, ipCurve, 0.50);
-        ordNorm = normalizeAtSg(ordinaryMat.sgGrid, ordCurve, 0.50);
-        ordInterp = interp1(ordinaryMat.sgGrid, ordNorm, ipCurveMat.sgGrid, ...
-            'linear', 'extrap');
-        shapeDiff = sqrt(mean((log10(max(ipNorm, realmin)) - ...
-            log10(max(ordInterp, realmin))).^2, 'omitnan'));
-
-        ipSummary = ipCurveMat.summary(ipMedoidId, :);
-        ordSummary = ordinaryMat.summary(ordMedoidId, :);
-        caseName = displayCaseName(ipSummary.Level3CaseName);
-        row = row + 1;
-        rows(row, :) = {caseId, ipSummary.Level3CaseName, windowName, ...
-            ipSummary.SliceIndex, ipSummary.SelectedSampleIndex, ...
-            ipSummary.PcAtSg20Pa / 1.0e5, ipSummary.PcAtSg50Pa / 1.0e5, ...
-            ipSummary.PcAtSg65Pa / 1.0e5, ipSummary.PercolationPcPa / 1.0e5, ...
-            ordSummary.SliceIndex, ordSummary.SelectedSampleIndex, ...
-            ordSummary.PcAtSg20Pa / 1.0e5, ordSummary.PcAtSg50Pa / 1.0e5, ...
-            ordSummary.PcAtSg65Pa / 1.0e5, shapeDiff, ...
-            ipSummary.SliceIndex == ordSummary.SliceIndex};
-
-        nexttile;
-        semilogy(ipCurveMat.sgGrid(:), ordInterp(:), '--', ...
-            'Color', [0.13 0.38 0.67], 'LineWidth', 2.4);
-        hold on;
-        semilogy(ipCurveMat.sgGrid(:), ipNorm(:), '-', ...
-            'Color', [0.86 0.22 0.16], 'LineWidth', 2.6);
-        grid on;
-        title(upper(char(windowName)), 'FontSize', 16, 'FontWeight', 'bold');
-        xlabel('Gas saturation');
-        ylabel('Pc / Pc(Sg=0.50)');
-        xlim([min(ipCurveMat.sgGrid), max(ipCurveMat.sgGrid)]);
-        set(gca, 'FontSize', 13, 'LineWidth', 1.0);
-        if w == 1
-            legend({'calibrated ordinary', 'invasion percolation'}, ...
-                'Location', 'best');
-        end
-    end
-    sgtitle({sprintf('Case %02d: %s', caseId, caseName), ...
-        'Medoid Pc curve shape comparison', ...
-        'Both curves normalized by Pc at Sg = 0.50'}, ...
-        'FontSize', 21, 'FontWeight', 'bold', 'Interpreter', 'none');
-    saveFigureBoth(fig, cfg.figureDir, ...
-        sprintf('s05_c012_case%02d_ip_vs_calibrated_ordinary_medoid_pc_shape', caseId));
-end
-comparisonTable = cell2table(rows(1:row, :), 'VariableNames', ...
-    {'Level3CaseId', 'Level3CaseName', 'Window', ...
-     'IpMedoidSliceIndex', 'IpMedoidSelectedSampleIndex', ...
-     'IpMedoidPcSg20Bar', 'IpMedoidPcSg50Bar', 'IpMedoidPcSg65Bar', ...
-     'IpMedoidPercolationPcBar', 'OrdinaryMedoidSliceIndex', ...
-     'OrdinaryMedoidSelectedSampleIndex', 'OrdinaryMedoidPcSg20Bar', ...
-     'OrdinaryMedoidPcSg50Bar', 'OrdinaryMedoidPcSg65Bar', ...
-     'RmsLog10NormalizedPcShapeDifference', 'SameMedoidSlice'});
-writetable(comparisonTable, fullfile(cfg.tableDir, ...
-    sprintf('pc_medoid_comparison_ip_vs_calibrated_ordinary_s05_c012_%s_full87.csv', ...
-    cfg.caseToken)));
-end
-
-
-function y = normalizeAtSg(sg, pc, sgRef)
-% Normalize a Pc curve by its value at a reference saturation.
-
-ref = interp1(sg, pc, sgRef, 'linear', 'extrap');
-y = pc ./ max(ref, realmin);
-y = max(y, realmin);
 end
 
 
