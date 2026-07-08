@@ -31,6 +31,22 @@ The workflow also expects:
 /home/shaowen/orcd/pool/predict_shaowen/inputs/texas_offshore_field_sampling/texas_field_slice_window_values.csv
 ```
 
+AMGCL should be compiled before dynamic-Kr production runs. This is required
+on Engaging because the full 3D dynamic solves are otherwise dominated by slow
+linear solves:
+
+```bash
+cd /home/shaowen/orcd/pool/predict_shaowen/repo/examples/pc_upscaling_pilot/engaging
+bash setup_mrst_amgcl.sh
+```
+
+The script installs MRST's pinned AMGCL revision
+`4f260881c7158bc5aede881f5f0ed272df2ab580`, rebuilds
+`amgcl_matlab.mexa64` and `amgcl_matlab_block.mexa64`, and runs a small
+Poisson-system smoke test. The full Case01 environment sets
+`KR_DYN_LINEAR_SOLVER=amgcl_require`, so the Kr stage fails early if AMGCL is
+not available instead of silently using a slow fallback.
+
 High-I/O outputs go to:
 
 ```text

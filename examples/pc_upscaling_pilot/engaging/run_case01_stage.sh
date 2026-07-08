@@ -73,18 +73,33 @@ trap finish_stage EXIT
 echo "Starting stage=${STAGE} at $(date --iso-8601=seconds)"
 echo "Working directory: $(pwd)"
 
+TIME_BIN=""
+if [[ -x /usr/bin/time ]]; then
+    TIME_BIN="/usr/bin/time"
+elif [[ -x /bin/time ]]; then
+    TIME_BIN="/bin/time"
+fi
+
+run_matlab_stage() {
+    local matlab_cmd="$1"
+    if [[ -n "${TIME_BIN}" ]]; then
+        "${TIME_BIN}" -v -o "${DIAG_PREFIX}.time" \
+            matlab -batch "${matlab_cmd}"
+    else
+        echo "External GNU time not found; running without resource timing file." >&2
+        matlab -batch "${matlab_cmd}"
+    fi
+}
+
 case "${STAGE}" in
     replay)
-        /usr/bin/time -v -o "${DIAG_PREFIX}.time" \
-            matlab -batch "prepare_full87_replay_median_examples"
+        run_matlab_stage "prepare_full87_replay_median_examples"
         ;;
     pc)
-        /usr/bin/time -v -o "${DIAG_PREFIX}.time" \
-            matlab -batch "run_pc_upscaling_ip_median_examples_full87"
+        run_matlab_stage "run_pc_upscaling_ip_median_examples_full87"
         ;;
     kr)
-        /usr/bin/time -v -o "${DIAG_PREFIX}.time" \
-            matlab -batch "run_kr_upscaling_dyn_median_examples_full87"
+        run_matlab_stage "run_kr_upscaling_dyn_median_examples_full87"
         ;;
 esac
 
