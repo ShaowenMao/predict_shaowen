@@ -239,10 +239,50 @@ else
     warning('MRST startup not found. Continuing with current MATLAB path: %s', ...
         cfg.mrstRoot);
 end
-mrstModule add mrst-gui mimetic upscaling incomp coarsegrid deckformat ...
-    ad-props ad-core ad-blackoil linearsolvers sequential
+addDynamicKrMrstModules();
 addpath(cfg.upscalingRoot);
 addpath(fullfile(cfg.upscalingRoot, 'upscaling'));
+end
+
+
+function initializeDynamicKrWorkerRuntime(cfg)
+% Initialize MRST, upscaling helpers, and AMGCL on one process-pool worker.
+
+persistent initialized
+if ~isempty(initialized) && initialized
+    return
+end
+
+if exist(fullfile(cfg.mrstRoot, 'startup.m'), 'file') == 2
+    run(fullfile(cfg.mrstRoot, 'startup.m'));
+else
+    warning('MRST startup not found on worker. Continuing with current path: %s', ...
+        cfg.mrstRoot);
+end
+addDynamicKrMrstModules();
+addpath(cfg.upscalingRoot);
+addpath(fullfile(cfg.upscalingRoot, 'upscaling'));
+
+needsWorkerAmgcl = cfg.linearSolverPolicy == "amgcl_require" || ...
+    (cfg.oneDMatchMethod == "ad" && cfg.oneDLinearSolverPolicy == "amgcl_require");
+if needsWorkerAmgcl
+    [isReady, reportText] = checkAmgclRuntimeReady();
+    if ~isReady
+        error('AMGCL:WorkerRequiredUnavailable', ...
+            ['AMGCL is required but not usable on a MATLAB worker.', newline, ...
+             '%s'], reportText);
+    end
+end
+
+initialized = true;
+end
+
+
+function addDynamicKrMrstModules()
+% Add every MRST module needed by the dynamic Pc/Kr workflow.
+
+mrstModule add mrst-gui mimetic upscaling incomp coarsegrid deckformat ...
+    ad-props ad-core ad-blackoil linearsolvers sequential
 end
 
 
@@ -826,12 +866,14 @@ sourceRows = replaySummary.SourceRow;
 if cfg.useParallel && n > 1
     ensureParallelPool(cfg.numWorkers);
     parfor i = 1:n
+        initializeDynamicKrWorkerRuntime(cfg);
         fprintf('Dynamic Kr row %4d/%4d: case %02d slice %02d %s\n', ...
             i, n, caseIds(i), sliceIds(i), char(windowNames(i)));
         curveCells{i} = loadOrComputeKrDynCurveCheckpoint( ...
             curveIds(i), outputFiles{i}, krOpt, windowNames(i), sourceRows(i));
     end
 else
+    initializeDynamicKrWorkerRuntime(cfg);
     for i = 1:n
         fprintf('Dynamic Kr row %4d/%4d: case %02d slice %02d %s\n', ...
             i, n, caseIds(i), sliceIds(i), char(windowNames(i)));
