@@ -33,22 +33,34 @@ examplesDir = fileparts(scriptDir);
 repoRoot = fileparts(examplesDir);
 
 cfg = struct();
-cfg.geologyId = "s05_c012";
-cfg.level3CaseIds = [1 3 4 7];
-cfg.caseToken = "cases_01_03_04_07";
+cfg.geologyId = string(envOrDefault("KR_DYN_GEOLOGY_ID", "s05_c012"));
+cfg.level3CaseIds = parseIdList(envOrDefault("KR_DYN_CASE_IDS", "1,3,4,7"));
+cfg.caseToken = caseTokenFromIds(cfg.level3CaseIds);
 cfg.windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"];
 cfg.sgGrid = linspace(0.02, 0.68, 80);
-cfg.sourceRoot = fullfile('D:', 'codex_gom', 'UQ_workflow', ...
-    'full87_replay_median_examples');
-cfg.replaySummaryCsv = fullfile(cfg.sourceRoot, 'tables', ...
-    'replay_summary_with_full87_context_s05_c012_cases_01_03_04_07.csv');
-cfg.upscalingZip = fullfile(repoRoot, 'upscaling.zip');
-cfg.upscalingRoot = fullfile('D:', 'codex_gom', 'tmp_upscaling_dyn_runtime');
-cfg.mrstRoot = fullfile('C:', 'Users', 'Shaow', 'OneDrive', 'MIT', ...
-    'mrst-2025a', 'SINTEF-AppliedCompSci-MRST-75749fa');
-cfg.outputRoot = fullfile('D:', 'codex_gom', 'UQ_workflow', ...
-    'kr_upscaling_dyn_median_examples_full87');
-cfg.useStrikeCollapsedGrid = parseLogicalEnv("KR_DYN_USE_STRIKE_COLLAPSED", true);
+cfg.sourceRoot = envOrDefault("KR_DYN_REPLAY_ROOT", ...
+    envOrDefault("FULL87_REPLAY_OUTPUT_ROOT", defaultReplayRoot()));
+cfg.replaySummaryCsv = envOrDefault("KR_DYN_REPLAY_SUMMARY_CSV", ...
+    fullfile(cfg.sourceRoot, 'tables', sprintf( ...
+    'replay_summary_with_full87_context_%s_%s.csv', ...
+    cfg.geologyId, cfg.caseToken)));
+cfg.pcPrestepMode = lower(strtrim(string(envOrDefault( ...
+    "KR_DYN_PC_PRESTEP_MODE", "precomputed"))));
+assert(any(cfg.pcPrestepMode == ["original", "precomputed"]), ...
+    'KR_DYN_PC_PRESTEP_MODE must be original or precomputed.');
+cfg.precomputedPcCurveCsv = envOrDefault("KR_DYN_PRECOMPUTED_PC_CURVE_CSV", ...
+    fullfile(fileparts(cfg.sourceRoot), 'pc_ip', 'curves', sprintf( ...
+    'pc_curve_points_%s_%s_ip_full87.csv', cfg.geologyId, cfg.caseToken)));
+cfg.precomputedPcSummaryCsv = envOrDefault("KR_DYN_PRECOMPUTED_PC_SUMMARY_CSV", ...
+    fullfile(fileparts(cfg.sourceRoot), 'pc_ip', 'tables', sprintf( ...
+    'pc_curve_summary_%s_%s_ip_full87.csv', cfg.geologyId, cfg.caseToken)));
+cfg.upscalingZip = envOrDefault("UPSCALING_ZIP", ...
+    fullfile(repoRoot, 'upscaling.zip'));
+cfg.upscalingRoot = envOrDefault("KR_DYN_UPSCALING_ROOT", ...
+    envOrDefault("UPSCALING_ROOT", defaultUpscalingRoot()));
+cfg.mrstRoot = envOrDefault("MRST_ROOT", defaultMrstRoot());
+cfg.outputRoot = envOrDefault("KR_DYN_OUTPUT_ROOT", ...
+    fullfile(defaultWorkflowRoot(), 'kr_upscaling_dyn_median_examples_full87'));
 cfg.onlyRows = parseIntegerListEnv("KR_DYN_ONLY_ROWS");
 cfg.smokeCartDims = parseIntegerListEnv("KR_DYN_SMOKE_CARTDIMS");
 
@@ -58,8 +70,9 @@ if maxRowsText ~= ""
 else
     cfg.maxRows = inf;
 end
-outputTag = matlab.lang.makeValidName(strtrim(string(getenv('KR_DYN_OUTPUT_TAG'))));
-if outputTag ~= ""
+outputTagRaw = strtrim(string(getenv('KR_DYN_OUTPUT_TAG')));
+if outputTagRaw ~= ""
+    outputTag = matlab.lang.makeValidName(outputTagRaw);
     cfg.outputRoot = cfg.outputRoot + "_" + outputTag;
 end
 cfg.useParallel = parseLogicalEnv("KR_DYN_USE_PARALLEL", ~isfinite(cfg.maxRows));
@@ -99,8 +112,6 @@ cfg.transportRateScale = parseNumericEnv("KR_DYN_TRANSPORT_RATE_SCALE", NaN);
 if isfinite(cfg.maxRows)
     if ~isempty(cfg.smokeCartDims)
         gridTag = sprintf('_smokeCart%d_%d_%d', cfg.smokeCartDims);
-    elseif cfg.useStrikeCollapsedGrid
-        gridTag = "_strikeCollapsed";
     else
         gridTag = "_fullGrid";
     end
@@ -133,9 +144,15 @@ replaySummary = sortrows(replaySummary, ...
 replaySummary.ProductionCurveId = (1:height(replaySummary))';
 
 expectedRows = 87 * numel(cfg.windows) * numel(cfg.level3CaseIds);
-assert(height(replaySummary) == expectedRows, ...
-    'Expected %d rows for cases %s, found %d.', ...
-    expectedRows, cfg.caseToken, height(replaySummary));
+if height(replaySummary) ~= expectedRows
+    allowPartial = parseLogicalEnv("KR_DYN_ALLOW_PARTIAL_REPLAY", ...
+        isfinite(cfg.maxRows) || ~isempty(cfg.onlyRows));
+    assert(allowPartial, ...
+        'Expected %d rows for cases %s, found %d.', ...
+        expectedRows, cfg.caseToken, height(replaySummary));
+    warning('Expected %d rows for cases %s, found %d; continuing with partial replay data.', ...
+        expectedRows, cfg.caseToken, height(replaySummary));
+end
 if ~isempty(cfg.onlyRows)
     assert(all(cfg.onlyRows >= 1 & cfg.onlyRows <= height(replaySummary)), ...
         'KR_DYN_ONLY_ROWS contains row ids outside 1:%d.', height(replaySummary));
@@ -150,11 +167,15 @@ krOpt = krDynOptions(cfg);
 fprintf('Reference deck: %s\n', cfg.originalDeckFile);
 fprintf('Kr mode = %s, Pc mode = %s, Corey exponent step = %.3g, timestep mode = %s.\n', ...
     krOpt.krMode, krOpt.pcMode, krOpt.coreyStep, krOpt.timestepMode);
+fprintf('Kr Pc pre-step mode = %s', krOpt.pcPrestepMode);
+if ~isempty(krOpt.precomputedPcTable)
+    fprintf(' (%s)', cfg.precomputedPcCurveCsv);
+end
+fprintf('\n');
 fprintf('1D matching method = %s\n', krOpt.oneDMatchMethod);
 if krOpt.oneDMatchMethod == "ad"
     fprintf('1D AD solver mode = %s\n', krOpt.oneDAdSolver);
 end
-fprintf('Use strike-collapsed replay grid: %d\n', krOpt.useStrikeCollapsedGrid);
 fprintf('Use parallel execution: %d', cfg.useParallel);
 if cfg.useParallel
     fprintf(' (%d workers)', cfg.numWorkers);
@@ -162,11 +183,13 @@ end
 fprintf('\n');
 
 curveLongCsv = fullfile(cfg.curveDir, ...
-    sprintf('kr_curve_points_s05_c012_%s_dyn_full87.csv', cfg.caseToken));
+    sprintf('kr_curve_points_%s_%s_dyn_full87.csv', ...
+    cfg.geologyId, cfg.caseToken));
 curveSummaryCsv = fullfile(cfg.tableDir, ...
-    sprintf('kr_curve_summary_s05_c012_%s_dyn_full87.csv', cfg.caseToken));
+    sprintf('kr_curve_summary_%s_%s_dyn_full87.csv', ...
+    cfg.geologyId, cfg.caseToken));
 curveMatFile = fullfile(cfg.curveDir, ...
-    sprintf('kr_curves_s05_c012_%s_dyn_full87.mat', cfg.caseToken));
+    sprintf('kr_curves_%s_%s_dyn_full87.mat', cfg.geologyId, cfg.caseToken));
 
 fprintf('\n=== Compute dynamic Kr curves ===\n')
 if ~cfg.disableRunMatCache && exist(curveMatFile, 'file') == 2
@@ -211,7 +234,7 @@ end
 function materializePatchedUpscalingBundle(zipFile, outputRoot)
 % Extract the original upscaling bundle and patch old helper assumptions.
 
-marker = fullfile(outputRoot, '.codex_dyn_patch_v17');
+marker = fullfile(outputRoot, '.codex_dyn_patch_v18');
 if exist(marker, 'file') == 2
     return
 end
@@ -249,7 +272,10 @@ patchTextFile(fullfile(outputRoot, 'upscaling', 'dynamic3Drun.m'), { ...
     "        N = 2;" + newline + ...
     "    end" + newline + ...
     "    maxNumCompThreads(N);" + newline + ...
-    "    nls.LinearSolver.amgcl_setup.nthreads = N;                                  % Specify threads manually" ...
+    "    try" + newline + ...
+    "        nls.LinearSolver.amgcl_setup.nthreads = N;                                  % Specify threads manually when supported" + newline + ...
+    "    catch" + newline + ...
+    "    end" ...
     });
 
 patchTextFile(fullfile(outputRoot, 'upscaling', 'dynamicBLrun.m'), { ...
@@ -586,7 +612,6 @@ krOpt.krMode = 'dyn';
 krOpt.pcMode = 'inv-per';
 krOpt.sg = 'sandClay';
 krOpt.deckFile = cfg.originalDeckFile;
-krOpt.useStrikeCollapsedGrid = cfg.useStrikeCollapsedGrid;
 krOpt.smokeCartDims = cfg.smokeCartDims;
 krOpt.checkpointDir = cfg.checkpointDir;
 krOpt.coreyStep = cfg.coreyStep;
@@ -606,6 +631,21 @@ krOpt.transportCfl = cfg.transportCfl;
 krOpt.transportMaxSubstepsPerReport = cfg.transportMaxSubstepsPerReport;
 krOpt.transportRateScale = cfg.transportRateScale;
 krOpt.referenceCurves = readSgofReferenceCurves(cfg.originalDeckFile);
+krOpt.pcPrestepMode = cfg.pcPrestepMode;
+krOpt.precomputedPcCurveCsv = cfg.precomputedPcCurveCsv;
+krOpt.precomputedPcSummaryCsv = cfg.precomputedPcSummaryCsv;
+krOpt.precomputedPcTable = table();
+krOpt.precomputedPcSummaryTable = table();
+if krOpt.pcPrestepMode == "precomputed"
+    assert(exist(cfg.precomputedPcCurveCsv, 'file') == 2, ...
+        'Precomputed Pc curve CSV not found: %s', cfg.precomputedPcCurveCsv);
+    assert(exist(cfg.precomputedPcSummaryCsv, 'file') == 2, ...
+        'Precomputed Pc summary CSV not found: %s', cfg.precomputedPcSummaryCsv);
+    krOpt.precomputedPcTable = readtable(cfg.precomputedPcCurveCsv, ...
+        'TextType', 'string');
+    krOpt.precomputedPcSummaryTable = readtable(cfg.precomputedPcSummaryCsv, ...
+        'TextType', 'string');
+end
 krOpt.runLogFile = fullfile(cfg.tableDir, ...
     sprintf('dynamic_kr_events_%s.log', cfg.caseToken));
 end
@@ -619,7 +659,7 @@ n = height(replaySummary);
 sgGrid = krOpt.sgGrid(:)';
 krg = nan(n, numel(sgGrid));
 krw = nan(n, numel(sgGrid));
-summaryRows = cell(n, 50);
+summaryRows = cell(n, 54);
 longRows = cell(n * numel(sgGrid), 19);
 longIdx = 0;
 curveCells = cell(n, 1);
@@ -628,6 +668,7 @@ windowNames = replaySummary.Window;
 caseIds = replaySummary.Level3CaseId;
 sliceIds = replaySummary.SliceIndex;
 curveIds = replaySummary.ProductionCurveId;
+sourceRows = replaySummary.SourceRow;
 
 if cfg.useParallel && n > 1
     ensureParallelPool(cfg.numWorkers);
@@ -635,14 +676,14 @@ if cfg.useParallel && n > 1
         fprintf('Dynamic Kr row %4d/%4d: case %02d slice %02d %s\n', ...
             i, n, caseIds(i), sliceIds(i), char(windowNames(i)));
         curveCells{i} = loadOrComputeKrDynCurveCheckpoint( ...
-            curveIds(i), outputFiles{i}, krOpt, windowNames(i));
+            curveIds(i), outputFiles{i}, krOpt, windowNames(i), sourceRows(i));
     end
 else
     for i = 1:n
         fprintf('Dynamic Kr row %4d/%4d: case %02d slice %02d %s\n', ...
             i, n, caseIds(i), sliceIds(i), char(windowNames(i)));
         curveCells{i} = loadOrComputeKrDynCurveCheckpoint( ...
-            curveIds(i), outputFiles{i}, krOpt, windowNames(i));
+            curveIds(i), outputFiles{i}, krOpt, windowNames(i), sourceRows(i));
     end
 end
 
@@ -658,10 +699,13 @@ for i = 1:n
         replaySummary.Window(i), replaySummary.SliceIndex(i), ...
         replaySummary.AssignedState(i), replaySummary.SamplingPool(i), ...
         replaySummary.SelectedSampleIndex(i), replaySummary.ReplaySeed(i), ...
-        curve.poreVolume, curve.numCells, curve.numRegions, ...
-        curve.numClayRegions, curve.clayPoreVolumeFraction, ...
+        curve.poreVolume, curve.numCells, curveValue(curve, 'originalCartDimY'), ...
+        curveValue(curve, 'runtimeCartDimY'), ...
+        char(curveTextValue(curve, 'gridMode', "unknown")), ...
+        curve.numRegions, curve.numClayRegions, curve.clayPoreVolumeFraction, ...
         curve.meanLog10KzzMD, curve.medianLog10KzzMD, ...
         curve.p05Log10KzzMD, curve.p95Log10KzzMD, ...
+        char(curveTextValue(curve, 'pcPrestepMode', "unknown")), ...
         curve.pcNumPoints, curve.pcMaxSg, ...
         curve.brineCoreyExponent, curve.gasCoreyExponent, ...
         curve.irreducibleWaterSaturation, curve.historyMatchError, ...
@@ -698,10 +742,11 @@ curveSummary = cell2table(summaryRows, 'VariableNames', { ...
     'ProductionCurveId', 'SourceRow', 'GeologyId', 'ScenarioName', ...
     'CaseLabel', 'Level3CaseId', 'Level3CaseName', 'Window', ...
     'SliceIndex', 'AssignedState', 'SamplingPool', 'SelectedSampleIndex', ...
-    'ReplaySeed', 'PoreVolume', 'NumCells', 'NumRegions', ...
-    'NumClayRegions', 'ClayPoreVolumeFraction', 'MeanLog10KzzMD', ...
+    'ReplaySeed', 'PoreVolume', 'NumCells', 'OriginalCartDimY', ...
+    'RuntimeCartDimY', 'GridMode', 'NumRegions', 'NumClayRegions', ...
+    'ClayPoreVolumeFraction', 'MeanLog10KzzMD', ...
     'MedianLog10KzzMD', 'P05Log10KzzMD', 'P95Log10KzzMD', ...
-    'PcNumPoints', 'PcMaxSg', 'BrineCoreyExponent', ...
+    'PcPrestepMode', 'PcNumPoints', 'PcMaxSg', 'BrineCoreyExponent', ...
     'GasCoreyExponent', 'IrreducibleWaterSaturation', ...
     'HistoryMatchError', 'KrgAtSg20', 'KrgAtSg50', 'KrgAtSg65', ...
     'KrwAtSg20', 'KrwAtSg50', 'KrwAtSg65', 'KrgArea', 'KrwArea', ...
@@ -727,13 +772,18 @@ curveMat.summary = curveSummary;
 end
 
 
-function curve = loadOrComputeKrDynCurveCheckpoint(curveId, outputFile, krOpt, windowName)
+function curve = loadOrComputeKrDynCurveCheckpoint( ...
+        curveId, outputFile, krOpt, windowName, sourceRow)
 % Load a completed curve checkpoint or compute and save it.
 
 checkpointFile = krDynCurveCheckpointFile(krOpt.checkpointDir, curveId);
+failureFile = krDynCurveFailureFile(krOpt.checkpointDir, curveId);
 if exist(checkpointFile, 'file') == 2
     S = load(checkpointFile, 'curve');
     curve = S.curve;
+    if exist(failureFile, 'file') == 2
+        delete(failureFile);
+    end
     recordCurveEvent(krOpt, curveId, 'checkpoint_hit', checkpointFile);
     return
 end
@@ -746,11 +796,11 @@ replayLoadSeconds = toc(loadTimer);
 recordCurveEvent(krOpt, curveId, 'replay_loaded', ...
     sprintf('seconds=%.6g', replayLoadSeconds));
 try
-    curve = krDynCurveFromReplay(S.replay, krOpt, windowName, curveId);
+    curve = krDynCurveFromReplay(S.replay, krOpt, windowName, curveId, sourceRow);
 catch ME
-    failureFile = krDynCurveFailureFile(krOpt.checkpointDir, curveId);
     failure = struct();
     failure.curveId = curveId;
+    failure.sourceRow = sourceRow;
     failure.outputFile = char(outputFile);
     failure.windowName = char(windowName);
     failure.errorIdentifier = ME.identifier;
@@ -772,11 +822,14 @@ if exist(checkpointFile, 'file') ~= 2
 elseif exist(tmpFile, 'file') == 2
     delete(tmpFile);
 end
+if exist(failureFile, 'file') == 2
+    delete(failureFile);
+end
 recordCurveEvent(krOpt, curveId, 'checkpoint_saved', checkpointFile);
 end
 
 
-function curve = krDynCurveFromReplay(replay, krOpt, windowName, curveId)
+function curve = krDynCurveFromReplay(replay, krOpt, windowName, curveId, sourceRow)
 % Compute one dynamic Appendix-C-style Kr curve from replay data.
 
 totalTimer = tic;
@@ -793,11 +846,19 @@ if exist(timingFile, 'file') == 2
 end
 opt.dyn_timing_file = timingFile;
 
-fprintf('  Pc invasion-percolation pre-step...\n');
-recordCurveEvent(krOpt, curveId, 'pc_start', ...
-    sprintf('nval=%d', krOpt.pcNval));
 pcTimer = tic;
-[pc, sg, fluid, sgmax] = upscalePcReg(G, fluid, rock, opt, false);
+if krOpt.pcPrestepMode == "precomputed"
+    fprintf('  Pc pre-step from completed IP Pc table...\n');
+    recordCurveEvent(krOpt, curveId, 'pc_start', ...
+        sprintf('source=precomputed sourceRow=%d', sourceRow));
+    [fluid, sgmax] = initializePcInversesForDynamicKr(fluid, rock, opt);
+    [sg, pc] = lookupPrecomputedPcCurve(krOpt, sourceRow);
+else
+    fprintf('  Pc invasion-percolation pre-step...\n');
+    recordCurveEvent(krOpt, curveId, 'pc_start', ...
+        sprintf('source=original nval=%d', krOpt.pcNval));
+    [pc, sg, fluid, sgmax] = upscalePcReg(G, fluid, rock, opt, false);
+end
 pcUpscalingSeconds = toc(pcTimer);
 recordCurveEvent(krOpt, curveId, 'pc_complete', ...
     sprintf('seconds=%.6g points=%d maxSg=%.6g', ...
@@ -842,6 +903,11 @@ curve.krg = krg;
 curve.krw = krw;
 curve.pcNumPoints = numel(pc);
 curve.pcMaxSg = max(sg);
+if krOpt.pcPrestepMode == "precomputed"
+    curve.pcPrestepMode = "precomputed";
+else
+    curve.pcPrestepMode = "original";
+end
 curve.brineCoreyExponent = vparFit(1);
 curve.gasCoreyExponent = vparFit(2);
 curve.irreducibleWaterSaturation = vparFit(3);
@@ -886,10 +952,11 @@ function [G, CG, rock, fluid, fault3D, opt, diagnostics] = ...
 % Build MRST inputs required by original dynamic upscaling helpers.
 
 grid = replay.Grid;
+originalCartDims = double(replay.G.cartDims(:)');
+gridMode = "full3d";
 if ~isempty(krOpt.smokeCartDims)
     [G, CG, grid] = cropReplayGridForSmoke(replay, grid, krOpt.smokeCartDims);
-elseif krOpt.useStrikeCollapsedGrid
-    [G, CG, grid] = collapseReplayGridAlongStrike(replay, grid);
+    gridMode = "smoke_crop";
 else
     G = replay.G;
     CG = replay.CG;
@@ -963,6 +1030,10 @@ poreWeights = poroAll .* volume;
 diagnostics = struct();
 diagnostics.poreVolume = sum(poreWeights, 'omitnan');
 diagnostics.numCells = G.cells.num;
+diagnostics.originalCartDimY = originalCartDims(2);
+runtimeCartDims = double(G.cartDims(:)');
+diagnostics.runtimeCartDimY = runtimeCartDims(min(2, numel(runtimeCartDims)));
+diagnostics.gridMode = gridMode;
 diagnostics.numRegions = numel(unique(units));
 diagnostics.numClayRegions = countClayRegions(units, isSmear);
 diagnostics.clayPoreVolumeFraction = ...
@@ -1034,6 +1105,127 @@ else
 end
 sgRef = refSg(:);
 pcPa = makeStrictlyIncreasing(pcPa(:));
+end
+
+
+function tf = hasPrecomputedPcCurve(krOpt, sourceRow)
+% Return true when the completed Pc table contains this replay source row.
+
+tf = false;
+if isempty(krOpt.precomputedPcTable)
+    return
+end
+T = krOpt.precomputedPcTable;
+if ~ismember('ReplaySourceRow', T.Properties.VariableNames)
+    return
+end
+rows = str2double(string(T.ReplaySourceRow));
+tf = any(rows == double(sourceRow));
+end
+
+
+function [sg, pc] = lookupPrecomputedPcCurve(krOpt, sourceRow)
+% Extract one completed IP Pc curve by replay source row.
+
+assert(hasPrecomputedPcCurve(krOpt, sourceRow), ...
+    'No precomputed Pc curve found for replay SourceRow %d.', sourceRow);
+T = krOpt.precomputedPcTable;
+rows = str2double(string(T.ReplaySourceRow));
+mask = rows == double(sourceRow);
+
+sg = str2double(string(T.GasSaturation(mask)));
+pc = str2double(string(T.PcPa(mask)));
+valid = isfinite(sg) & isfinite(pc);
+sg = sg(valid);
+pc = pc(valid);
+assert(numel(sg) >= 2, ...
+    'Precomputed Pc curve for SourceRow %d has fewer than two valid points.', ...
+    sourceRow);
+
+[sg, order] = sort(sg(:));
+pc = pc(order);
+
+endpoint = lookupPrecomputedPcEndpoint(krOpt, sourceRow);
+assert(~isempty(endpoint), ...
+    'No precomputed Pc endpoint found for replay SourceRow %d. The Pc summary table is required.', ...
+    sourceRow);
+endpointSg = endpoint(1);
+endpointPc = endpoint(2);
+keep = sg <= endpointSg + 1.0e-12;
+sg = sg(keep);
+pc = pc(keep);
+if isempty(sg)
+    sg = endpointSg;
+    pc = endpointPc;
+elseif abs(sg(end) - endpointSg) > 1.0e-10
+    sg(end + 1, 1) = endpointSg;
+    pc(end + 1, 1) = endpointPc;
+else
+    pc(end) = max(pc(end), endpointPc);
+end
+
+[sg, keep] = unique(sg, 'stable');
+pc = pc(keep);
+pc = makeStrictlyIncreasing(pc(:));
+end
+
+
+function endpoint = lookupPrecomputedPcEndpoint(krOpt, sourceRow)
+% Return [BulkSgMax, PcMaxPa] for a completed Pc curve when available.
+
+endpoint = [];
+S = krOpt.precomputedPcSummaryTable;
+requiredColumns = {'ReplaySourceRow', 'BulkSgMax', 'PcMaxPa'};
+if isempty(S) || ~all(ismember(requiredColumns, S.Properties.VariableNames))
+    return
+end
+rows = str2double(string(S.ReplaySourceRow));
+mask = rows == double(sourceRow);
+if ~any(mask)
+    return
+end
+bulkSgMax = str2double(string(S.BulkSgMax(find(mask, 1, 'first'))));
+pcMaxPa = str2double(string(S.PcMaxPa(find(mask, 1, 'first'))));
+if isfinite(bulkSgMax) && isfinite(pcMaxPa) && bulkSgMax > 0
+    endpoint = [bulkSgMax, pcMaxPa];
+end
+end
+
+
+function [fluid, sgmax] = initializePcInversesForDynamicKr(fluid, rock, opt)
+% Build fluid.pcInv and region sgmax without rerunning Pc upscaling.
+%
+% The dynamic Kr helper requires inverse Pc functions for each saturation
+% region. This mirrors the setup used by the optimized IP Pc workflow, but
+% leaves the bulk Pc/Sg curve to the completed precomputed Pc table.
+
+reg = rock.regions.saturation;
+idReg = unique(reg);
+nreg = numel(idReg);
+fluid.pcInv = cell(1, max(reg));
+sgmax = zeros(1, nreg);
+
+for n = 1:nreg
+    regId = idReg(n);
+    if strcmp(opt.sg, 'sandClay')
+        if fluid.isclay(n)
+            sgmin = fluid.krPts.g(2, 1);
+            sgmax(n) = fluid.krPts.g(2, 3);
+        else
+            sgmin = fluid.krPts.g(1, 1);
+            sgmax(n) = fluid.krPts.g(1, 3) - 0.01;
+        end
+    else
+        sgmin = fluid.krPts.g(n, 1);
+        sgmax(n) = fluid.krPts.g(n, 3);
+    end
+
+    sgvals = linspace(sgmin, sgmax(n), pow2(6)-1)';
+    sgvals = [sgvals(1); sgvals(1)+1e-3; sgvals(2:end)];
+    pcvals = makeStrictlyIncreasing(fluid.pcOG{regId}(sgvals));
+    fluid.pcInv{regId} = @(pcOG) interp1(pcvals, sgvals, pcOG, ...
+        'linear', 'extrap');
+end
 end
 
 
@@ -1150,65 +1342,6 @@ out = values(mask(:), :);
 if size(values, 2) == 1
     out = out(:);
 end
-end
-
-
-function [Gout, CGout, gridOut] = collapseReplayGridAlongStrike(replay, gridIn)
-% Collapse a strike-invariant 3D replay grid to one y column.
-
-Gin = replay.G;
-dims = double(Gin.cartDims(:)');
-if numel(dims) < 3 || dims(2) == 1
-    Gout = Gin;
-    CGout = replay.CG;
-    gridOut = gridIn;
-    return
-end
-
-fieldsToCheck = {'isSmear', 'units', 'vcl', 'poro'};
-for i = 1:numel(fieldsToCheck)
-    values = gridIn.(fieldsToCheck{i});
-    assert(isStrikeInvariant(values, dims), ...
-        'Cannot use strike-collapsed dynamic Kr grid: field %s varies along strike.', ...
-        fieldsToCheck{i});
-end
-for j = 1:size(gridIn.perm, 2)
-    assert(isStrikeInvariant(gridIn.perm(:, j), dims), ...
-        'Cannot use strike-collapsed dynamic Kr grid: perm column %d varies along strike.', j);
-end
-
-physDim = max(Gin.nodes.coords, [], 1) - min(Gin.nodes.coords, [], 1);
-Gout = computeGeometry(cartGrid([dims(1), 1, dims(3)], physDim));
-p = partitionCartGrid(Gout.cartDims, [1, 1, 1]);
-CGout = generateCoarseGrid(Gout, p);
-
-gridOut = struct();
-gridOut.isSmear = collapseVectorAlongStrike(gridIn.isSmear, dims);
-gridOut.units = collapseVectorAlongStrike(gridIn.units, dims);
-gridOut.vcl = collapseVectorAlongStrike(gridIn.vcl, dims);
-gridOut.poro = collapseVectorAlongStrike(gridIn.poro, dims);
-gridOut.perm = zeros(Gout.cells.num, size(gridIn.perm, 2));
-for j = 1:size(gridIn.perm, 2)
-    gridOut.perm(:, j) = collapseVectorAlongStrike(gridIn.perm(:, j), dims);
-end
-end
-
-
-function tf = isStrikeInvariant(values, dims)
-% Return true if every along-strike column contains the same x-z map.
-
-arr = reshape(values(:), dims);
-first = arr(:, 1, :);
-diffVal = abs(arr - repmat(first, [1, dims(2), 1]));
-tf = max(diffVal(:), [], 'omitnan') <= 1e-10;
-end
-
-
-function out = collapseVectorAlongStrike(values, dims)
-% Extract one x-z map from a repeated x-y-z field.
-
-arr = reshape(values(:), dims);
-out = reshape(arr(:, 1, :), [], 1);
 end
 
 
@@ -1362,6 +1495,93 @@ if isfield(curve, fieldName)
     value = curve.(fieldName);
 else
     value = NaN;
+end
+end
+
+
+function value = curveTextValue(curve, fieldName, defaultValue)
+% Return a text curve field or a default for older checkpoints.
+
+if isfield(curve, fieldName)
+    value = string(curve.(fieldName));
+else
+    value = string(defaultValue);
+end
+end
+
+
+function value = envOrDefault(name, defaultValue)
+% Read an environment variable or return a default value.
+
+raw = getenv(char(name));
+if isempty(raw)
+    value = defaultValue;
+else
+    value = raw;
+end
+end
+
+
+function ids = parseIdList(textValue)
+% Parse comma-separated integer ids from a string.
+
+parts = regexp(char(textValue), '\s*,\s*', 'split');
+ids = str2double(parts);
+ids = ids(isfinite(ids));
+assert(~isempty(ids), 'No valid integer ids were provided.');
+end
+
+
+function token = caseTokenFromIds(caseIds)
+% Build a stable case-token string such as cases_01_03_04_07.
+
+parts = strings(1, numel(caseIds));
+for i = 1:numel(caseIds)
+    parts(i) = sprintf('%02d', caseIds(i));
+end
+token = "cases_" + strjoin(parts, "_");
+end
+
+
+function rootPath = defaultWorkflowRoot()
+% Return the default workflow root for the current platform.
+
+if ispc
+    rootPath = fullfile('D:', 'codex_gom', 'UQ_workflow');
+else
+    rootPath = fullfile('/home', 'shaowen', 'orcd', 'scratch', ...
+        'predict_shaowen', 'runs', 'manual');
+end
+end
+
+
+function rootPath = defaultReplayRoot()
+% Return the default replay root for the current platform.
+
+rootPath = fullfile(defaultWorkflowRoot(), 'full87_replay_median_examples');
+end
+
+
+function rootPath = defaultUpscalingRoot()
+% Return a platform-appropriate temporary upscaling-code root.
+
+if ispc
+    rootPath = fullfile('D:', 'codex_gom', 'tmp_upscaling_dyn_runtime');
+else
+    rootPath = fullfile(tempdir, 'tmp_upscaling_dyn_runtime');
+end
+end
+
+
+function rootPath = defaultMrstRoot()
+% Return the default MRST root for the current platform.
+
+if ispc
+    rootPath = fullfile('C:', 'Users', 'Shaow', 'OneDrive', 'MIT', ...
+        'mrst-2025a', 'SINTEF-AppliedCompSci-MRST-75749fa');
+else
+    rootPath = fullfile('/home', 'shaowen', 'orcd', 'pool', ...
+        'predict_shaowen', 'software', 'mrst-current');
 end
 end
 

@@ -33,6 +33,7 @@ cfg.dataRoot = envOrDefault("FULL87_REPLAY_DATA_ROOT", ...
     fullfile(examplesDir, 'thickness_scenario_data'));
 cfg.replayPredictCodeRoot = envOrDefault("PREDICT_REPLAY_CODE_ROOT", ...
     defaultReplayCodeRoot(repoRoot));
+cfg.mrstRoot = envOrDefault("MRST_ROOT", defaultMrstRoot());
 cfg.verifyToleranceLog10 = str2double(envOrDefault( ...
     "FULL87_REPLAY_VERIFY_TOLERANCE_LOG10", "1.0e-3"));
 cfg.maxRows = str2double(envOrDefault("FULL87_REPLAY_MAX_ROWS", "Inf"));
@@ -54,6 +55,7 @@ selectionCsv = buildFull87Selection(cfg);
 selectionTable = readtable(selectionCsv, 'TextType', 'string');
 
 fprintf('\n=== Replay exact selected PREDICT realizations ===\n')
+setupMrstForReplay(cfg.mrstRoot);
 replaySummaryCsv = fullfile(cfg.replayDir, 'replay_summary.csv');
 if exist(replaySummaryCsv, 'file') == 2
     replaySummary = readtable(replaySummaryCsv, 'TextType', 'string');
@@ -154,8 +156,16 @@ end
 function T = attachSelectionContext(T, selectionTable)
 % Attach field-sampling context to the replay summary table.
 
-assert(height(T) == height(selectionTable), ...
-    'Replay summary and selection table have different row counts.');
+if height(T) ~= height(selectionTable)
+    assert(ismember('SourceRow', T.Properties.VariableNames), ...
+        ['Replay summary and selection table have different row counts, ', ...
+        'and SourceRow is unavailable for subsetting.']);
+    sourceRows = str2double(string(T.SourceRow));
+    assert(all(isfinite(sourceRows)) && ...
+        all(sourceRows >= 1) && all(sourceRows <= height(selectionTable)), ...
+        'Replay summary SourceRow values do not match the selection table.');
+    selectionTable = selectionTable(sourceRows, :);
+end
 
 T.GeologyId = selectionTable.geology_id;
 T.ScenarioIndex = str2double(string(selectionTable.scenario_index));
@@ -194,6 +204,39 @@ if exist(archivedRoot, 'dir') == 7
     rootPath = archivedRoot;
 else
     rootPath = repoRoot;
+end
+end
+
+
+function rootPath = defaultMrstRoot()
+% Return the default MRST root for the current platform.
+
+if ispc
+    rootPath = fullfile('C:', 'Users', 'Shaow', 'OneDrive', 'MIT', ...
+        'mrst-2025a', 'SINTEF-AppliedCompSci-MRST-75749fa');
+else
+    rootPath = fullfile('/home', 'shaowen', 'orcd', 'pool', ...
+        'predict_shaowen', 'software', 'mrst-current');
+end
+end
+
+
+function setupMrstForReplay(mrstRoot)
+% Initialize MRST because PREDICT replay uses MRST geometry utilities.
+
+if exist('mrstModule', 'file') == 2
+    return
+end
+startupFile = fullfile(mrstRoot, 'startup.m');
+assert(exist(startupFile, 'file') == 2, ...
+    'MRST startup.m not found: %s', startupFile);
+run(startupFile);
+try
+    mrstModule add mrst-gui mimetic upscaling incomp coarsegrid deckformat ...
+        ad-core ad-props ad-blackoil
+catch err
+    warning('Could not add all standard MRST modules for replay: %s', ...
+        err.message);
 end
 end
 

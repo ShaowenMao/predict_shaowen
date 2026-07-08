@@ -34,21 +34,24 @@ examplesDir = fileparts(scriptDir);
 repoRoot = fileparts(examplesDir);
 
 cfg = struct();
-cfg.geologyId = "s05_c012";
-cfg.level3CaseIds = [1 3 4 7];
-cfg.caseToken = "cases_01_03_04_07";
+cfg.geologyId = string(envOrDefault("PC_IP_GEOLOGY_ID", "s05_c012"));
+cfg.level3CaseIds = parseIdList(envOrDefault("PC_IP_CASE_IDS", "1,3,4,7"));
+cfg.caseToken = caseTokenFromIds(cfg.level3CaseIds);
 cfg.windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"];
 cfg.sgGrid = linspace(0.02, 0.68, 80);
-cfg.sourceRoot = fullfile('D:', 'codex_gom', 'UQ_workflow', ...
-    'full87_replay_median_examples');
-cfg.replaySummaryCsv = fullfile(cfg.sourceRoot, 'tables', ...
-    'replay_summary_with_full87_context_s05_c012_cases_01_03_04_07.csv');
-cfg.upscalingZip = fullfile(repoRoot, 'upscaling.zip');
-cfg.upscalingRoot = fullfile('D:', 'codex_gom', 'tmp_upscaling_zip_inspect');
-cfg.mrstRoot = fullfile('C:', 'Users', 'Shaow', 'OneDrive', 'MIT', ...
-    'mrst-2025a', 'SINTEF-AppliedCompSci-MRST-75749fa');
-cfg.outputRoot = fullfile('D:', 'codex_gom', 'UQ_workflow', ...
-    'pc_upscaling_ip_median_examples_full87');
+cfg.sourceRoot = envOrDefault("PC_IP_REPLAY_ROOT", ...
+    envOrDefault("FULL87_REPLAY_OUTPUT_ROOT", defaultReplayRoot()));
+cfg.replaySummaryCsv = envOrDefault("PC_IP_REPLAY_SUMMARY_CSV", ...
+    fullfile(cfg.sourceRoot, 'tables', sprintf( ...
+    'replay_summary_with_full87_context_%s_%s.csv', ...
+    cfg.geologyId, cfg.caseToken)));
+cfg.upscalingZip = envOrDefault("UPSCALING_ZIP", ...
+    fullfile(repoRoot, 'upscaling.zip'));
+cfg.upscalingRoot = envOrDefault("PC_IP_UPSCALING_ROOT", ...
+    envOrDefault("UPSCALING_ROOT", defaultUpscalingRoot()));
+cfg.mrstRoot = envOrDefault("MRST_ROOT", defaultMrstRoot());
+cfg.outputRoot = envOrDefault("PC_IP_OUTPUT_ROOT", ...
+    fullfile(defaultWorkflowRoot(), 'pc_upscaling_ip_median_examples_full87'));
 
 maxRowsText = strtrim(string(getenv('PC_IP_MAX_ROWS')));
 if maxRowsText ~= ""
@@ -82,9 +85,15 @@ replaySummary.WindowOrder = windowOrder(replaySummary.Window);
 replaySummary = sortrows(replaySummary, {'Level3CaseId', 'SliceIndex', 'WindowOrder'});
 
 expectedRows = 87 * numel(cfg.windows) * numel(cfg.level3CaseIds);
-assert(height(replaySummary) == expectedRows, ...
-    'Expected %d rows for cases %s, found %d.', ...
-    expectedRows, cfg.caseToken, height(replaySummary));
+if height(replaySummary) ~= expectedRows
+    allowPartial = parseLogicalEnv("PC_IP_ALLOW_PARTIAL_REPLAY", ...
+        isfinite(cfg.maxRows));
+    assert(allowPartial, ...
+        'Expected %d rows for cases %s, found %d.', ...
+        expectedRows, cfg.caseToken, height(replaySummary));
+    warning('Expected %d rows for cases %s, found %d; continuing with partial replay data.', ...
+        expectedRows, cfg.caseToken, height(replaySummary));
+end
 if isfinite(cfg.maxRows)
     replaySummary = replaySummary(1:min(cfg.maxRows, height(replaySummary)), :);
 end
@@ -98,11 +107,13 @@ fprintf('IP mode uses kzz scaling, %s connectivity, t = %.2f, clay Pce uncertain
     pcOpt.ipAlgorithm, pcOpt.t, pcOpt.clayPceUncertaintyQuantile);
 
 curveLongCsv = fullfile(cfg.curveDir, ...
-    sprintf('pc_curve_points_s05_c012_%s_ip_full87.csv', cfg.caseToken));
+    sprintf('pc_curve_points_%s_%s_ip_full87.csv', ...
+    cfg.geologyId, cfg.caseToken));
 curveSummaryCsv = fullfile(cfg.tableDir, ...
-    sprintf('pc_curve_summary_s05_c012_%s_ip_full87.csv', cfg.caseToken));
+    sprintf('pc_curve_summary_%s_%s_ip_full87.csv', ...
+    cfg.geologyId, cfg.caseToken));
 curveMatFile = fullfile(cfg.curveDir, ...
-    sprintf('pc_curves_s05_c012_%s_ip_full87.mat', cfg.caseToken));
+    sprintf('pc_curves_%s_%s_ip_full87.mat', cfg.geologyId, cfg.caseToken));
 
 fprintf('\n=== Compute full invasion-percolation Pc curves ===\n')
 if exist(curveMatFile, 'file') == 2
@@ -123,13 +134,16 @@ end
 fprintf('\n=== Select IP medoid Pc curves ===\n')
 results = analyzeIpMedoids(curveMat, cfg);
 medoidSummaryCsv = fullfile(cfg.tableDir, ...
-    sprintf('pc_medoid_summary_s05_c012_%s_ip_full87.csv', cfg.caseToken));
+    sprintf('pc_medoid_summary_%s_%s_ip_full87.csv', ...
+    cfg.geologyId, cfg.caseToken));
 distanceSummaryCsv = fullfile(cfg.tableDir, ...
-    sprintf('pc_distance_summary_s05_c012_%s_ip_full87.csv', cfg.caseToken));
+    sprintf('pc_distance_summary_%s_%s_ip_full87.csv', ...
+    cfg.geologyId, cfg.caseToken));
 writetable(results.MedoidSummary, medoidSummaryCsv);
 writetable(results.DistanceSummary, distanceSummaryCsv);
 save(fullfile(cfg.tableDir, ...
-    sprintf('pc_medoid_results_s05_c012_%s_ip_full87.mat', cfg.caseToken)), ...
+    sprintf('pc_medoid_results_%s_%s_ip_full87.mat', ...
+    cfg.geologyId, cfg.caseToken)), ...
     'results', '-v7.3');
 fprintf('Saved IP medoid summary: %s\n', medoidSummaryCsv);
 fprintf('Saved IP distance summary: %s\n', distanceSummaryCsv);
@@ -839,7 +853,8 @@ for c = 1:numel(cfg.level3CaseIds)
         'Grey = 87 slices; red = medoid curve'}, ...
         'FontSize', 22, 'FontWeight', 'bold', 'Interpreter', 'none');
     saveFigureBoth(fig, cfg.figureDir, ...
-        sprintf('s05_c012_case%02d_ip_full87_pc_curves_with_medoids', caseId));
+        sprintf('%s_case%02d_ip_full87_pc_curves_with_medoids', ...
+        cfg.geologyId, caseId));
 end
 
 fig = figure('Color', 'w', 'Position', [120 120 1750 950]);
@@ -872,7 +887,7 @@ end
 sgtitle('Validated invasion-percolation medoid Pc levels by case and window', ...
     'FontSize', 22, 'FontWeight', 'bold');
 saveFigureBoth(fig, cfg.figureDir, ...
-    sprintf('s05_c012_%s_ip_medoid_pc_levels', cfg.caseToken));
+    sprintf('%s_%s_ip_medoid_pc_levels', cfg.geologyId, cfg.caseToken));
 end
 
 
@@ -942,4 +957,92 @@ exportgraphics(fig, pngFile, 'Resolution', 220);
 exportgraphics(fig, pdfFile, 'ContentType', 'vector');
 fprintf('Saved figure: %s\n', pngFile);
 fprintf('Saved figure: %s\n', pdfFile);
+end
+
+
+function value = envOrDefault(name, defaultValue)
+% Read an environment variable or return a default value.
+
+raw = getenv(char(name));
+if isempty(raw)
+    value = defaultValue;
+else
+    value = raw;
+end
+end
+
+
+function ids = parseIdList(textValue)
+% Parse comma-separated integer ids from a string.
+
+parts = regexp(char(textValue), '\s*,\s*', 'split');
+ids = str2double(parts);
+ids = ids(isfinite(ids));
+assert(~isempty(ids), 'No valid integer ids were provided.');
+end
+
+
+function token = caseTokenFromIds(caseIds)
+% Build a stable case-token string such as cases_01_03_04_07.
+
+parts = strings(1, numel(caseIds));
+for i = 1:numel(caseIds)
+    parts(i) = sprintf('%02d', caseIds(i));
+end
+token = "cases_" + strjoin(parts, "_");
+end
+
+
+function rootPath = defaultWorkflowRoot()
+% Return the default workflow root for the current platform.
+
+if ispc
+    rootPath = fullfile('D:', 'codex_gom', 'UQ_workflow');
+else
+    rootPath = fullfile('/home', 'shaowen', 'orcd', 'scratch', ...
+        'predict_shaowen', 'runs', 'manual');
+end
+end
+
+
+function rootPath = defaultReplayRoot()
+% Return the default replay root for the current platform.
+
+rootPath = fullfile(defaultWorkflowRoot(), 'full87_replay_median_examples');
+end
+
+
+function rootPath = defaultUpscalingRoot()
+% Return a platform-appropriate temporary upscaling-code root.
+
+if ispc
+    rootPath = fullfile('D:', 'codex_gom', 'tmp_upscaling_zip_inspect');
+else
+    rootPath = fullfile(tempdir, 'tmp_upscaling_zip_inspect');
+end
+end
+
+
+function rootPath = defaultMrstRoot()
+% Return the default MRST root for the current platform.
+
+if ispc
+    rootPath = fullfile('C:', 'Users', 'Shaow', 'OneDrive', 'MIT', ...
+        'mrst-2025a', 'SINTEF-AppliedCompSci-MRST-75749fa');
+else
+    rootPath = fullfile('/home', 'shaowen', 'orcd', 'pool', ...
+        'predict_shaowen', 'software', 'mrst-current');
+end
+end
+
+
+function tf = parseLogicalEnv(name, defaultValue)
+% Parse a logical environment variable.
+
+txt = lower(strtrim(string(getenv(char(name)))));
+if txt == ""
+    tf = defaultValue;
+    return
+end
+tf = any(txt == ["1", "true", "yes", "y", "on"]);
 end
