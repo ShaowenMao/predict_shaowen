@@ -38,6 +38,8 @@ cfg.geologyId = string(envOrDefault("PC_IP_GEOLOGY_ID", "s05_c012"));
 cfg.level3CaseIds = parseIdList(envOrDefault("PC_IP_CASE_IDS", "1,3,4,7"));
 cfg.caseToken = caseTokenFromIds(cfg.level3CaseIds);
 cfg.windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"];
+% Common grid for reporting/medoid comparison only. Native Pc endpoints are
+% saved separately and should drive effective Swi in dynamic Kr upscaling.
 cfg.sgGrid = linspace(0.02, 0.68, 80);
 cfg.sourceRoot = envOrDefault("PC_IP_REPLAY_ROOT", ...
     envOrDefault("FULL87_REPLAY_OUTPUT_ROOT", defaultReplayRoot()));
@@ -109,6 +111,9 @@ fprintf('IP mode uses kzz scaling, %s connectivity, t = %.2f, clay Pce uncertain
 curveLongCsv = fullfile(cfg.curveDir, ...
     sprintf('pc_curve_points_%s_%s_ip_full87.csv', ...
     cfg.geologyId, cfg.caseToken));
+nativeCurveLongCsv = fullfile(cfg.curveDir, ...
+    sprintf('pc_native_curve_points_%s_%s_ip_full87.csv', ...
+    cfg.geologyId, cfg.caseToken));
 curveSummaryCsv = fullfile(cfg.tableDir, ...
     sprintf('pc_curve_summary_%s_%s_ip_full87.csv', ...
     cfg.geologyId, cfg.caseToken));
@@ -116,17 +121,34 @@ curveMatFile = fullfile(cfg.curveDir, ...
     sprintf('pc_curves_%s_%s_ip_full87.mat', cfg.geologyId, cfg.caseToken));
 
 fprintf('\n=== Compute full invasion-percolation Pc curves ===\n')
-if exist(curveMatFile, 'file') == 2
+useCachedCurves = exist(curveMatFile, 'file') == 2 && ...
+    exist(nativeCurveLongCsv, 'file') == 2 && ...
+    exist(curveSummaryCsv, 'file') == 2;
+if useCachedCurves
     fprintf('Loading cached IP curve MAT: %s\n', curveMatFile);
     cached = load(curveMatFile, 'curveMat');
     curveMat = cached.curveMat;
-else
-    [curveLong, curveSummary, curveMat] = computeIpPcCurves( ...
+    useCachedCurves = isfield(curveMat, 'rawSg') && ...
+        isfield(curveMat, 'rawPcPa');
+    if ~useCachedCurves
+        fprintf(['Cached Pc MAT lacks native endpoint arrays; ', ...
+            'recomputing to preserve upscaled Swi endpoints.\n']);
+    end
+end
+
+if ~useCachedCurves
+    if exist(curveMatFile, 'file') == 2
+        fprintf(['Existing Pc MAT lacks required native-curve companion files; ', ...
+            'recomputing to preserve upscaled Swi endpoints.\n']);
+    end
+    [curveLong, nativeCurveLong, curveSummary, curveMat] = computeIpPcCurves( ...
         replaySummary, pcOpt);
     writetable(curveLong, curveLongCsv);
+    writetable(nativeCurveLong, nativeCurveLongCsv);
     writetable(curveSummary, curveSummaryCsv);
     save(curveMatFile, 'curveMat', 'pcOpt', 'cfg', '-v7.3');
     fprintf('Saved IP curve points: %s\n', curveLongCsv);
+    fprintf('Saved native IP curve points: %s\n', nativeCurveLongCsv);
     fprintf('Saved IP curve summary: %s\n', curveSummaryCsv);
     fprintf('Saved IP curve MAT: %s\n', curveMatFile);
 end
@@ -276,15 +298,19 @@ curve.sgAtPcUnique = curve.sg(ia);
 end
 
 
-function [curveLong, curveSummary, curveMat] = computeIpPcCurves(replaySummary, pcOpt)
+function [curveLong, nativeCurveLong, curveSummary, curveMat] = computeIpPcCurves(replaySummary, pcOpt)
 % Compute invasion-percolation Pc curves for every replay row.
 
 n = height(replaySummary);
 sgGrid = pcOpt.sgGrid(:)';
 pcPa = nan(n, numel(sgGrid));
-summaryRows = cell(n, 34);
+rawSg = cell(n, 1);
+rawPcPa = cell(n, 1);
+summaryRows = cell(n, 35);
 longRows = cell(n * numel(sgGrid), 18);
 longIdx = 0;
+nativeRows = {};
+nativeIdx = 0;
 
 for i = 1:n
     outputFile = char(replaySummary.OutputFile(i));
@@ -294,6 +320,8 @@ for i = 1:n
     S = load(outputFile, 'replay');
     curve = ipPcCurveFromReplay(S.replay, pcOpt, replaySummary.Window(i));
     pcPa(i, :) = curve.pcPa;
+    rawSg{i} = curve.rawSg(:);
+    rawPcPa{i} = curve.rawPcPa(:);
 
     summaryRows(i, :) = { ...
         i, replaySummary.SourceRow(i), replaySummary.GeologyId(i), ...
@@ -307,8 +335,9 @@ for i = 1:n
         curve.meanLog10KzzMD, curve.medianLog10KzzMD, ...
         curve.p05Log10KzzMD, curve.p95Log10KzzMD, ...
         curve.pcAtSg20Pa, curve.pcAtSg50Pa, curve.pcAtSg65Pa, ...
-        curve.bulkSgMax, curve.rawNumPoints, curve.percolationPcPa, ...
-        curve.percolationSg, curve.pcMinPa, curve.pcMaxPa, ...
+        curve.bulkSgMax, curve.effectiveSwi, curve.rawNumPoints, ...
+        curve.percolationPcPa, curve.percolationSg, ...
+        curve.pcMinPa, curve.pcMaxPa, ...
         pcOpt.scalingPermComponent, pcOpt.t, ...
         pcOpt.clayPceUncertaintyQuantile};
 
@@ -324,6 +353,19 @@ for i = 1:n
             log10(max(curve.pcPa(j), realmin)), curve.clayPoreVolumeFraction, ...
             curve.medianLog10KzzMD, curve.percolationPcPa / 1.0e5};
     end
+
+    for j = 1:numel(curve.rawSg)
+        nativeIdx = nativeIdx + 1;
+        nativeRows(nativeIdx, :) = { ...
+            i, replaySummary.SourceRow(i), replaySummary.GeologyId(i), ...
+            replaySummary.Level3CaseId(i), replaySummary.Level3CaseName(i), ...
+            replaySummary.Window(i), replaySummary.SliceIndex(i), ...
+            replaySummary.AssignedState(i), replaySummary.SamplingPool(i), ...
+            replaySummary.SelectedSampleIndex(i), replaySummary.ReplaySeed(i), ...
+            j, curve.rawSg(j), curve.rawPcPa(j), curve.rawPcPa(j) / 1.0e5, ...
+            log10(max(curve.rawPcPa(j), realmin)), curve.bulkSgMax, ...
+            curve.effectiveSwi, j == numel(curve.rawSg)};
+    end
 end
 
 curveSummary = cell2table(summaryRows, 'VariableNames', ...
@@ -334,7 +376,7 @@ curveSummary = cell2table(summaryRows, 'VariableNames', ...
      'NumClayRegions', 'ClayPoreVolumeFraction', 'MeanLog10KzzMD', ...
      'MedianLog10KzzMD', 'P05Log10KzzMD', 'P95Log10KzzMD', ...
      'PcAtSg20Pa', 'PcAtSg50Pa', 'PcAtSg65Pa', 'BulkSgMax', ...
-     'RawNumPoints', 'PercolationPcPa', 'PercolationSg', ...
+     'EffectiveSwi', 'RawNumPoints', 'PercolationPcPa', 'PercolationSg', ...
      'PcMinPa', 'PcMaxPa', 'ScalingPermComponent', 'IpT', ...
      'ClayPceUncertaintyQuantile'});
 
@@ -346,10 +388,19 @@ curveLong = cell2table(longRows(1:longIdx, :), 'VariableNames', ...
      'ClayPoreVolumeFraction', 'MedianLog10KzzMD', ...
      'PercolationPcBar'});
 
+nativeCurveLong = cell2table(nativeRows, 'VariableNames', ...
+    {'CurveId', 'ReplaySourceRow', 'GeologyId', 'Level3CaseId', ...
+     'Level3CaseName', 'Window', 'SliceIndex', 'AssignedState', ...
+     'SamplingPool', 'SelectedSampleIndex', 'ReplaySeed', ...
+     'NativePointIndex', 'GasSaturation', 'PcPa', 'PcBar', ...
+     'Log10PcPa', 'BulkSgMax', 'EffectiveSwi', 'IsEndpoint'});
+
 curveMat = struct();
 curveMat.sgGrid = sgGrid;
 curveMat.pcPa = pcPa;
 curveMat.pcBar = pcPa / 1.0e5;
+curveMat.rawSg = rawSg;
+curveMat.rawPcPa = rawPcPa;
 curveMat.summary = curveSummary;
 end
 
@@ -401,6 +452,7 @@ curve.pcAtSg20Pa = interp1(pcOpt.sgGrid, pcAtSg, 0.20, 'linear', 'extrap');
 curve.pcAtSg50Pa = interp1(pcOpt.sgGrid, pcAtSg, 0.50, 'linear', 'extrap');
 curve.pcAtSg65Pa = interp1(pcOpt.sgGrid, pcAtSg, 0.65, 'linear', 'extrap');
 curve.bulkSgMax = max(sgUnique);
+curve.effectiveSwi = max(0, min(1, 1 - curve.bulkSgMax));
 curve.pcMinPa = min(pcUnique);
 curve.pcMaxPa = max(pcUnique);
 end
@@ -806,10 +858,14 @@ end
 
 
 function makeIpFigures(curveMat, results, cfg)
-% Plot all IP full-87 curves and medoids, separated by Level-3 case.
+% Plot native-endpoint IP full-87 curves and medoids by Level-3 case.
+%
+% The fixed Sg grid in curveMat.pcBar is retained for curve comparison and
+% medoid selection. Presentation figures use the native IP curves instead so
+% each curve's BulkSgMax endpoint, and therefore effective Swi, remains
+% visible.
 
 summary = curveMat.summary;
-sg = curveMat.sgGrid;
 windows = cfg.windows;
 
 for c = 1:numel(cfg.level3CaseIds)
@@ -819,8 +875,8 @@ for c = 1:numel(cfg.level3CaseIds)
         continue
     end
     caseName = displayCaseName(summary.Level3CaseName(caseRows(1)));
-    fig = figure('Color', 'w', 'Position', [80 80 1700 900]);
-    tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+    fig = figure('Color', 'w', 'Position', [80 80 1700 1050]);
+    tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'tight');
     for w = 1:numel(windows)
         nexttile;
         windowName = windows(w);
@@ -834,23 +890,38 @@ for c = 1:numel(cfg.level3CaseIds)
         medoidMask = results.MedoidSummary.Level3CaseId == caseId & ...
             results.MedoidSummary.Window == windowName;
         medoidId = results.MedoidSummary.MedoidCurveId(medoidMask);
-        semilogy(sg(:), curveMat.pcBar(idx, :)', '-', ...
-            'Color', [0.72 0.74 0.78], 'LineWidth', 0.8);
         hold on;
-        semilogy(sg(:), curveMat.pcBar(medoidId, :)', '-', ...
+        for j = 1:numel(idx)
+            curveId = idx(j);
+            nativeSg = curveMat.rawSg{curveId};
+            nativePcBar = max(curveMat.rawPcPa{curveId} ./ 1.0e5, 1.0e-12);
+            semilogy(nativeSg(:), nativePcBar(:), '-', ...
+                'Color', [0.72 0.74 0.78], 'LineWidth', 0.8);
+            semilogy(nativeSg(end), nativePcBar(end), 'o', ...
+                'MarkerFaceColor', [0.58 0.61 0.65], ...
+                'MarkerEdgeColor', [0.42 0.44 0.48], ...
+                'MarkerSize', 3.5);
+        end
+        medoidSg = curveMat.rawSg{medoidId};
+        medoidPcBar = max(curveMat.rawPcPa{medoidId} ./ 1.0e5, 1.0e-12);
+        semilogy(medoidSg(:), medoidPcBar(:), '-', ...
             'Color', [0.86 0.22 0.16], 'LineWidth', 2.8);
+        semilogy(medoidSg(end), medoidPcBar(end), 'o', ...
+            'MarkerFaceColor', [0.86 0.22 0.16], ...
+            'MarkerEdgeColor', 'w', 'LineWidth', 0.8, ...
+            'MarkerSize', 7);
         grid on;
         title(sprintf('%s | invasion percolation', upper(char(windowName))), ...
             'FontSize', 16, 'FontWeight', 'bold');
         xlabel('Gas saturation');
         ylabel('Pc [bar]');
-        xlim([min(sg), max(sg)]);
+        xlim([0, 1]);
         ylim([1e-2, 1e3]);
         set(gca, 'FontSize', 13, 'LineWidth', 1.0);
     end
     sgtitle({sprintf('Case %02d: %s', caseId, caseName), ...
-        'Full-87 invasion-percolation Pc curves by window', ...
-        'Grey = 87 slices; red = medoid curve'}, ...
+        'Native-endpoint invasion-percolation Pc curves by window', ...
+        'Curve endpoints show BulkSgMax; EffectiveSwi = 1 - BulkSgMax'}, ...
         'FontSize', 22, 'FontWeight', 'bold', 'Interpreter', 'none');
     saveFigureBoth(fig, cfg.figureDir, ...
         sprintf('%s_case%02d_ip_full87_pc_curves_with_medoids', ...

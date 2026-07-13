@@ -11,6 +11,7 @@ source "${SCRIPT_DIR}/env_case01.sh"
 
 SBATCH_ACCOUNT="${SBATCH_ACCOUNT:-mit_amf_advanced_cpu}"
 SBATCH_PARTITION="${SBATCH_PARTITION:-mit_normal}"
+SBATCH_QOS="${SBATCH_QOS:-}"
 
 if [[ "${RUN_MODE}" == "smoke" ]]; then
     REPLAY_TIME="${REPLAY_TIME:-00:30:00}"
@@ -56,6 +57,9 @@ submit_stage() {
     )
     if [[ -n "${dependency}" ]]; then
         args+=(--dependency="afterok:${dependency}")
+    fi
+    if [[ -n "${SBATCH_QOS}" ]]; then
+        args+=(--qos="${SBATCH_QOS}")
     fi
 
     sbatch "${args[@]}" "${SCRIPT_DIR}/run_case01_stage.sh" "${stage}"

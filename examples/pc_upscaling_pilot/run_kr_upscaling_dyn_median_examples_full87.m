@@ -25,6 +25,11 @@
 %   setenv('KR_DYN_COREY_STEP','0.2')
 %   setenv('KR_DYN_TIMESTEP_MODE','paper')
 %   run_kr_upscaling_dyn_median_examples_full87
+%
+% Pc-guided representative reduction:
+%   setenv('KR_DYN_SELECTION_MODE','median_swi')
+%   % Runs one actual median-effective-Swi slice per case/window and exports
+%   % normalized Kr shapes plus slice-specific Pc endpoint mappings.
 
 clear; clc;
 
@@ -37,6 +42,8 @@ cfg.geologyId = string(envOrDefault("KR_DYN_GEOLOGY_ID", "s05_c012"));
 cfg.level3CaseIds = parseIdList(envOrDefault("KR_DYN_CASE_IDS", "1,3,4,7"));
 cfg.caseToken = caseTokenFromIds(cfg.level3CaseIds);
 cfg.windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"];
+% Common grid for exported Kr tables only. Effective Swi is inferred from
+% the native precomputed Pc endpoint via max(Sg), matching the WRR workflow.
 cfg.sgGrid = linspace(0.02, 0.68, 80);
 cfg.sourceRoot = envOrDefault("KR_DYN_REPLAY_ROOT", ...
     envOrDefault("FULL87_REPLAY_OUTPUT_ROOT", defaultReplayRoot()));
@@ -51,6 +58,9 @@ assert(any(cfg.pcPrestepMode == ["original", "precomputed"]), ...
 cfg.precomputedPcCurveCsv = envOrDefault("KR_DYN_PRECOMPUTED_PC_CURVE_CSV", ...
     fullfile(fileparts(cfg.sourceRoot), 'pc_ip', 'curves', sprintf( ...
     'pc_curve_points_%s_%s_ip_full87.csv', cfg.geologyId, cfg.caseToken)));
+cfg.precomputedPcNativeCurveCsv = envOrDefault("KR_DYN_PRECOMPUTED_PC_NATIVE_CURVE_CSV", ...
+    fullfile(fileparts(cfg.sourceRoot), 'pc_ip', 'curves', sprintf( ...
+    'pc_native_curve_points_%s_%s_ip_full87.csv', cfg.geologyId, cfg.caseToken)));
 cfg.precomputedPcSummaryCsv = envOrDefault("KR_DYN_PRECOMPUTED_PC_SUMMARY_CSV", ...
     fullfile(fileparts(cfg.sourceRoot), 'pc_ip', 'tables', sprintf( ...
     'pc_curve_summary_%s_%s_ip_full87.csv', cfg.geologyId, cfg.caseToken)));
@@ -61,6 +71,14 @@ cfg.upscalingRoot = envOrDefault("KR_DYN_UPSCALING_ROOT", ...
 cfg.mrstRoot = envOrDefault("MRST_ROOT", defaultMrstRoot());
 cfg.outputRoot = envOrDefault("KR_DYN_OUTPUT_ROOT", ...
     fullfile(defaultWorkflowRoot(), 'kr_upscaling_dyn_median_examples_full87'));
+cfg.selectionMode = lower(strtrim(string(envOrDefault( ...
+    "KR_DYN_SELECTION_MODE", "all"))));
+assert(any(cfg.selectionMode == ["all", "median_swi"]), ...
+    'KR_DYN_SELECTION_MODE must be all or median_swi.');
+cfg.normalizedShapePoints = round(parseNumericEnv( ...
+    "KR_DYN_NORMALIZED_SHAPE_POINTS", 101));
+assert(cfg.normalizedShapePoints >= 2, ...
+    'KR_DYN_NORMALIZED_SHAPE_POINTS must be at least 2.');
 cfg.onlyRows = parseIntegerListEnv("KR_DYN_ONLY_ROWS");
 cfg.smokeCartDims = parseIntegerListEnv("KR_DYN_SMOKE_CARTDIMS");
 
@@ -166,6 +184,26 @@ if height(replaySummary) ~= expectedRows
     warning('Expected %d rows for cases %s, found %d; continuing with partial replay data.', ...
         expectedRows, cfg.caseToken, height(replaySummary));
 end
+
+selectionTable = table();
+pcSummaryForMapping = table();
+if cfg.selectionMode == "median_swi"
+    assert(exist(cfg.precomputedPcSummaryCsv, 'file') == 2, ...
+        'Median-Swi selection requires the completed Pc summary CSV: %s', ...
+        cfg.precomputedPcSummaryCsv);
+    pcSummaryForMapping = readtable(cfg.precomputedPcSummaryCsv, ...
+        'TextType', 'string');
+    [replaySummary, selectionTable] = selectMedianSwiReplayRows( ...
+        replaySummary, pcSummaryForMapping, cfg);
+    selectionCsv = fullfile(cfg.tableDir, sprintf( ...
+        'kr_representative_selection_%s_%s_median_swi.csv', ...
+        cfg.geologyId, cfg.caseToken));
+    writetable(selectionTable, selectionCsv);
+    fprintf(['Selected %d Pc-guided representative replay rows ', ...
+        'using median effective Swi.\n'], height(replaySummary));
+    fprintf('Saved representative selection table: %s\n', selectionCsv);
+end
+
 if ~isempty(cfg.onlyRows)
     assert(all(cfg.onlyRows >= 1 & cfg.onlyRows <= height(replaySummary)), ...
         'KR_DYN_ONLY_ROWS contains row ids outside 1:%d.', height(replaySummary));
@@ -175,6 +213,7 @@ elseif isfinite(cfg.maxRows)
 end
 fprintf('Using %d replayed rows from: %s\n', ...
     height(replaySummary), cfg.replaySummaryCsv);
+fprintf('Kr row-selection mode: %s\n', cfg.selectionMode);
 
 krOpt = krDynOptions(cfg);
 fprintf('Reference deck: %s\n', cfg.originalDeckFile);
@@ -197,21 +236,36 @@ if cfg.useParallel
 end
 fprintf('\n');
 
-curveLongCsv = fullfile(cfg.curveDir, ...
-    sprintf('kr_curve_points_%s_%s_dyn_full87.csv', ...
-    cfg.geologyId, cfg.caseToken));
-curveSummaryCsv = fullfile(cfg.tableDir, ...
-    sprintf('kr_curve_summary_%s_%s_dyn_full87.csv', ...
-    cfg.geologyId, cfg.caseToken));
-curveMatFile = fullfile(cfg.curveDir, ...
-    sprintf('kr_curves_%s_%s_dyn_full87.mat', cfg.geologyId, cfg.caseToken));
+if cfg.selectionMode == "all"
+    outputSuffix = "dyn_full87";
+else
+    outputSuffix = "dyn_pc_guided_median_swi";
+end
+curveLongCsv = fullfile(cfg.curveDir, sprintf( ...
+    'kr_curve_points_%s_%s_%s.csv', ...
+    cfg.geologyId, cfg.caseToken, outputSuffix));
+curveSummaryCsv = fullfile(cfg.tableDir, sprintf( ...
+    'kr_curve_summary_%s_%s_%s.csv', ...
+    cfg.geologyId, cfg.caseToken, outputSuffix));
+curveMatFile = fullfile(cfg.curveDir, sprintf( ...
+    'kr_curves_%s_%s_%s.mat', ...
+    cfg.geologyId, cfg.caseToken, outputSuffix));
 
 fprintf('\n=== Compute dynamic Kr curves ===\n')
-if ~cfg.disableRunMatCache && exist(curveMatFile, 'file') == 2
+useCachedCurveMat = ~cfg.disableRunMatCache && ...
+    exist(curveMatFile, 'file') == 2;
+if useCachedCurveMat
     fprintf('Loading cached dynamic Kr curve MAT: %s\n', curveMatFile);
     cached = load(curveMatFile, 'curveMat');
     curveMat = cached.curveMat;
-else
+    useCachedCurveMat = cachedCurveRowsMatchSelection( ...
+        curveMat, replaySummary);
+    if ~useCachedCurveMat
+        fprintf(['Cached Kr MAT does not match the current replay-row ', ...
+            'selection; rebuilding from row checkpoints.\n']);
+    end
+end
+if ~useCachedCurveMat
     [curveLong, curveSummary, curveMat] = computeKrDynCurves( ...
         replaySummary, krOpt, cfg);
     writetable(curveLong, curveLongCsv);
@@ -222,8 +276,349 @@ else
     fprintf('Saved dynamic Kr curve MAT: %s\n', curveMatFile);
 end
 
+if cfg.selectionMode == "median_swi"
+    if ~exist('curveSummary', 'var')
+        curveSummary = curveMat.summary;
+    end
+    exportPcGuidedRepresentativeKr( ...
+        curveMat, curveSummary, pcSummaryForMapping, selectionTable, cfg);
+end
+
 fprintf('\nDynamic Kr upscaling run complete.\n')
 fprintf('Output root: %s\n', cfg.outputRoot);
+
+
+function [selectedReplay, selection] = selectMedianSwiReplayRows( ...
+        replaySummary, pcSummary, cfg)
+% Select one actual replay row per case/window using the scalar Swi medoid.
+
+% For a one-dimensional sample under absolute distance, the medoid is an
+% observed value nearest the sample median. Ties are resolved by SourceRow
+% so repeated runs select the same realization.
+
+requiredPcColumns = {'ReplaySourceRow', 'GeologyId', 'Level3CaseId', ...
+    'Level3CaseName', 'Window', 'SliceIndex', 'BulkSgMax'};
+assert(all(ismember(requiredPcColumns, pcSummary.Properties.VariableNames)), ...
+    'Pc summary is missing columns required for median-Swi selection.');
+
+if ismember('EffectiveSwi', pcSummary.Properties.VariableNames)
+    pcSwi = double(pcSummary.EffectiveSwi);
+else
+    pcSwi = 1.0 - double(pcSummary.BulkSgMax);
+end
+pcSourceRows = double(pcSummary.ReplaySourceRow);
+
+selectedMask = false(height(replaySummary), 1);
+selectionRows = cell(numel(cfg.level3CaseIds) * numel(cfg.windows), 14);
+rowId = 0;
+
+for c = 1:numel(cfg.level3CaseIds)
+    caseId = cfg.level3CaseIds(c);
+    for w = 1:numel(cfg.windows)
+        windowName = cfg.windows(w);
+        candidateIdx = find(replaySummary.Level3CaseId == caseId & ...
+            replaySummary.Window == windowName);
+        assert(~isempty(candidateIdx), ...
+            'No replay candidates found for case %d, window %s.', ...
+            caseId, windowName);
+
+        candidateSourceRows = double(replaySummary.SourceRow(candidateIdx));
+        [found, pcIdx] = ismember(candidateSourceRows, pcSourceRows);
+        assert(all(found), ...
+            'Pc summary is missing replay rows for case %d, window %s.', ...
+            caseId, windowName);
+        candidateSwi = pcSwi(pcIdx);
+        assert(all(isfinite(candidateSwi)), ...
+            'Effective Swi contains non-finite values for case %d, window %s.', ...
+            caseId, windowName);
+
+        targetSwi = median(candidateSwi);
+        distanceToMedian = abs(candidateSwi - targetSwi);
+        tieTable = table(distanceToMedian, candidateSourceRows, ...
+            double(replaySummary.SliceIndex(candidateIdx)), ...
+            (1:numel(candidateIdx))', ...
+            'VariableNames', {'Distance', 'SourceRow', 'SliceIndex', 'LocalIndex'});
+        tieTable = sortrows(tieTable, {'Distance', 'SourceRow', 'SliceIndex'});
+        localIdx = tieTable.LocalIndex(1);
+        replayIdx = candidateIdx(localIdx);
+        selectedMask(replayIdx) = true;
+        selectedPcIdx = pcIdx(localIdx);
+
+        if ismember('CurveId', pcSummary.Properties.VariableNames)
+            selectedPcCurveId = double(pcSummary.CurveId(selectedPcIdx));
+        else
+            selectedPcCurveId = NaN;
+        end
+
+        rowId = rowId + 1;
+        selectionRows(rowId, :) = { ...
+            replaySummary.GeologyId(replayIdx), caseId, ...
+            replaySummary.Level3CaseName(replayIdx), windowName, ...
+            numel(candidateIdx), targetSwi, candidateSwi(localIdx), ...
+            distanceToMedian(localIdx), selectedPcCurveId, ...
+            double(replaySummary.ProductionCurveId(replayIdx)), ...
+            double(replaySummary.SourceRow(replayIdx)), ...
+            double(replaySummary.SliceIndex(replayIdx)), ...
+            double(replaySummary.SelectedSampleIndex(replayIdx)), ...
+            double(replaySummary.ReplaySeed(replayIdx))};
+    end
+end
+
+selectedReplay = replaySummary(selectedMask, :);
+selectedReplay = sortrows(selectedReplay, ...
+    {'Level3CaseId', 'WindowOrder', 'SliceIndex'});
+selection = cell2table(selectionRows(1:rowId, :), 'VariableNames', { ...
+    'GeologyId', 'Level3CaseId', 'Level3CaseName', 'Window', ...
+    'CandidateCount', 'MedianEffectiveSwi', 'SelectedEffectiveSwi', ...
+    'AbsoluteSwiDifference', 'SelectedPcCurveId', ...
+    'SelectedProductionCurveId', 'SelectedReplaySourceRow', ...
+    'SelectedSliceIndex', 'SelectedSampleIndex', 'SelectedReplaySeed'});
+end
+
+
+function tf = cachedCurveRowsMatchSelection(curveMat, replaySummary)
+% Require cached curves to represent exactly the currently selected rows.
+
+tf = isfield(curveMat, 'summary') && ...
+    ismember('SourceRow', curveMat.summary.Properties.VariableNames) && ...
+    height(curveMat.summary) == height(replaySummary);
+if ~tf
+    return
+end
+cachedRows = double(curveMat.summary.SourceRow(:));
+selectedRows = double(replaySummary.SourceRow(:));
+tf = isequal(cachedRows, selectedRows);
+end
+
+
+function exportPcGuidedRepresentativeKr( ...
+        curveMat, curveSummary, pcSummary, selectionTable, cfg)
+% Export normalized representative shapes and locally rescaled slice curves.
+
+uGrid = linspace(0, 1, cfg.normalizedShapePoints)';
+nRep = height(curveSummary);
+shapeRows = cell(nRep * numel(uGrid), 15);
+shapeIndex = containers.Map('KeyType', 'char', 'ValueType', 'double');
+shapeKrg = cell(nRep, 1);
+shapeKrw = cell(nRep, 1);
+shapeIds = strings(nRep, 1);
+shapeRowId = 0;
+
+for i = 1:nRep
+    [nativeSg, nativeKrg, nativeKrw] = curveMatNativeValues( ...
+        curveMat, curveSummary, i);
+    [krgShape, krwShape] = normalizedKrShape( ...
+        nativeSg, nativeKrg, nativeKrw, uGrid);
+    shapeKrg{i} = krgShape;
+    shapeKrw{i} = krwShape;
+    shapeId = sprintf('%s_case%02d_%s', char(curveSummary.GeologyId(i)), ...
+        curveSummary.Level3CaseId(i), char(curveSummary.Window(i)));
+    shapeIds(i) = string(shapeId);
+    shapeIndex(shapeId) = i;
+
+    for j = 1:numel(uGrid)
+        shapeRowId = shapeRowId + 1;
+        shapeRows(shapeRowId, :) = { ...
+            curveSummary.GeologyId(i), curveSummary.Level3CaseId(i), ...
+            curveSummary.Level3CaseName(i), curveSummary.Window(i), ...
+            string(shapeId), curveSummary.ProductionCurveId(i), ...
+            curveSummary.SourceRow(i), curveSummary.SliceIndex(i), ...
+            curveSummary.PcMaxSg(i), ...
+            curveSummary.IrreducibleWaterSaturation(i), ...
+            curveSummary.BrineCoreyExponent(i), ...
+            curveSummary.GasCoreyExponent(i), ...
+            uGrid(j), krgShape(j), krwShape(j)};
+    end
+end
+
+shapeTable = cell2table(shapeRows(1:shapeRowId, :), 'VariableNames', { ...
+    'GeologyId', 'Level3CaseId', 'Level3CaseName', 'Window', ...
+    'ShapeId', 'RepresentativeProductionCurveId', ...
+    'RepresentativeReplaySourceRow', 'RepresentativeSliceIndex', ...
+    'RepresentativeBulkSgMax', 'RepresentativeEffectiveSwi', ...
+    'BrineCoreyExponent', 'GasCoreyExponent', 'NormalizedSg', ...
+    'Krg', 'Krw'});
+
+pcMask = pcSummary.GeologyId == cfg.geologyId & ...
+    ismember(pcSummary.Level3CaseId, cfg.level3CaseIds);
+pcRows = pcSummary(pcMask, :);
+pcRows.WindowOrder = windowOrder(pcRows.Window);
+pcRows = sortrows(pcRows, {'Level3CaseId', 'SliceIndex', 'WindowOrder'});
+availableShape = false(height(pcRows), 1);
+for i = 1:height(pcRows)
+    key = sprintf('%s_case%02d_%s', char(pcRows.GeologyId(i)), ...
+        pcRows.Level3CaseId(i), char(pcRows.Window(i)));
+    availableShape(i) = isKey(shapeIndex, key);
+end
+pcRows = pcRows(availableShape, :);
+if ismember('EffectiveSwi', pcRows.Properties.VariableNames)
+    localSwi = double(pcRows.EffectiveSwi);
+else
+    localSwi = 1.0 - double(pcRows.BulkSgMax);
+end
+localSgMax = double(pcRows.BulkSgMax);
+
+nMap = height(pcRows);
+mappingRows = cell(nMap, 17);
+sliceRows = cell(nMap * numel(uGrid), 17);
+sliceRowId = 0;
+
+for i = 1:nMap
+    shapeId = sprintf('%s_case%02d_%s', char(pcRows.GeologyId(i)), ...
+        pcRows.Level3CaseId(i), char(pcRows.Window(i)));
+    repIdx = shapeIndex(shapeId);
+    if ismember('CurveId', pcRows.Properties.VariableNames)
+        pcCurveId = double(pcRows.CurveId(i));
+    else
+        pcCurveId = NaN;
+    end
+
+    mappingRows(i, :) = { ...
+        pcCurveId, double(pcRows.ReplaySourceRow(i)), ...
+        pcRows.GeologyId(i), pcRows.Level3CaseId(i), ...
+        pcRows.Level3CaseName(i), pcRows.Window(i), ...
+        double(pcRows.SliceIndex(i)), string(shapeId), ...
+        double(curveSummary.ProductionCurveId(repIdx)), ...
+        double(curveSummary.SourceRow(repIdx)), ...
+        double(curveSummary.SliceIndex(repIdx)), ...
+        localSgMax(i), localSwi(i), ...
+        double(curveSummary.BrineCoreyExponent(repIdx)), ...
+        double(curveSummary.GasCoreyExponent(repIdx)), ...
+        double(pcRows.SelectedSampleIndex(i)), ...
+        double(pcRows.ReplaySeed(i))};
+
+    for j = 1:numel(uGrid)
+        sliceRowId = sliceRowId + 1;
+        localSg = uGrid(j) * localSgMax(i);
+        sliceRows(sliceRowId, :) = { ...
+            pcCurveId, double(pcRows.ReplaySourceRow(i)), ...
+            pcRows.GeologyId(i), pcRows.Level3CaseId(i), ...
+            pcRows.Level3CaseName(i), pcRows.Window(i), ...
+            double(pcRows.SliceIndex(i)), string(shapeId), ...
+            double(curveSummary.SourceRow(repIdx)), ...
+            localSwi(i), localSgMax(i), uGrid(j), localSg, ...
+            1.0 - localSg, shapeKrg{repIdx}(j), shapeKrw{repIdx}(j), ...
+            j == numel(uGrid)};
+    end
+end
+
+mappingTable = cell2table(mappingRows, 'VariableNames', { ...
+    'PcCurveId', 'PcReplaySourceRow', 'GeologyId', 'Level3CaseId', ...
+    'Level3CaseName', 'Window', 'SliceIndex', 'ShapeId', ...
+    'RepresentativeProductionCurveId', 'RepresentativeKrReplaySourceRow', ...
+    'RepresentativeKrSliceIndex', 'BulkSgMax', 'EffectiveSwi', ...
+    'BrineCoreyExponent', 'GasCoreyExponent', ...
+    'SelectedSampleIndex', 'ReplaySeed'});
+sliceCurveTable = cell2table(sliceRows(1:sliceRowId, :), ...
+    'VariableNames', {'PcCurveId', 'PcReplaySourceRow', 'GeologyId', ...
+    'Level3CaseId', 'Level3CaseName', 'Window', 'SliceIndex', ...
+    'ShapeId', 'RepresentativeKrReplaySourceRow', 'EffectiveSwi', ...
+    'BulkSgMax', 'NormalizedSg', 'GasSaturation', 'WaterSaturation', ...
+    'Krg', 'Krw', 'IsEndpoint'});
+
+token = sprintf('%s_%s', cfg.geologyId, cfg.caseToken);
+shapeCsv = fullfile(cfg.curveDir, sprintf( ...
+    'kr_normalized_representative_shapes_%s.csv', token));
+mappingCsv = fullfile(cfg.tableDir, sprintf( ...
+    'kr_slice_endpoint_mapping_%s.csv', token));
+sliceCsv = fullfile(cfg.curveDir, sprintf( ...
+    'kr_slice_curves_pc_guided_%s.csv', token));
+matFile = fullfile(cfg.curveDir, sprintf( ...
+    'kr_pc_guided_representatives_%s.mat', token));
+
+writetable(shapeTable, shapeCsv);
+writetable(mappingTable, mappingCsv);
+writetable(sliceCurveTable, sliceCsv);
+representativeKr = struct();
+representativeKr.selection = selectionTable;
+representativeKr.normalizedShapes = shapeTable;
+representativeKr.sliceEndpointMapping = mappingTable;
+representativeKr.sliceCurves = sliceCurveTable;
+representativeKr.normalizedSgGrid = uGrid;
+save(matFile, 'representativeKr', 'cfg', '-v7.3');
+
+fprintf('Saved normalized representative Kr shapes: %s\n', shapeCsv);
+fprintf('Saved slice endpoint mapping: %s\n', mappingCsv);
+fprintf('Saved Pc-guided slice Kr curves: %s\n', sliceCsv);
+fprintf('Saved Pc-guided Kr MAT: %s\n', matFile);
+end
+
+
+function [sg, krg, krw] = curveMatNativeValues(curveMat, curveSummary, rowId)
+% Return native Kr arrays, reconstructing the fitted Corey form if needed.
+
+if isfield(curveMat, 'nativeSg') && ...
+        numel(curveMat.nativeSg) >= rowId && ...
+        ~isempty(curveMat.nativeSg{rowId})
+    sg = curveMat.nativeSg{rowId};
+    krg = curveMat.nativeKrg{rowId};
+    krw = curveMat.nativeKrw{rowId};
+    return
+end
+
+u = linspace(0, 1, 101)';
+sgMax = double(curveSummary.PcMaxSg(rowId));
+sg = u * sgMax;
+krg = u .^ double(curveSummary.GasCoreyExponent(rowId));
+krw = (1.0 - u) .^ double(curveSummary.BrineCoreyExponent(rowId));
+end
+
+
+function [sg, krg, krw] = nativeKrCurveValues(curve)
+% Return checkpoint-native Kr arrays or the equivalent fitted Corey curve.
+
+if isfield(curve, 'nativeSg') && ~isempty(curve.nativeSg)
+    sg = curve.nativeSg(:);
+    krg = curve.nativeKrg(:);
+    krw = curve.nativeKrw(:);
+    return
+end
+
+u = linspace(0, 1, 101)';
+sg = u * curve.pcMaxSg;
+krg = u .^ curve.gasCoreyExponent;
+krw = (1.0 - u) .^ curve.brineCoreyExponent;
+end
+
+
+function [krgShape, krwShape] = normalizedKrShape( ...
+        sg, krg, krw, normalizedGrid)
+% Interpolate one native Kr pair onto a unit saturation coordinate.
+
+sg = double(sg(:));
+krg = min(max(double(krg(:)), 0), 1);
+krw = min(max(double(krw(:)), 0), 1);
+valid = isfinite(sg) & isfinite(krg) & isfinite(krw);
+sg = sg(valid);
+krg = krg(valid);
+krw = krw(valid);
+assert(numel(sg) >= 2 && max(sg) > 0, ...
+    'Representative Kr curve requires at least two valid saturation points.');
+
+u = sg ./ max(sg);
+[u, order] = sort(u);
+krg = krg(order);
+krw = krw(order);
+[u, keep] = unique(u, 'stable');
+krg = krg(keep);
+krw = krw(keep);
+
+if u(1) > 0
+    u = [0; u];
+    krg = [0; krg];
+    krw = [1; krw];
+end
+if u(end) < 1
+    u = [u; 1];
+    krg = [krg; krg(end)];
+    krw = [krw; krw(end)];
+end
+
+krgShape = interp1(u, krg, normalizedGrid, 'linear');
+krwShape = interp1(u, krw, normalizedGrid, 'linear');
+krgShape = min(max(krgShape(:), 0), 1);
+krwShape = min(max(krwShape(:), 0), 1);
+end
 
 
 function initializeDynamicKrPaths(cfg)
@@ -826,8 +1221,10 @@ krOpt.transportRateScale = cfg.transportRateScale;
 krOpt.referenceCurves = readSgofReferenceCurves(cfg.originalDeckFile);
 krOpt.pcPrestepMode = cfg.pcPrestepMode;
 krOpt.precomputedPcCurveCsv = cfg.precomputedPcCurveCsv;
+krOpt.precomputedPcNativeCurveCsv = cfg.precomputedPcNativeCurveCsv;
 krOpt.precomputedPcSummaryCsv = cfg.precomputedPcSummaryCsv;
 krOpt.precomputedPcTable = table();
+krOpt.precomputedPcNativeTable = table();
 krOpt.precomputedPcSummaryTable = table();
 if krOpt.pcPrestepMode == "precomputed"
     assert(exist(cfg.precomputedPcCurveCsv, 'file') == 2, ...
@@ -836,6 +1233,14 @@ if krOpt.pcPrestepMode == "precomputed"
         'Precomputed Pc summary CSV not found: %s', cfg.precomputedPcSummaryCsv);
     krOpt.precomputedPcTable = readtable(cfg.precomputedPcCurveCsv, ...
         'TextType', 'string');
+    if exist(cfg.precomputedPcNativeCurveCsv, 'file') == 2
+        krOpt.precomputedPcNativeTable = readtable( ...
+            cfg.precomputedPcNativeCurveCsv, 'TextType', 'string');
+    else
+        warning(['Native precomputed Pc curve CSV not found. ', ...
+            'Falling back to fixed-grid Pc curve plus endpoint: %s'], ...
+            cfg.precomputedPcNativeCurveCsv);
+    end
     krOpt.precomputedPcSummaryTable = readtable(cfg.precomputedPcSummaryCsv, ...
         'TextType', 'string');
 end
@@ -852,6 +1257,9 @@ n = height(replaySummary);
 sgGrid = krOpt.sgGrid(:)';
 krg = nan(n, numel(sgGrid));
 krw = nan(n, numel(sgGrid));
+nativeSg = cell(n, 1);
+nativeKrg = cell(n, 1);
+nativeKrw = cell(n, 1);
 summaryRows = cell(n, 54);
 longRows = cell(n * numel(sgGrid), 19);
 longIdx = 0;
@@ -886,6 +1294,8 @@ for i = 1:n
     curve = curveCells{i};
     krg(i, :) = curve.krg;
     krw(i, :) = curve.krw;
+    [nativeSg{i}, nativeKrg{i}, nativeKrw{i}] = ...
+        nativeKrCurveValues(curve);
 
     summaryRows(i, :) = { ...
         curveIds(i), replaySummary.SourceRow(i), replaySummary.GeologyId(i), ...
@@ -963,6 +1373,9 @@ curveMat = struct();
 curveMat.sgGrid = sgGrid;
 curveMat.krg = krg;
 curveMat.krw = krw;
+curveMat.nativeSg = nativeSg;
+curveMat.nativeKrg = nativeKrg;
+curveMat.nativeKrw = nativeKrw;
 curveMat.summary = curveSummary;
 end
 
@@ -1096,6 +1509,9 @@ krw = min(max(krw(:)', 0), 1);
 curve = diagnostics;
 curve.krg = krg;
 curve.krw = krw;
+curve.nativeSg = sgDyn(:)';
+curve.nativeKrg = krgDyn(:)';
+curve.nativeKrw = krwDyn(:)';
 curve.pcNumPoints = numel(pc);
 curve.pcMaxSg = max(sg);
 if krOpt.pcPrestepMode == "precomputed"
@@ -1309,6 +1725,16 @@ function tf = hasPrecomputedPcCurve(krOpt, sourceRow)
 % Return true when the completed Pc table contains this replay source row.
 
 tf = false;
+if ~isempty(krOpt.precomputedPcNativeTable)
+    T = krOpt.precomputedPcNativeTable;
+    if ismember('ReplaySourceRow', T.Properties.VariableNames)
+        rows = str2double(string(T.ReplaySourceRow));
+        tf = any(rows == double(sourceRow));
+        if tf
+            return
+        end
+    end
+end
 if isempty(krOpt.precomputedPcTable)
     return
 end
@@ -1326,21 +1752,24 @@ function [sg, pc] = lookupPrecomputedPcCurve(krOpt, sourceRow)
 
 assert(hasPrecomputedPcCurve(krOpt, sourceRow), ...
     'No precomputed Pc curve found for replay SourceRow %d.', sourceRow);
+
+if ~isempty(krOpt.precomputedPcNativeTable)
+    Tnative = krOpt.precomputedPcNativeTable;
+    if ismember('ReplaySourceRow', Tnative.Properties.VariableNames)
+        nativeRows = str2double(string(Tnative.ReplaySourceRow));
+        nativeMask = nativeRows == double(sourceRow);
+        if any(nativeMask)
+            [sg, pc] = extractPrecomputedPcRows(Tnative, nativeMask, sourceRow);
+            return
+        end
+    end
+end
+
 T = krOpt.precomputedPcTable;
 rows = str2double(string(T.ReplaySourceRow));
 mask = rows == double(sourceRow);
 
-sg = str2double(string(T.GasSaturation(mask)));
-pc = str2double(string(T.PcPa(mask)));
-valid = isfinite(sg) & isfinite(pc);
-sg = sg(valid);
-pc = pc(valid);
-assert(numel(sg) >= 2, ...
-    'Precomputed Pc curve for SourceRow %d has fewer than two valid points.', ...
-    sourceRow);
-
-[sg, order] = sort(sg(:));
-pc = pc(order);
+[sg, pc] = extractPrecomputedPcRows(T, mask, sourceRow);
 
 endpoint = lookupPrecomputedPcEndpoint(krOpt, sourceRow);
 assert(~isempty(endpoint), ...
@@ -1361,6 +1790,26 @@ else
     pc(end) = max(pc(end), endpointPc);
 end
 
+[sg, keep] = unique(sg, 'stable');
+pc = pc(keep);
+pc = makeStrictlyIncreasing(pc(:));
+end
+
+
+function [sg, pc] = extractPrecomputedPcRows(T, mask, sourceRow)
+% Extract and clean one precomputed Pc curve from a table mask.
+
+sg = str2double(string(T.GasSaturation(mask)));
+pc = str2double(string(T.PcPa(mask)));
+valid = isfinite(sg) & isfinite(pc);
+sg = sg(valid);
+pc = pc(valid);
+assert(numel(sg) >= 2, ...
+    'Precomputed Pc curve for SourceRow %d has fewer than two valid points.', ...
+    sourceRow);
+
+[sg, order] = sort(sg(:));
+pc = pc(order);
 [sg, keep] = unique(sg, 'stable');
 pc = pc(keep);
 pc = makeStrictlyIncreasing(pc(:));

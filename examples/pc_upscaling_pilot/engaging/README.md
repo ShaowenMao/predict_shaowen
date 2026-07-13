@@ -118,3 +118,60 @@ output row counts, and dynamic-Kr timing quantiles.
 
 Full production for all 162 geologies should use the same design, but with a
 manifest-driven job array rather than a single chained case01 job.
+
+## Pc-Guided Representative Kr Reduction
+
+The full dynamic-Kr calculation can be reduced from 87 curves per window to
+one curve per window after all Pc curves have been upscaled. For each
+case/window, the driver selects the actual slice whose effective `Swi` is
+nearest the median of the 87 Pc-derived values:
+
+```bash
+export KR_DYN_SELECTION_MODE=median_swi
+```
+
+The default remains `all`, so existing full-87 calculations are unchanged.
+The reduced mode exports:
+
+- the deterministic median-`Swi` slice selection;
+- one normalized Kr shape per window;
+- a slice-to-shape table containing every local Pc-derived `BulkSgMax` and
+  `EffectiveSwi`;
+- reconstructed slice-specific Kr curves whose saturation endpoints match
+  the corresponding Pc curves.
+
+Run the completed Case 01 Pc/replay inputs through the reduced stage with:
+
+```bash
+cd /home/shaowen/orcd/pool/predict_shaowen/repo/examples/pc_upscaling_pilot/engaging
+bash submit_case01_pc_guided_kr.sh
+```
+
+For another geology or case set, use the general wrapper after replay and Pc
+have completed:
+
+```bash
+export GEOLOGY_ID=s05_c012
+export CASE_IDS=3
+export SOURCE_RUN_ID=case03_full_native_swi_validation_20260712
+export PC_RUN_ID=${SOURCE_RUN_ID}
+bash submit_pc_guided_kr.sh
+```
+
+Set `DEPENDENCY_JOB_ID` to the Pc job ID when submitting the reduced Kr job
+before the Pc stage has finished. The wrapper then submits with an `afterok`
+dependency and checks the files when the job starts.
+
+The six representative simulations are independent and use six process
+workers by default. Checkpoint files retain the original full-87 production
+curve IDs, so an interrupted run resumes the same selected realizations.
+
+Validate a reduced result against a completed full benchmark with:
+
+```matlab
+validate_pc_guided_kr_representatives(fullSummaryCsv, proxySummaryCsv, outputDir)
+```
+
+Validation compares normalized two-phase Kr shapes, separately from the
+slice-specific Pc endpoint. The default acceptance limits are curve RMSE
+`<= 0.02` and maximum pointwise difference `<= 0.05`.

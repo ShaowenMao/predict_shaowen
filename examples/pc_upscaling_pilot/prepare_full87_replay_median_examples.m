@@ -69,6 +69,7 @@ else
     replaySummary = runReplay(selectionCsv, cfg);
 end
 
+assertReplaySummaryVerified(replaySummary, selectionTable, cfg);
 replaySummary = attachSelectionContext(replaySummary, selectionTable);
 caseToken = caseTokenFromIds(cfg.caseIds);
 contextCsv = fullfile(cfg.tableDir, sprintf( ...
@@ -96,7 +97,8 @@ end
 function tf = replaySummaryIsReusable(replaySummary, selectionTable, cfg)
 % Return true when an existing replay summary is complete and verified.
 
-if height(replaySummary) ~= height(selectionTable)
+expectedRows = expectedReplayRowCount(selectionTable, cfg);
+if height(replaySummary) ~= expectedRows
     tf = false;
     return
 end
@@ -109,8 +111,55 @@ end
 
 replayDiffs = str2double(string(replaySummary.MaxAbsLog10Diff));
 numBadRows = sum(replayDiffs > cfg.verifyToleranceLog10 | ...
-    string(replaySummary.VerificationStatus) == "replay_failed");
+    ~isfinite(replayDiffs) | ...
+    string(replaySummary.VerificationStatus) ~= "matched");
 tf = numBadRows == 0;
+end
+
+
+function assertReplaySummaryVerified(replaySummary, selectionTable, cfg)
+% Stop production upscaling when replay is incomplete or does not verify.
+
+expectedRows = expectedReplayRowCount(selectionTable, cfg);
+if height(replaySummary) ~= expectedRows
+    error('ReplayVerification:Incomplete', ...
+        'Expected %d replay rows but found %d.', ...
+        expectedRows, height(replaySummary));
+end
+
+required = {'MaxAbsLog10Diff', 'VerificationStatus'};
+if ~all(ismember(required, replaySummary.Properties.VariableNames))
+    error('ReplayVerification:MissingColumns', ...
+        'Replay summary is missing verification columns.');
+end
+
+replayDiffs = str2double(string(replaySummary.MaxAbsLog10Diff));
+statuses = string(replaySummary.VerificationStatus);
+bad = replayDiffs > cfg.verifyToleranceLog10 | ~isfinite(replayDiffs) | ...
+      statuses ~= "matched";
+if any(bad)
+    finiteBadDiffs = replayDiffs(bad & isfinite(replayDiffs));
+    if isempty(finiteBadDiffs)
+        maxBadDiff = NaN;
+    else
+        maxBadDiff = max(finiteBadDiffs);
+    end
+    error('ReplayVerification:Mismatch', ...
+        ['%d of %d replay rows failed exact-permeability verification ' ...
+         '(tolerance %.3g log10 units; largest mismatch %.6g). ' ...
+         'Pc/Kr upscaling was not started.'], ...
+        sum(bad), height(replaySummary), cfg.verifyToleranceLog10, maxBadDiff);
+end
+end
+
+
+function expectedRows = expectedReplayRowCount(selectionTable, cfg)
+% Account for intentionally truncated smoke-test replay selections.
+
+expectedRows = height(selectionTable);
+if isfinite(cfg.maxRows)
+    expectedRows = min(expectedRows, max(0, floor(cfg.maxRows)));
+end
 end
 
 

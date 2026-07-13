@@ -738,15 +738,19 @@ function unitId = selectSmearOverlapUnit(vals, diagGroup, M, smear, G, ...
 % nDiag * Psmear. If that is tied, it selects the source whose original
 % layer-center diagonal is closest to the disputed diagonal group center.
 
+if strcmp(rule, 'random')
+    % Preserve the legacy random stream exactly. The original code called
+    % randi even for one eligible source, and randi(1) advances MATLAB's RNG.
+    unitId = vals(randi(numel(vals), 1));
+    return
+end
+
 if isscalar(vals)
     unitId = vals;
     return
 end
 
 switch rule
-    case 'random'
-        unitId = vals(randi(numel(vals), 1));
-        
     case 'geologic'
         pSmearByUnit = zeros(1, max(M.unitIn));
         pSmear = smear.Psmear;
