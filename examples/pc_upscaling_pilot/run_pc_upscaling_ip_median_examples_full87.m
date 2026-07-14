@@ -875,8 +875,8 @@ for c = 1:numel(cfg.level3CaseIds)
         continue
     end
     caseName = displayCaseName(summary.Level3CaseName(caseRows(1)));
-    fig = figure('Color', 'w', 'Position', [80 80 1700 1050]);
-    tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'tight');
+    fig = figure('Color', 'w', 'Position', [60 35 2100 1420]);
+    tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
     for w = 1:numel(windows)
         nexttile;
         windowName = windows(w);
@@ -891,6 +891,7 @@ for c = 1:numel(cfg.level3CaseIds)
             results.MedoidSummary.Window == windowName;
         medoidId = results.MedoidSummary.MedoidCurveId(medoidMask);
         hold on;
+        set(gca, 'YScale', 'log');
         for j = 1:numel(idx)
             curveId = idx(j);
             nativeSg = curveMat.rawSg{curveId};
