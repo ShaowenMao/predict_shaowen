@@ -62,7 +62,7 @@ waterLight = [0.62, 0.76, 0.90];
 waterDark = [0.08, 0.34, 0.62];
 endpointColor = [0.34, 0.34, 0.34];
 
-fig = figure('Color', 'w', 'Position', [60, 40, 2100, 1420]);
+fig = figure('Color', 'w', 'Position', [60, 40, 1800, 1100]);
 layout = tiledlayout(fig, 2, 3, 'TileSpacing', 'compact', ...
     'Padding', 'compact');
 
@@ -122,27 +122,27 @@ for i = 1:numel(windowNames)
     ax.GridAlpha = 0.55;
     ax.MinorGridAlpha = 0.18;
     ax.FontName = 'Arial';
-    ax.FontSize = 17;
+    ax.FontSize = 14;
     ax.LineWidth = 1.0;
     box(ax, 'on');
-    axis(ax, 'square');
+    pbaspect(ax, [1.30, 1.0, 1.0]);
 
     if i > 3
-        xlabel(ax, 'Gas saturation', 'FontSize', 20);
+        xlabel(ax, 'Gas saturation', 'FontSize', 16);
     end
     if i == 1 || i == 4
-        ylabel(ax, 'Relative permeability', 'FontSize', 20);
+        ylabel(ax, 'Relative permeability', 'FontSize', 16);
     end
-    title(ax, sprintf('%s | %d slices', upper(windowName), numel(sliceIds)), ...
-        sprintf('S_{g,max}: %.2f-%.2f (median %.2f)', ...
+    title(ax, sprintf('%s | n = %d', upper(windowName), numel(sliceIds)), ...
+        sprintf('S_{g,max} = %.2f-%.2f (median %.2f)', ...
         min(endpointSg), max(endpointSg), median(endpointSg)), ...
-        'FontSize', 20, 'FontWeight', 'bold');
+        'FontSize', 16, 'FontWeight', 'bold');
 end
 
 title(layout, {sprintf('Case %02d: %s', caseId, caseName), ...
-    'Pc-guided slice-scaled dynamic Kr curves by window', ...
-    'One normalized shape per window; each slice endpoint uses BulkSgMax = 1 - EffectiveSwi from Pc upscaling'}, ...
-    'FontName', 'Arial', 'FontSize', 27, 'FontWeight', 'bold');
+    'Pc-guided dynamic Kr curves by window', ...
+    'Light = 87 slice-scaled curves; dark = median-Swi representative'}, ...
+    'FontName', 'Arial', 'FontSize', 22, 'FontWeight', 'bold');
 
 lgd = legend(legendHandles, ...
     {'87 slice-scaled Krg', '87 slice-scaled Krw', ...
@@ -150,7 +150,7 @@ lgd = legend(legendHandles, ...
     'Orientation', 'horizontal');
 lgd.Layout.Tile = 'south';
 lgd.FontName = 'Arial';
-lgd.FontSize = 18;
+lgd.FontSize = 14;
 
 baseName = sprintf('case%02d_pc_guided_slice_scaled_dynamic_kr_by_window', ...
     caseId);

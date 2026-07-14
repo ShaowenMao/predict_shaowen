@@ -133,25 +133,25 @@ for i = 1:numel(windows)
     styleAxis(ax, true);
     endpointLabel = sprintf('S_{g,max}: %.2f-%.2f', ...
         min(endpoints), max(endpoints));
-    title(ax, sprintf('%s | %d slices', upper(windowName), numel(sources)), ...
-        endpointLabel, 'FontSize', 19, 'FontWeight', 'bold');
+    title(ax, sprintf('%s | n = %d', upper(windowName), numel(sources)), ...
+        endpointLabel, 'FontSize', 16, 'FontWeight', 'bold');
     if i > 3
-        xlabel(ax, 'Gas saturation', 'FontSize', 19);
+        xlabel(ax, 'Gas saturation', 'FontSize', 16);
     end
     if i == 1 || i == 4
-        ylabel(ax, 'Pc [bar]', 'FontSize', 19);
+        ylabel(ax, 'Pc [bar]', 'FontSize', 16);
     end
 end
 
 title(layout, {sprintf('Case %02d: %s', caseId, caseName), ...
-    'Full-87 native-endpoint invasion-percolation Pc curves', ...
-    'Red = Pc curve for the median-Swi realization selected for dynamic Kr'}, ...
-    'FontName', 'Arial', 'FontSize', 25, 'FontWeight', 'bold');
+    'Native-endpoint invasion-percolation Pc curves', ...
+    'Grey = 87 slices; red = median-Swi representative'}, ...
+    'FontName', 'Arial', 'FontSize', 22, 'FontWeight', 'bold');
 lgd = legend(legendHandles, {'87 upscaled Pc curves', ...
     'median-Swi selected Pc curve'}, 'Orientation', 'horizontal');
 lgd.Layout.Tile = 'south';
 lgd.FontName = 'Arial';
-lgd.FontSize = 17;
+lgd.FontSize = 14;
 
 baseName = sprintf('case%02d_upscaled_pc_curves_median_swi_selection', caseId);
 [pngFile, pdfFile] = exportCaseFigure(fig, outputDir, baseName);
@@ -213,13 +213,13 @@ for i = 1:numel(windows)
     styleAxis(ax, false);
     endpointLabel = sprintf('S_{g,max}: %.2f-%.2f', ...
         min(endpoints), max(endpoints));
-    title(ax, sprintf('%s | %d slices', upper(windowName), numel(sources)), ...
-        endpointLabel, 'FontSize', 19, 'FontWeight', 'bold');
+    title(ax, sprintf('%s | n = %d', upper(windowName), numel(sources)), ...
+        endpointLabel, 'FontSize', 16, 'FontWeight', 'bold');
     if i > 3
-        xlabel(ax, 'Gas saturation', 'FontSize', 19);
+        xlabel(ax, 'Gas saturation', 'FontSize', 16);
     end
     if i == 1 || i == 4
-        ylabel(ax, 'Relative permeability', 'FontSize', 19);
+        ylabel(ax, 'Relative permeability', 'FontSize', 16);
     end
 end
 
@@ -227,14 +227,14 @@ titleLines = {sprintf('Case %02d: %s', caseId, caseName), ...
     'Full-87 native-endpoint dynamic Kr curves', ...
     'Dark curves = median-Swi selected representative'};
 baseName = sprintf('case%02d_upscaled_dynamic_kr_curves', caseId);
-title(layout, titleLines, 'FontName', 'Arial', 'FontSize', 25, ...
+title(layout, titleLines, 'FontName', 'Arial', 'FontSize', 22, ...
     'FontWeight', 'bold');
 lgd = legend(legendHandles, {'87 full Krg curves', '87 full Krw curves', ...
     'selected representative Krg', 'selected representative Krw'}, ...
     'Orientation', 'horizontal');
 lgd.Layout.Tile = 'south';
 lgd.FontName = 'Arial';
-lgd.FontSize = 17;
+lgd.FontSize = 14;
 [pngFile, pdfFile] = exportCaseFigure(fig, outputDir, baseName);
 end
 
@@ -290,29 +290,29 @@ for i = 1:numel(windows)
         'Color', colors.waterDark, 'LineWidth', 3.2);
 
     styleAxis(ax, false);
-    title(ax, sprintf('%s | %d slices', upper(windowName), height(W)), ...
+    title(ax, sprintf('%s | n = %d', upper(windowName), height(W)), ...
         sprintf('physical S_{wi}: %.2f-%.2f', ...
         min(physicalSwi), max(physicalSwi)), ...
-        'FontSize', 19, 'FontWeight', 'bold');
+        'FontSize', 16, 'FontWeight', 'bold');
     if i > 3
-        xlabel(ax, 'Physical gas saturation', 'FontSize', 19);
+        xlabel(ax, 'Physical gas saturation', 'FontSize', 16);
     end
     if i == 1 || i == 4
-        ylabel(ax, 'Relative permeability', 'FontSize', 19);
+        ylabel(ax, 'Relative permeability', 'FontSize', 16);
     end
 end
 
 title(layout, {sprintf('Case %02d: %s', caseId, caseName), ...
     'Pc-guided slice-scaled dynamic Kr curves on the physical saturation axis', ...
     'One representative normalized shape per window; each curve ends at S_{g,max}=1-S_{wi}'}, ...
-    'FontName', 'Arial', 'FontSize', 25, 'FontWeight', 'bold');
+    'FontName', 'Arial', 'FontSize', 22, 'FontWeight', 'bold');
 lgd = legend(legendHandles, ...
     {'87 slice-scaled Krg curves', '87 slice-scaled Krw curves', ...
     'selected representative Krg', 'selected representative Krw'}, ...
     'Orientation', 'horizontal');
 lgd.Layout.Tile = 'south';
 lgd.FontName = 'Arial';
-lgd.FontSize = 17;
+lgd.FontSize = 14;
 baseName = sprintf('case%02d_pc_guided_slice_scaled_dynamic_kr_curves', ...
     caseId);
 [pngFile, pdfFile] = exportCaseFigure(fig, outputDir, baseName);
@@ -322,7 +322,7 @@ end
 function fig = newCaseFigure()
 % Create the common publication-size figure canvas.
 
-fig = figure('Color', 'w', 'Position', [60, 35, 2100, 1420]);
+fig = figure('Color', 'w', 'Position', [60, 40, 1800, 1100]);
 end
 
 
@@ -344,10 +344,10 @@ ax.GridColor = [0.82, 0.82, 0.82];
 ax.GridAlpha = 0.55;
 ax.MinorGridAlpha = 0.20;
 ax.FontName = 'Arial';
-ax.FontSize = 16;
+ax.FontSize = 14;
 ax.LineWidth = 1.0;
 box(ax, 'on');
-axis(ax, 'square');
+pbaspect(ax, [1.30, 1.0, 1.0]);
 end
 
 
