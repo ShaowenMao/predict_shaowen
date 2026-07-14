@@ -41,6 +41,11 @@ cfg.windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"];
 % Common grid for reporting/medoid comparison only. Native Pc endpoints are
 % saved separately and should drive effective Swi in dynamic Kr upscaling.
 cfg.sgGrid = linspace(0.02, 0.68, 80);
+% Full-curve medoids are diagnostics only. Production reservoir inputs use
+% every native Pc curve, so this relatively expensive comparison is off by
+% default and never affects downstream Kr selection.
+cfg.enableMedoidDiagnostics = parseLogicalEnv( ...
+    "PC_IP_ENABLE_MEDOID_DIAGNOSTICS", false);
 cfg.sourceRoot = envOrDefault("PC_IP_REPLAY_ROOT", ...
     envOrDefault("FULL87_REPLAY_OUTPUT_ROOT", defaultReplayRoot()));
 cfg.replaySummaryCsv = envOrDefault("PC_IP_REPLAY_SUMMARY_CSV", ...
@@ -133,6 +138,22 @@ if useCachedCurves
     if ~useCachedCurves
         fprintf(['Cached Pc MAT lacks native endpoint arrays; ', ...
             'recomputing to preserve upscaled Swi endpoints.\n']);
+    else
+        curveSummary = readtable(curveSummaryCsv, 'TextType', 'string');
+        if ~all(ismember({'BulkVolume', 'UpscaledPorosity'}, ...
+                curveSummary.Properties.VariableNames))
+            fprintf(['Cached Pc curves predate porosity export; computing ', ...
+                '6-by-87 volume-weighted porosity directly from replay maps.\n']);
+            curveSummary = addPorosityToCachedSummary( ...
+                curveSummary, replaySummary);
+            curveMat.summary = curveSummary;
+            writetable(curveSummary, curveSummaryCsv);
+            save(curveMatFile, 'curveMat', 'pcOpt', 'cfg', '-v7.3');
+            fprintf('Updated cached Pc summary with upscaled porosity: %s\n', ...
+                curveSummaryCsv);
+        else
+            curveMat.summary = curveSummary;
+        end
     end
 end
 
@@ -153,25 +174,30 @@ if ~useCachedCurves
     fprintf('Saved IP curve MAT: %s\n', curveMatFile);
 end
 
-fprintf('\n=== Select IP medoid Pc curves ===\n')
-results = analyzeIpMedoids(curveMat, cfg);
-medoidSummaryCsv = fullfile(cfg.tableDir, ...
-    sprintf('pc_medoid_summary_%s_%s_ip_full87.csv', ...
-    cfg.geologyId, cfg.caseToken));
-distanceSummaryCsv = fullfile(cfg.tableDir, ...
-    sprintf('pc_distance_summary_%s_%s_ip_full87.csv', ...
-    cfg.geologyId, cfg.caseToken));
-writetable(results.MedoidSummary, medoidSummaryCsv);
-writetable(results.DistanceSummary, distanceSummaryCsv);
-save(fullfile(cfg.tableDir, ...
-    sprintf('pc_medoid_results_%s_%s_ip_full87.mat', ...
-    cfg.geologyId, cfg.caseToken)), ...
-    'results', '-v7.3');
-fprintf('Saved IP medoid summary: %s\n', medoidSummaryCsv);
-fprintf('Saved IP distance summary: %s\n', distanceSummaryCsv);
+if cfg.enableMedoidDiagnostics
+    fprintf('\n=== Compute optional full-Pc-curve medoid diagnostics ===\n')
+    results = analyzeIpMedoids(curveMat, cfg);
+    medoidSummaryCsv = fullfile(cfg.tableDir, ...
+        sprintf('pc_medoid_summary_%s_%s_ip_full87.csv', ...
+        cfg.geologyId, cfg.caseToken));
+    distanceSummaryCsv = fullfile(cfg.tableDir, ...
+        sprintf('pc_distance_summary_%s_%s_ip_full87.csv', ...
+        cfg.geologyId, cfg.caseToken));
+    writetable(results.MedoidSummary, medoidSummaryCsv);
+    writetable(results.DistanceSummary, distanceSummaryCsv);
+    save(fullfile(cfg.tableDir, ...
+        sprintf('pc_medoid_results_%s_%s_ip_full87.mat', ...
+        cfg.geologyId, cfg.caseToken)), ...
+        'results', '-v7.3');
+    fprintf('Saved diagnostic Pc-medoid summary: %s\n', medoidSummaryCsv);
+    fprintf('Saved diagnostic Pc-distance summary: %s\n', distanceSummaryCsv);
 
-fprintf('\n=== Generate IP figures ===\n')
-makeIpFigures(curveMat, results, cfg);
+    fprintf('\n=== Generate optional Pc-medoid diagnostic figures ===\n')
+    makeIpFigures(curveMat, results, cfg);
+else
+    fprintf(['\nSkipping full-Pc-curve medoid diagnostics ', ...
+        '(PC_IP_ENABLE_MEDOID_DIAGNOSTICS=0).\n']);
+end
 
 fprintf('\nFull invasion-percolation cases %s Pc upscaling complete.\n', ...
     cfg.caseToken)
@@ -306,7 +332,7 @@ sgGrid = pcOpt.sgGrid(:)';
 pcPa = nan(n, numel(sgGrid));
 rawSg = cell(n, 1);
 rawPcPa = cell(n, 1);
-summaryRows = cell(n, 35);
+summaryRows = cell(n, 37);
 longRows = cell(n * numel(sgGrid), 18);
 longIdx = 0;
 nativeRows = {};
@@ -330,7 +356,8 @@ for i = 1:n
         replaySummary.Window(i), replaySummary.SliceIndex(i), ...
         replaySummary.AssignedState(i), replaySummary.SamplingPool(i), ...
         replaySummary.SelectedSampleIndex(i), replaySummary.ReplaySeed(i), ...
-        curve.poreVolume, curve.numCells, curve.numRegions, ...
+        curve.poreVolume, curve.bulkVolume, curve.upscaledPorosity, ...
+        curve.numCells, curve.numRegions, ...
         curve.numClayRegions, curve.clayPoreVolumeFraction, ...
         curve.meanLog10KzzMD, curve.medianLog10KzzMD, ...
         curve.p05Log10KzzMD, curve.p95Log10KzzMD, ...
@@ -372,7 +399,8 @@ curveSummary = cell2table(summaryRows, 'VariableNames', ...
     {'CurveId', 'ReplaySourceRow', 'GeologyId', 'ScenarioName', ...
      'CaseLabel', 'Level3CaseId', 'Level3CaseName', 'Window', ...
      'SliceIndex', 'AssignedState', 'SamplingPool', 'SelectedSampleIndex', ...
-     'ReplaySeed', 'PoreVolume', 'NumCells', 'NumRegions', ...
+     'ReplaySeed', 'PoreVolume', 'BulkVolume', 'UpscaledPorosity', ...
+     'NumCells', 'NumRegions', ...
      'NumClayRegions', 'ClayPoreVolumeFraction', 'MeanLog10KzzMD', ...
      'MedianLog10KzzMD', 'P05Log10KzzMD', 'P95Log10KzzMD', ...
      'PcAtSg20Pa', 'PcAtSg50Pa', 'PcAtSg65Pa', 'BulkSgMax', ...
@@ -635,7 +663,8 @@ function [G, rock, fluid, opt, diagnostics] = buildIpInputsFromReplay( ...
 
 G = replay.G;
 grid = replay.Grid;
-poroAll = max(grid.poro(:), pcOpt.minPoro);
+rawPoro = double(grid.poro(:));
+poroAll = max(rawPoro, pcOpt.minPoro);
 perm = grid.perm;
 units = grid.units(:);
 isSmear = logical(grid.isSmear(:));
@@ -647,6 +676,8 @@ log10KzzMD = log10(permComponentSI ./ pcOpt.mDInM2);
 valid = isfinite(poroAll) & isfinite(permComponentSI) & ...
     isfinite(volume) & volume > 0 & units > 0;
 assert(all(valid), 'IP runner expects valid replay cells for all fault-core cells.');
+assert(all(rawPoro >= 0 & rawPoro <= 1), ...
+    'IP runner expects physical fine-grid porosity in [0,1].');
 
 rock = struct();
 rock.poro = poroAll;
@@ -690,7 +721,10 @@ opt.theta = [pcOpt.contactAngleDeg, pcOpt.contactAngleDeg];
 
 poreWeights = poroAll .* volume;
 diagnostics = struct();
-diagnostics.poreVolume = sum(poreWeights, 'omitnan');
+diagnostics.bulkVolume = sum(volume, 'omitnan');
+diagnostics.poreVolume = sum(rawPoro .* volume, 'omitnan');
+diagnostics.upscaledPorosity = diagnostics.poreVolume ./ ...
+    max(diagnostics.bulkVolume, realmin);
 diagnostics.numCells = G.cells.num;
 diagnostics.numRegions = numel(idReg);
 diagnostics.numClayRegions = sum(fluid.isclay);
@@ -700,6 +734,64 @@ diagnostics.meanLog10KzzMD = mean(log10KzzMD, 'omitnan');
 diagnostics.medianLog10KzzMD = median(log10KzzMD, 'omitnan');
 diagnostics.p05Log10KzzMD = prctile(log10KzzMD, 5);
 diagnostics.p95Log10KzzMD = prctile(log10KzzMD, 95);
+end
+
+
+function summary = addPorosityToCachedSummary(summary, replaySummary)
+% Add exact volume-weighted porosity without rerunning Pc upscaling.
+
+n = height(summary);
+bulkVolume = nan(n, 1);
+upscaledPorosity = nan(n, 1);
+replaySourceRows = numericValues(replaySummary.SourceRow);
+summarySourceRows = numericValues(summary.ReplaySourceRow);
+
+for i = 1:n
+    sourceRow = summarySourceRows(i);
+    replayIndex = find(replaySourceRows == sourceRow, 1, 'first');
+    assert(~isempty(replayIndex), 'PcPorosity:ReplaySourceMissing', ...
+        'Replay source row %d is missing while backfilling porosity.', ...
+        sourceRow);
+    S = load(char(replaySummary.OutputFile(replayIndex)), 'replay');
+    [bulkVolume(i), upscaledPorosity(i)] = ...
+        volumeWeightedPorosity(S.replay);
+end
+
+summary.BulkVolume = bulkVolume;
+summary.UpscaledPorosity = upscaledPorosity;
+summary.PoreVolume = bulkVolume .* upscaledPorosity;
+end
+
+
+function [bulkVolume, upscaledPorosity] = volumeWeightedPorosity(replay)
+% Preserve fine-scale pore volume in one coarse fault-cell porosity.
+
+volume = double(replay.G.cells.volumes(:));
+porosity = double(replay.Grid.poro(:));
+assert(numel(volume) == numel(porosity), ...
+    'PcPorosity:GridSizeMismatch', ...
+    'Fine-grid volume and porosity arrays have different lengths.');
+assert(all(isfinite(volume) & volume > 0), ...
+    'PcPorosity:InvalidVolume', ...
+    'Fine-grid cell volumes must be finite and positive.');
+assert(all(isfinite(porosity) & porosity >= 0 & porosity <= 1), ...
+    'PcPorosity:InvalidPorosity', ...
+    'Fine-grid porosity must be finite and lie in [0,1].');
+
+bulkVolume = sum(volume);
+upscaledPorosity = sum(porosity .* volume) ./ bulkVolume;
+end
+
+
+function values = numericValues(values)
+% Convert numeric, string, or cell text table columns to doubles.
+
+if ~isnumeric(values)
+    values = str2double(string(values));
+end
+values = double(values(:));
+assert(all(isfinite(values)), 'PcPorosity:NonfiniteTableValue', ...
+    'Expected finite numeric replay-source values.');
 end
 
 
@@ -921,16 +1013,21 @@ for c = 1:numel(cfg.level3CaseIds)
         set(gca, 'FontSize', 13, 'LineWidth', 1.0);
     end
     sgtitle({sprintf('Case %02d: %s', caseId, caseName), ...
-        'Native-endpoint invasion-percolation Pc curves by window', ...
-        'Curve endpoints show BulkSgMax; EffectiveSwi = 1 - BulkSgMax'}, ...
+        'Optional full-Pc-curve medoid diagnostic', ...
+        'Grey = all slices; red = curve medoid; medoid is not a reservoir input'}, ...
         'FontSize', 22, 'FontWeight', 'bold', 'Interpreter', 'none');
     saveFigureBoth(fig, cfg.figureDir, ...
-        sprintf('%s_case%02d_ip_full87_pc_curves_with_medoids', ...
+        sprintf('%s_case%02d_ip_full87_pc_medoid_diagnostic', ...
         cfg.geologyId, caseId));
 end
 
-fig = figure('Color', 'w', 'Position', [120 120 1750 950]);
-tiledlayout(2, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+nCasePanels = numel(cfg.level3CaseIds);
+nColumns = min(3, max(1, nCasePanels));
+nRows = ceil(nCasePanels / nColumns);
+fig = figure('Color', 'w', 'Position', ...
+    [120 120 580 * nColumns 450 * nRows]);
+tiledlayout(nRows, nColumns, 'TileSpacing', 'compact', ...
+    'Padding', 'compact');
 for c = 1:numel(cfg.level3CaseIds)
     caseId = cfg.level3CaseIds(c);
     nexttile;
@@ -956,10 +1053,11 @@ for c = 1:numel(cfg.level3CaseIds)
             'Location', 'northwest');
     end
 end
-sgtitle('Validated invasion-percolation medoid Pc levels by case and window', ...
+sgtitle('Optional full-Pc-curve medoid diagnostic levels', ...
     'FontSize', 22, 'FontWeight', 'bold');
 saveFigureBoth(fig, cfg.figureDir, ...
-    sprintf('%s_%s_ip_medoid_pc_levels', cfg.geologyId, cfg.caseToken));
+    sprintf('%s_%s_ip_medoid_pc_levels_diagnostic', ...
+    cfg.geologyId, cfg.caseToken));
 end
 
 

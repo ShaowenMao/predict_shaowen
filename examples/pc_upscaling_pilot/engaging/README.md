@@ -1,4 +1,4 @@
-# Engaging Case01 Workflow
+# Engaging Replay, Pc, and Dynamic Kr Workflow
 
 This folder contains the first Engaging workflow for the rigorous production
 path:
@@ -119,26 +119,42 @@ output row counts, and dynamic-Kr timing quantiles.
 Full production for all 162 geologies should use the same design, but with a
 manifest-driven job array rather than a single chained case01 job.
 
-## Pc-Guided Representative Kr Reduction
+## Swi-Medoid Representative Kr Reduction
 
 The full dynamic-Kr calculation can be reduced from 87 curves per window to
 one curve per window after all Pc curves have been upscaled. For each
-case/window, the driver selects the actual slice whose effective `Swi` is
-nearest the median of the 87 Pc-derived values:
+case/window, the driver selects the actual slice at the scalar effective-Swi
+medoid. With 87 slices, this is the observed median value:
 
 ```bash
-export KR_DYN_SELECTION_MODE=median_swi
+export KR_DYN_SELECTION_MODE=swi_medoid
 ```
 
-The default remains `all`, so existing full-87 calculations are unchanged.
-The reduced mode exports:
+The standalone MATLAB driver retains `all` for explicit full-87 validation.
+The production submission wrapper defaults to `swi_medoid` and exports:
 
-- the deterministic median-`Swi` slice selection;
+- the deterministic `Swi`-medoid slice selection;
 - one normalized Kr shape per window;
 - a slice-to-shape table containing every local Pc-derived `BulkSgMax` and
   `EffectiveSwi`;
 - reconstructed slice-specific Kr curves whose saturation endpoints match
-  the corresponding Pc curves.
+  the corresponding Pc curves;
+- one checked reservoir-ready MAT file per geology/case; and
+- a QA CSV covering counts, endpoints, monotonicity, and physical bounds.
+
+The reservoir-ready export is enabled by default. Disable it only for a
+diagnostic partial run:
+
+```bash
+export KR_DYN_EXPORT_RESERVOIR_READY=0
+```
+
+Full-Pc-curve medoids are optional visual diagnostics and never select the
+production Kr realization. Enable those figures only when needed:
+
+```bash
+export PC_IP_ENABLE_MEDOID_DIAGNOSTICS=1
+```
 
 Run the completed Case 01 Pc/replay inputs through the reduced stage with:
 
@@ -171,6 +187,9 @@ Validate a reduced result against a completed full benchmark with:
 ```matlab
 validate_pc_guided_kr_representatives(fullSummaryCsv, proxySummaryCsv, outputDir)
 ```
+
+Some script/function filenames retain the historical `pc_guided` label, but
+their production method and outputs use the canonical **Swi medoid** term.
 
 Validation compares normalized two-phase Kr shapes, separately from the
 slice-specific Pc endpoint. The default acceptance limits are curve RMSE

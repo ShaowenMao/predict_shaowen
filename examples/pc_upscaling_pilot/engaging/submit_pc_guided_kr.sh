@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Submit one Pc-guided representative dynamic-Kr job for any geology/case set.
+# Submit one Swi-medoid representative dynamic-Kr job for any geology/case set.
 
 set -euo pipefail
 
@@ -31,7 +31,7 @@ for raw_value in "${case_values[@]}"; do
 done
 
 RUN_MODE="${RUN_MODE:-full}"
-RUN_ID="${RUN_ID:-${GEOLOGY_ID}_${case_token}_pc_guided_kr_$(date +%Y%m%d_%H%M%S)}"
+RUN_ID="${RUN_ID:-${GEOLOGY_ID}_${case_token}_swi_medoid_kr_$(date +%Y%m%d_%H%M%S)}"
 RUN_ROOT="${RUN_ROOT:-${SCRATCH_ROOT}/runs/${RUN_ID}}"
 REPLAY_ROOT="${REPLAY_ROOT:-${SCRATCH_ROOT}/runs/${SOURCE_RUN_ID}/full87_replay}"
 PC_ROOT="${PC_ROOT:-${SCRATCH_ROOT}/runs/${PC_RUN_ID}/pc_ip}"
@@ -62,10 +62,11 @@ export KR_DYN_REPLAY_SUMMARY_CSV="${REPLAY_SUMMARY}"
 export KR_DYN_PRECOMPUTED_PC_CURVE_CSV="${PC_CURVES}"
 export KR_DYN_PRECOMPUTED_PC_NATIVE_CURVE_CSV="${PC_NATIVE_CURVES}"
 export KR_DYN_PRECOMPUTED_PC_SUMMARY_CSV="${PC_SUMMARY}"
-export KR_DYN_OUTPUT_ROOT="${KR_DYN_OUTPUT_ROOT:-${RUN_ROOT}/kr_dyn_pc_guided}"
+export KR_DYN_OUTPUT_ROOT="${KR_DYN_OUTPUT_ROOT:-${RUN_ROOT}/kr_dyn_swi_medoid}"
 export KR_DYN_GEOLOGY_ID="${GEOLOGY_ID}"
 export KR_DYN_CASE_IDS="${CASE_IDS}"
-export KR_DYN_SELECTION_MODE="${KR_DYN_SELECTION_MODE:-median_swi}"
+export KR_DYN_SELECTION_MODE="${KR_DYN_SELECTION_MODE:-swi_medoid}"
+export KR_DYN_EXPORT_RESERVOIR_READY="${KR_DYN_EXPORT_RESERVOIR_READY:-1}"
 export KR_DYN_PC_PRESTEP_MODE="${KR_DYN_PC_PRESTEP_MODE:-precomputed}"
 export KR_DYN_USE_PARALLEL="${KR_DYN_USE_PARALLEL:-1}"
 export KR_DYN_NUM_WORKERS="${KR_DYN_NUM_WORKERS:-6}"
@@ -93,7 +94,7 @@ args=(
     --parsable
     --account="${SBATCH_ACCOUNT}"
     --partition="${SBATCH_PARTITION}"
-    --job-name="predict_kr_pcguided"
+    --job-name="predict_kr_swimedoid"
     --time="${KR_TIME}"
     --cpus-per-task="${KR_CPUS}"
     --mem="${KR_MEM}"
@@ -111,14 +112,14 @@ fi
 job_id="$(sbatch "${args[@]}" "${SCRIPT_DIR}/run_case01_stage.sh" kr)"
 selected_count=$((6 * case_count))
 
-echo "Submitted Pc-guided dynamic-Kr stage"
+echo "Submitted Swi-medoid dynamic-Kr stage"
 echo "  job:             ${job_id}"
 echo "  run root:        ${RUN_ROOT}"
 echo "  geology:         ${GEOLOGY_ID}"
 echo "  Level-3 cases:   ${CASE_IDS}"
 echo "  replay source:   ${SOURCE_RUN_ID}"
 echo "  Pc source:       ${PC_RUN_ID}"
-echo "  selected curves: ${selected_count} (one median-Swi realization per window/case)"
+echo "  selected curves: ${selected_count} (one Swi-medoid realization per window/case)"
 echo "  resources:       ${KR_TIME}, ${KR_CPUS} CPUs, ${KR_MEM}"
 if [[ -n "${DEPENDENCY_JOB_ID}" ]]; then
     echo "  after job:        ${DEPENDENCY_JOB_ID}"

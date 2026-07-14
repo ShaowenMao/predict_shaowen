@@ -3,11 +3,11 @@ function outputFiles = plot_pc_guided_scaled_kr_curves(sliceCurveCsv, outputDir)
 %
 %   OUTPUTFILES = PLOT_PC_GUIDED_SCALED_KR_CURVES(SLICECURVECSV, OUTPUTDIR)
 %   reads the slice-level curves exported by
-%   run_kr_upscaling_dyn_median_examples_full87 in median_swi mode. For
+%   run_kr_upscaling_dyn_median_examples_full87 in swi_medoid mode. For
 %   each throw window, it plots all slice curves obtained by mapping one
 %   representative normalized dynamic-Kr shape to each slice's Pc-derived
-%   BulkSgMax = 1 - EffectiveSwi. The median-Swi slice used for the dynamic
-%   Kr calculation is highlighted.
+%   BulkSgMax = 1 - EffectiveSwi. The scalar Swi-medoid slice used for the
+%   dynamic Kr calculation is highlighted.
 %
 %   The function writes publication-ready PNG and PDF figures and returns
 %   their paths in OUTPUTFILES. It does not alter any upscaling results.
@@ -140,8 +140,8 @@ for i = 1:numel(windowNames)
 end
 
 title(layout, {sprintf('Case %02d: %s', caseId, caseName), ...
-    'Pc-guided dynamic Kr curves by window', ...
-    'Light = 87 slice-scaled curves; dark = median-Swi representative'}, ...
+    'Swi-medoid dynamic Kr curves by window', ...
+    'Light = 87 slice-scaled curves; dark = Swi-medoid representative'}, ...
     'FontName', 'Arial', 'FontSize', 22, 'FontWeight', 'bold');
 
 lgd = legend(legendHandles, ...
@@ -152,7 +152,7 @@ lgd.Layout.Tile = 'south';
 lgd.FontName = 'Arial';
 lgd.FontSize = 14;
 
-baseName = sprintf('case%02d_pc_guided_slice_scaled_dynamic_kr_by_window', ...
+baseName = sprintf('case%02d_swi_medoid_slice_scaled_dynamic_kr_by_window', ...
     caseId);
 pngFile = fullfile(outputDir, baseName + ".png");
 pdfFile = fullfile(outputDir, baseName + ".pdf");

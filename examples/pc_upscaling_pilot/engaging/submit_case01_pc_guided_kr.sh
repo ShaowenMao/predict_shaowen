@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Convenience wrapper for the completed Case 01 replay and Pc results.
+# Convenience Swi-medoid Kr wrapper for completed Case 01 replay/Pc results.
 
 set -euo pipefail
 

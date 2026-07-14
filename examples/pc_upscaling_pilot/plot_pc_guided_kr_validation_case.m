@@ -11,8 +11,8 @@ function outputFiles = plot_pc_guided_kr_validation_case( ...
 %     3. one representative normalized dynamic-Kr shape per window mapped
 %        back to every slice's physical Pc-derived saturation endpoint.
 %
-%   In every panel, the curve selected by the Pc median-effective-Swi rule
-%   is highlighted. The function writes PNG and PDF versions and does not
+%   In every panel, the curve selected at the scalar effective-Swi medoid is
+%   highlighted. The function writes PNG and PDF versions and does not
 %   modify the underlying upscaling data.
 
 arguments
@@ -87,7 +87,7 @@ end
 
 function [pngFile, pdfFile] = plotPcFamily( ...
         pc, representativeKr, windows, caseId, caseName, outputDir, colors)
-% Plot all native-endpoint Pc curves and the median-Swi selection.
+% Plot all native-endpoint Pc curves and the Swi-medoid selection.
 
 fig = newCaseFigure();
 layout = tiledlayout(fig, 2, 3, 'TileSpacing', 'compact', ...
@@ -145,15 +145,15 @@ end
 
 title(layout, {sprintf('Case %02d: %s', caseId, caseName), ...
     'Native-endpoint invasion-percolation Pc curves', ...
-    'Grey = 87 slices; red = median-Swi representative'}, ...
+    'Grey = 87 slices; red = Swi-medoid Kr input realization'}, ...
     'FontName', 'Arial', 'FontSize', 22, 'FontWeight', 'bold');
 lgd = legend(legendHandles, {'87 upscaled Pc curves', ...
-    'median-Swi selected Pc curve'}, 'Orientation', 'horizontal');
+    'Swi-medoid Kr input realization'}, 'Orientation', 'horizontal');
 lgd.Layout.Tile = 'south';
 lgd.FontName = 'Arial';
 lgd.FontSize = 14;
 
-baseName = sprintf('case%02d_upscaled_pc_curves_median_swi_selection', caseId);
+baseName = sprintf('case%02d_upscaled_pc_curves_swi_medoid_selection', caseId);
 [pngFile, pdfFile] = exportCaseFigure(fig, outputDir, baseName);
 end
 
@@ -225,7 +225,7 @@ end
 
 titleLines = {sprintf('Case %02d: %s', caseId, caseName), ...
     'Full-87 native-endpoint dynamic Kr curves', ...
-    'Dark curves = median-Swi selected representative'};
+    'Dark curves = Swi-medoid dynamic-Kr representative'};
 baseName = sprintf('case%02d_upscaled_dynamic_kr_curves', caseId);
 title(layout, titleLines, 'FontName', 'Arial', 'FontSize', 22, ...
     'FontWeight', 'bold');
@@ -303,7 +303,7 @@ for i = 1:numel(windows)
 end
 
 title(layout, {sprintf('Case %02d: %s', caseId, caseName), ...
-    'Pc-guided slice-scaled dynamic Kr curves on the physical saturation axis', ...
+    'Swi-medoid dynamic Kr shapes mapped to slice-specific endpoints', ...
     'One representative normalized shape per window; each curve ends at S_{g,max}=1-S_{wi}'}, ...
     'FontName', 'Arial', 'FontSize', 22, 'FontWeight', 'bold');
 lgd = legend(legendHandles, ...
@@ -313,7 +313,7 @@ lgd = legend(legendHandles, ...
 lgd.Layout.Tile = 'south';
 lgd.FontName = 'Arial';
 lgd.FontSize = 14;
-baseName = sprintf('case%02d_pc_guided_slice_scaled_dynamic_kr_curves', ...
+baseName = sprintf('case%02d_swi_medoid_slice_scaled_dynamic_kr_curves', ...
     caseId);
 [pngFile, pdfFile] = exportCaseFigure(fig, outputDir, baseName);
 end

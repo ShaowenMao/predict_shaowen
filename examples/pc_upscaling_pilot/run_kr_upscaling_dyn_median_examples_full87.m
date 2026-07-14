@@ -26,16 +26,18 @@
 %   setenv('KR_DYN_TIMESTEP_MODE','paper')
 %   run_kr_upscaling_dyn_median_examples_full87
 %
-% Pc-guided representative reduction:
-%   setenv('KR_DYN_SELECTION_MODE','median_swi')
-%   % Runs one actual median-effective-Swi slice per case/window and exports
-%   % normalized Kr shapes plus slice-specific Pc endpoint mappings.
+% Swi-medoid representative reduction:
+%   setenv('KR_DYN_SELECTION_MODE','swi_medoid')
+%   % Runs the actual slice at the scalar effective-Swi medoid for each
+%   % case/window and exports normalized Kr shapes plus slice-specific Pc
+%   % endpoint mappings.
 
 clear; clc;
 
 scriptDir = fileparts(mfilename('fullpath'));
 examplesDir = fileparts(scriptDir);
 repoRoot = fileparts(examplesDir);
+addpath(scriptDir);
 
 cfg = struct();
 cfg.geologyId = string(envOrDefault("KR_DYN_GEOLOGY_ID", "s05_c012"));
@@ -71,14 +73,16 @@ cfg.upscalingRoot = envOrDefault("KR_DYN_UPSCALING_ROOT", ...
 cfg.mrstRoot = envOrDefault("MRST_ROOT", defaultMrstRoot());
 cfg.outputRoot = envOrDefault("KR_DYN_OUTPUT_ROOT", ...
     fullfile(defaultWorkflowRoot(), 'kr_upscaling_dyn_median_examples_full87'));
-cfg.selectionMode = lower(strtrim(string(envOrDefault( ...
-    "KR_DYN_SELECTION_MODE", "all"))));
-assert(any(cfg.selectionMode == ["all", "median_swi"]), ...
-    'KR_DYN_SELECTION_MODE must be all or median_swi.');
+cfg.selectionMode = canonicalSelectionMode(envOrDefault( ...
+    "KR_DYN_SELECTION_MODE", "all"));
+assert(any(cfg.selectionMode == ["all", "swi_medoid"]), ...
+    'KR_DYN_SELECTION_MODE must be all or swi_medoid.');
 cfg.normalizedShapePoints = round(parseNumericEnv( ...
     "KR_DYN_NORMALIZED_SHAPE_POINTS", 101));
 assert(cfg.normalizedShapePoints >= 2, ...
     'KR_DYN_NORMALIZED_SHAPE_POINTS must be at least 2.');
+cfg.exportReservoirReady = parseLogicalEnv( ...
+    "KR_DYN_EXPORT_RESERVOIR_READY", true);
 cfg.onlyRows = parseIntegerListEnv("KR_DYN_ONLY_ROWS");
 cfg.smokeCartDims = parseIntegerListEnv("KR_DYN_SMOKE_CARTDIMS");
 
@@ -187,20 +191,26 @@ end
 
 selectionTable = table();
 pcSummaryForMapping = table();
-if cfg.selectionMode == "median_swi"
+if cfg.selectionMode == "swi_medoid"
     assert(exist(cfg.precomputedPcSummaryCsv, 'file') == 2, ...
-        'Median-Swi selection requires the completed Pc summary CSV: %s', ...
+        'Swi-medoid selection requires the completed Pc summary CSV: %s', ...
         cfg.precomputedPcSummaryCsv);
     pcSummaryForMapping = readtable(cfg.precomputedPcSummaryCsv, ...
         'TextType', 'string');
-    [replaySummary, selectionTable] = selectMedianSwiReplayRows( ...
-        replaySummary, pcSummaryForMapping, cfg);
+    assert(all(ismember({'PoreVolume', 'BulkVolume', ...
+        'UpscaledPorosity'}, pcSummaryForMapping.Properties.VariableNames)), ...
+        ['Pc summary lacks reservoir porosity fields. Run the Pc stage ', ...
+         'once with the current code; cached Pc curves will be retained ', ...
+         'and porosity will be backfilled directly from replay maps.']);
+    [replaySummary, selectionTable] = select_swi_medoid_replay_rows( ...
+        replaySummary, pcSummaryForMapping, ...
+        cfg.level3CaseIds, cfg.windows);
     selectionCsv = fullfile(cfg.tableDir, sprintf( ...
-        'kr_representative_selection_%s_%s_median_swi.csv', ...
+        'kr_representative_selection_%s_%s_swi_medoid.csv', ...
         cfg.geologyId, cfg.caseToken));
     writetable(selectionTable, selectionCsv);
-    fprintf(['Selected %d Pc-guided representative replay rows ', ...
-        'using median effective Swi.\n'], height(replaySummary));
+    fprintf(['Selected %d representative replay rows using the ', ...
+        'scalar effective-Swi medoid.\n'], height(replaySummary));
     fprintf('Saved representative selection table: %s\n', selectionCsv);
 end
 
@@ -239,7 +249,7 @@ fprintf('\n');
 if cfg.selectionMode == "all"
     outputSuffix = "dyn_full87";
 else
-    outputSuffix = "dyn_pc_guided_median_swi";
+    outputSuffix = "dyn_swi_medoid";
 end
 curveLongCsv = fullfile(cfg.curveDir, sprintf( ...
     'kr_curve_points_%s_%s_%s.csv', ...
@@ -276,7 +286,7 @@ if ~useCachedCurveMat
     fprintf('Saved dynamic Kr curve MAT: %s\n', curveMatFile);
 end
 
-if cfg.selectionMode == "median_swi"
+if cfg.selectionMode == "swi_medoid"
     if ~exist('curveSummary', 'var')
         curveSummary = curveMat.summary;
     end
@@ -286,94 +296,6 @@ end
 
 fprintf('\nDynamic Kr upscaling run complete.\n')
 fprintf('Output root: %s\n', cfg.outputRoot);
-
-
-function [selectedReplay, selection] = selectMedianSwiReplayRows( ...
-        replaySummary, pcSummary, cfg)
-% Select one actual replay row per case/window using the scalar Swi medoid.
-
-% For a one-dimensional sample under absolute distance, the medoid is an
-% observed value nearest the sample median. Ties are resolved by SourceRow
-% so repeated runs select the same realization.
-
-requiredPcColumns = {'ReplaySourceRow', 'GeologyId', 'Level3CaseId', ...
-    'Level3CaseName', 'Window', 'SliceIndex', 'BulkSgMax'};
-assert(all(ismember(requiredPcColumns, pcSummary.Properties.VariableNames)), ...
-    'Pc summary is missing columns required for median-Swi selection.');
-
-if ismember('EffectiveSwi', pcSummary.Properties.VariableNames)
-    pcSwi = double(pcSummary.EffectiveSwi);
-else
-    pcSwi = 1.0 - double(pcSummary.BulkSgMax);
-end
-pcSourceRows = double(pcSummary.ReplaySourceRow);
-
-selectedMask = false(height(replaySummary), 1);
-selectionRows = cell(numel(cfg.level3CaseIds) * numel(cfg.windows), 14);
-rowId = 0;
-
-for c = 1:numel(cfg.level3CaseIds)
-    caseId = cfg.level3CaseIds(c);
-    for w = 1:numel(cfg.windows)
-        windowName = cfg.windows(w);
-        candidateIdx = find(replaySummary.Level3CaseId == caseId & ...
-            replaySummary.Window == windowName);
-        assert(~isempty(candidateIdx), ...
-            'No replay candidates found for case %d, window %s.', ...
-            caseId, windowName);
-
-        candidateSourceRows = double(replaySummary.SourceRow(candidateIdx));
-        [found, pcIdx] = ismember(candidateSourceRows, pcSourceRows);
-        assert(all(found), ...
-            'Pc summary is missing replay rows for case %d, window %s.', ...
-            caseId, windowName);
-        candidateSwi = pcSwi(pcIdx);
-        assert(all(isfinite(candidateSwi)), ...
-            'Effective Swi contains non-finite values for case %d, window %s.', ...
-            caseId, windowName);
-
-        targetSwi = median(candidateSwi);
-        distanceToMedian = abs(candidateSwi - targetSwi);
-        tieTable = table(distanceToMedian, candidateSourceRows, ...
-            double(replaySummary.SliceIndex(candidateIdx)), ...
-            (1:numel(candidateIdx))', ...
-            'VariableNames', {'Distance', 'SourceRow', 'SliceIndex', 'LocalIndex'});
-        tieTable = sortrows(tieTable, {'Distance', 'SourceRow', 'SliceIndex'});
-        localIdx = tieTable.LocalIndex(1);
-        replayIdx = candidateIdx(localIdx);
-        selectedMask(replayIdx) = true;
-        selectedPcIdx = pcIdx(localIdx);
-
-        if ismember('CurveId', pcSummary.Properties.VariableNames)
-            selectedPcCurveId = double(pcSummary.CurveId(selectedPcIdx));
-        else
-            selectedPcCurveId = NaN;
-        end
-
-        rowId = rowId + 1;
-        selectionRows(rowId, :) = { ...
-            replaySummary.GeologyId(replayIdx), caseId, ...
-            replaySummary.Level3CaseName(replayIdx), windowName, ...
-            numel(candidateIdx), targetSwi, candidateSwi(localIdx), ...
-            distanceToMedian(localIdx), selectedPcCurveId, ...
-            double(replaySummary.ProductionCurveId(replayIdx)), ...
-            double(replaySummary.SourceRow(replayIdx)), ...
-            double(replaySummary.SliceIndex(replayIdx)), ...
-            double(replaySummary.SelectedSampleIndex(replayIdx)), ...
-            double(replaySummary.ReplaySeed(replayIdx))};
-    end
-end
-
-selectedReplay = replaySummary(selectedMask, :);
-selectedReplay = sortrows(selectedReplay, ...
-    {'Level3CaseId', 'WindowOrder', 'SliceIndex'});
-selection = cell2table(selectionRows(1:rowId, :), 'VariableNames', { ...
-    'GeologyId', 'Level3CaseId', 'Level3CaseName', 'Window', ...
-    'CandidateCount', 'MedianEffectiveSwi', 'SelectedEffectiveSwi', ...
-    'AbsoluteSwiDifference', 'SelectedPcCurveId', ...
-    'SelectedProductionCurveId', 'SelectedReplaySourceRow', ...
-    'SelectedSliceIndex', 'SelectedSampleIndex', 'SelectedReplaySeed'});
-end
 
 
 function tf = cachedCurveRowsMatchSelection(curveMat, replaySummary)
@@ -522,9 +444,9 @@ shapeCsv = fullfile(cfg.curveDir, sprintf( ...
 mappingCsv = fullfile(cfg.tableDir, sprintf( ...
     'kr_slice_endpoint_mapping_%s.csv', token));
 sliceCsv = fullfile(cfg.curveDir, sprintf( ...
-    'kr_slice_curves_pc_guided_%s.csv', token));
+    'kr_slice_curves_swi_medoid_%s.csv', token));
 matFile = fullfile(cfg.curveDir, sprintf( ...
-    'kr_pc_guided_representatives_%s.mat', token));
+    'kr_swi_medoid_representatives_%s.mat', token));
 
 writetable(shapeTable, shapeCsv);
 writetable(mappingTable, mappingCsv);
@@ -539,8 +461,23 @@ save(matFile, 'representativeKr', 'cfg', '-v7.3');
 
 fprintf('Saved normalized representative Kr shapes: %s\n', shapeCsv);
 fprintf('Saved slice endpoint mapping: %s\n', mappingCsv);
-fprintf('Saved Pc-guided slice Kr curves: %s\n', sliceCsv);
-fprintf('Saved Pc-guided Kr MAT: %s\n', matFile);
+fprintf('Saved Swi-medoid slice Kr curves: %s\n', sliceCsv);
+fprintf('Saved Swi-medoid Kr MAT: %s\n', matFile);
+
+isFullProduction = ~isfinite(cfg.maxRows) && isempty(cfg.onlyRows);
+if cfg.exportReservoirReady && isFullProduction
+    reservoirDir = fullfile(cfg.outputRoot, 'reservoir_ready');
+    selectionCsvForExport = fullfile(cfg.tableDir, sprintf( ...
+        'kr_representative_selection_%s_%s_swi_medoid.csv', ...
+        cfg.geologyId, cfg.caseToken));
+    export_reservoir_ready_pc_kr_cases( ...
+        cfg.precomputedPcNativeCurveCsv, sliceCsv, ...
+        selectionCsvForExport, reservoirDir, ...
+        'PorosityInput', cfg.precomputedPcSummaryCsv);
+elseif cfg.exportReservoirReady
+    fprintf(['Skipping reservoir-ready export for a partial/smoke run; ', ...
+        'full 87-slice coverage is required.\n']);
+end
 end
 
 
@@ -2152,6 +2089,17 @@ if isfield(curve, fieldName)
     value = string(curve.(fieldName));
 else
     value = string(defaultValue);
+end
+end
+
+
+function mode = canonicalSelectionMode(rawMode)
+% Return the canonical Kr row-selection mode.
+
+mode = lower(strtrim(string(rawMode)));
+if mode == "median_swi"
+    warning('KR_DYN_SELECTION_MODE=median_swi is deprecated; using swi_medoid.');
+    mode = "swi_medoid";
 end
 end
 

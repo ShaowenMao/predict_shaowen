@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Validate one Pc-guided Kr result against its completed full-87 benchmark.
+# Validate one Swi-medoid Kr result against its completed full-87 benchmark.
 
 set -euo pipefail
 

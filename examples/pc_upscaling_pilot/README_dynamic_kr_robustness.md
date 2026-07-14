@@ -51,6 +51,13 @@ run_pc_upscaling_ip_median_examples_full87
 
 Clear `PC_IP_MAX_ROWS` for the full run.
 
+Every native Pc curve is a production reservoir input. Full-curve medoids are
+diagnostics only and are disabled by default. Enable them with:
+
+```matlab
+setenv('PC_IP_ENABLE_MEDOID_DIAGNOSTICS', '1')
+```
+
 ## Dynamic Kr Upscaling
 
 Run:
@@ -66,6 +73,18 @@ The default behavior preserves the original 1D dynamic matching result:
 
 That means clean rows use the same AD-style 1D Corey matching as the
 original workflow, with added progress logging and checkpoints.
+
+For production reduction after all Pc curves are available, use:
+
+```matlab
+setenv('KR_DYN_SELECTION_MODE', 'swi_medoid')
+setenv('KR_DYN_EXPORT_RESERVOIR_READY', '1')
+```
+
+This selects one actual scalar-Swi medoid realization per window, runs six
+dynamic Kr calculations per Level-3 case, normalizes those shapes, restores
+all 87 slice-specific Pc endpoints, and writes checked reservoir-ready MAT
+files. Use `KR_DYN_SELECTION_MODE=all` only for full-87 validation.
 
 ## Robust Fallback Options
 
