@@ -1,0 +1,1218 @@
+%RUN_PC_UPSCALING_IP_MEDIAN_EXAMPLES_FULL87 Invasion-percolation Pc upscaling.
+%
+% This script uses replayed PREDICT realizations from the full-87 replay
+% preparation step and computes Pc curves with a connectivity
+% invasion-percolation calculation equivalent to the original t = 1
+% threshold sweep:
+%
+%   geology: s05_c012
+%   scenario: medium sand, nonuniform
+%   geologic case: case_012_zf0500_svcl010_cvcl060
+%   Level-3 cases: 01, 03, 04, and 07
+%
+% The material Pc functions are deterministic: sand is Leverett-scaled from
+% the reference sand curve, and clay is scaled from the GoM clay
+% Pce(log10(k)) model at the median uncertainty quantile. The key Pc
+% upscaling mechanism is connectivity-based: gas saturation only increases
+% after a connected invasion path forms.
+%
+% First prepare replay inputs:
+%   prepare_full87_replay_median_examples
+%
+% For a quick smoke test, run:
+%   setenv('PC_IP_MAX_ROWS','1')
+%   run_pc_upscaling_ip_median_examples_full87
+%
+% For the full case, clear that variable:
+%   setenv('PC_IP_MAX_ROWS','')
+%   run_pc_upscaling_ip_median_examples_full87
+
+clear; clc;
+
+scriptDir = fileparts(mfilename('fullpath'));
+examplesDir = fileparts(scriptDir);
+repoRoot = fileparts(examplesDir);
+
+cfg = struct();
+cfg.geologyId = string(envOrDefault("PC_IP_GEOLOGY_ID", "s05_c012"));
+cfg.level3CaseIds = parseIdList(envOrDefault("PC_IP_CASE_IDS", "1,3,4,7"));
+cfg.caseToken = caseTokenFromIds(cfg.level3CaseIds);
+cfg.windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"];
+% Common grid for reporting/medoid comparison only. Native Pc endpoints are
+% saved separately and should drive effective Swi in dynamic Kr upscaling.
+cfg.sgGrid = linspace(0.02, 0.68, 80);
+% Full-curve medoids are diagnostics only. Production reservoir inputs use
+% every native Pc curve, so this relatively expensive comparison is off by
+% default and never affects downstream Kr selection.
+cfg.enableMedoidDiagnostics = parseLogicalEnv( ...
+    "PC_IP_ENABLE_MEDOID_DIAGNOSTICS", false);
+cfg.sourceRoot = envOrDefault("PC_IP_REPLAY_ROOT", ...
+    envOrDefault("FULL87_REPLAY_OUTPUT_ROOT", defaultReplayRoot()));
+cfg.replaySummaryCsv = envOrDefault("PC_IP_REPLAY_SUMMARY_CSV", ...
+    fullfile(cfg.sourceRoot, 'tables', sprintf( ...
+    'replay_summary_with_full87_context_%s_%s.csv', ...
+    cfg.geologyId, cfg.caseToken)));
+cfg.upscalingZip = envOrDefault("UPSCALING_ZIP", ...
+    fullfile(repoRoot, 'upscaling.zip'));
+cfg.upscalingRoot = envOrDefault("PC_IP_UPSCALING_ROOT", ...
+    envOrDefault("UPSCALING_ROOT", defaultUpscalingRoot()));
+cfg.mrstRoot = envOrDefault("MRST_ROOT", defaultMrstRoot());
+cfg.outputRoot = envOrDefault("PC_IP_OUTPUT_ROOT", ...
+    fullfile(defaultWorkflowRoot(), 'pc_upscaling_ip_median_examples_full87'));
+
+maxRowsText = strtrim(string(getenv('PC_IP_MAX_ROWS')));
+if maxRowsText ~= ""
+    cfg.maxRows = str2double(maxRowsText);
+else
+    cfg.maxRows = inf;
+end
+if isfinite(cfg.maxRows)
+    cfg.outputRoot = cfg.outputRoot + "_smoke" + string(cfg.maxRows);
+end
+
+cfg.curveDir = fullfile(cfg.outputRoot, 'curves');
+cfg.tableDir = fullfile(cfg.outputRoot, 'tables');
+cfg.figureDir = fullfile(cfg.outputRoot, 'figures');
+ensureFolder(cfg.curveDir);
+ensureFolder(cfg.tableDir);
+ensureFolder(cfg.figureDir);
+
+initializeIpPaths(cfg);
+cfg.originalDeckFile = resolveOriginalDeckFile(cfg);
+
+fprintf('\n=== Load replay summary for full IP cases %s Pc upscaling ===\n', ...
+    cfg.caseToken)
+assert(exist(cfg.replaySummaryCsv, 'file') == 2, ...
+    'Missing replay summary: %s', cfg.replaySummaryCsv);
+replaySummaryAll = readtable(cfg.replaySummaryCsv, 'TextType', 'string');
+caseMask = replaySummaryAll.GeologyId == cfg.geologyId & ...
+    ismember(replaySummaryAll.Level3CaseId, cfg.level3CaseIds);
+replaySummary = replaySummaryAll(caseMask, :);
+replaySummary.WindowOrder = windowOrder(replaySummary.Window);
+replaySummary = sortrows(replaySummary, {'Level3CaseId', 'SliceIndex', 'WindowOrder'});
+
+expectedRows = 87 * numel(cfg.windows) * numel(cfg.level3CaseIds);
+if height(replaySummary) ~= expectedRows
+    allowPartial = parseLogicalEnv("PC_IP_ALLOW_PARTIAL_REPLAY", ...
+        isfinite(cfg.maxRows));
+    assert(allowPartial, ...
+        'Expected %d rows for cases %s, found %d.', ...
+        expectedRows, cfg.caseToken, height(replaySummary));
+    warning('Expected %d rows for cases %s, found %d; continuing with partial replay data.', ...
+        expectedRows, cfg.caseToken, height(replaySummary));
+end
+if isfinite(cfg.maxRows)
+    replaySummary = replaySummary(1:min(cfg.maxRows, height(replaySummary)), :);
+end
+fprintf('Using %d replayed rows for cases %s from: %s\n', ...
+    height(replaySummary), cfg.caseToken, cfg.replaySummaryCsv);
+
+fprintf('\n=== Prepare deterministic material Pc scaling ===\n')
+pcOpt = ipPcOptions(cfg.originalDeckFile, cfg.sgGrid);
+fprintf('Reference deck: %s\n', cfg.originalDeckFile);
+fprintf('IP mode uses kzz scaling, %s connectivity, t = %.2f, clay Pce uncertainty quantile %.2f.\n', ...
+    pcOpt.ipAlgorithm, pcOpt.t, pcOpt.clayPceUncertaintyQuantile);
+
+curveLongCsv = fullfile(cfg.curveDir, ...
+    sprintf('pc_curve_points_%s_%s_ip_full87.csv', ...
+    cfg.geologyId, cfg.caseToken));
+nativeCurveLongCsv = fullfile(cfg.curveDir, ...
+    sprintf('pc_native_curve_points_%s_%s_ip_full87.csv', ...
+    cfg.geologyId, cfg.caseToken));
+curveSummaryCsv = fullfile(cfg.tableDir, ...
+    sprintf('pc_curve_summary_%s_%s_ip_full87.csv', ...
+    cfg.geologyId, cfg.caseToken));
+curveMatFile = fullfile(cfg.curveDir, ...
+    sprintf('pc_curves_%s_%s_ip_full87.mat', cfg.geologyId, cfg.caseToken));
+
+fprintf('\n=== Compute full invasion-percolation Pc curves ===\n')
+useCachedCurves = exist(curveMatFile, 'file') == 2 && ...
+    exist(nativeCurveLongCsv, 'file') == 2 && ...
+    exist(curveSummaryCsv, 'file') == 2;
+if useCachedCurves
+    fprintf('Loading cached IP curve MAT: %s\n', curveMatFile);
+    cached = load(curveMatFile, 'curveMat');
+    curveMat = cached.curveMat;
+    useCachedCurves = isfield(curveMat, 'rawSg') && ...
+        isfield(curveMat, 'rawPcPa');
+    if ~useCachedCurves
+        fprintf(['Cached Pc MAT lacks native endpoint arrays; ', ...
+            'recomputing to preserve upscaled Swi endpoints.\n']);
+    else
+        curveSummary = readtable(curveSummaryCsv, 'TextType', 'string');
+        if ~all(ismember({'BulkVolume', 'UpscaledPorosity'}, ...
+                curveSummary.Properties.VariableNames))
+            fprintf(['Cached Pc curves predate porosity export; computing ', ...
+                '6-by-87 volume-weighted porosity directly from replay maps.\n']);
+            curveSummary = addPorosityToCachedSummary( ...
+                curveSummary, replaySummary);
+            curveMat.summary = curveSummary;
+            writetable(curveSummary, curveSummaryCsv);
+            save(curveMatFile, 'curveMat', 'pcOpt', 'cfg', '-v7.3');
+            fprintf('Updated cached Pc summary with upscaled porosity: %s\n', ...
+                curveSummaryCsv);
+        else
+            curveMat.summary = curveSummary;
+        end
+    end
+end
+
+if ~useCachedCurves
+    if exist(curveMatFile, 'file') == 2
+        fprintf(['Existing Pc MAT lacks required native-curve companion files; ', ...
+            'recomputing to preserve upscaled Swi endpoints.\n']);
+    end
+    [curveLong, nativeCurveLong, curveSummary, curveMat] = computeIpPcCurves( ...
+        replaySummary, pcOpt);
+    writetable(curveLong, curveLongCsv);
+    writetable(nativeCurveLong, nativeCurveLongCsv);
+    writetable(curveSummary, curveSummaryCsv);
+    save(curveMatFile, 'curveMat', 'pcOpt', 'cfg', '-v7.3');
+    fprintf('Saved IP curve points: %s\n', curveLongCsv);
+    fprintf('Saved native IP curve points: %s\n', nativeCurveLongCsv);
+    fprintf('Saved IP curve summary: %s\n', curveSummaryCsv);
+    fprintf('Saved IP curve MAT: %s\n', curveMatFile);
+end
+
+if cfg.enableMedoidDiagnostics
+    fprintf('\n=== Compute optional full-Pc-curve medoid diagnostics ===\n')
+    results = analyzeIpMedoids(curveMat, cfg);
+    medoidSummaryCsv = fullfile(cfg.tableDir, ...
+        sprintf('pc_medoid_summary_%s_%s_ip_full87.csv', ...
+        cfg.geologyId, cfg.caseToken));
+    distanceSummaryCsv = fullfile(cfg.tableDir, ...
+        sprintf('pc_distance_summary_%s_%s_ip_full87.csv', ...
+        cfg.geologyId, cfg.caseToken));
+    writetable(results.MedoidSummary, medoidSummaryCsv);
+    writetable(results.DistanceSummary, distanceSummaryCsv);
+    save(fullfile(cfg.tableDir, ...
+        sprintf('pc_medoid_results_%s_%s_ip_full87.mat', ...
+        cfg.geologyId, cfg.caseToken)), ...
+        'results', '-v7.3');
+    fprintf('Saved diagnostic Pc-medoid summary: %s\n', medoidSummaryCsv);
+    fprintf('Saved diagnostic Pc-distance summary: %s\n', distanceSummaryCsv);
+
+    fprintf('\n=== Generate optional Pc-medoid diagnostic figures ===\n')
+    makeIpFigures(curveMat, results, cfg);
+else
+    fprintf(['\nSkipping full-Pc-curve medoid diagnostics ', ...
+        '(PC_IP_ENABLE_MEDOID_DIAGNOSTICS=0).\n']);
+end
+
+fprintf('\nFull invasion-percolation cases %s Pc upscaling complete.\n', ...
+    cfg.caseToken)
+fprintf('Output root: %s\n', cfg.outputRoot);
+
+
+function initializeIpPaths(cfg)
+% Add MRST and original upscaling helper paths used by upscalePcReg.
+
+assert(exist(cfg.upscalingRoot, 'dir') == 7, ...
+    'Missing extracted upscaling root: %s', cfg.upscalingRoot);
+if exist(fullfile(cfg.mrstRoot, 'startup.m'), 'file') == 2
+    run(fullfile(cfg.mrstRoot, 'startup.m'));
+else
+    warning('MRST startup not found. Continuing with current MATLAB path: %s', ...
+        cfg.mrstRoot);
+end
+addpath(cfg.upscalingRoot);
+addpath(fullfile(cfg.upscalingRoot, 'upscaling'));
+end
+
+
+function pcOpt = ipPcOptions(deckFile, sgGrid)
+% Options for deterministic calibrated material curves plus IP upscaling.
+
+pcOpt = struct();
+pcOpt.sgGrid = sgGrid;
+pcOpt.minPoro = 1.0e-4;
+pcOpt.minPermMD = 1.0e-9;
+pcOpt.mDInM2 = 9.869233e-16;
+pcOpt.refPermSandSI = 7.60393535652603e-13;
+pcOpt.refPoroSand = 0.289875;
+pcOpt.clayPceRmse = 0.2953;
+pcOpt.clayPceUncertaintyQuantile = 0.5;
+pcOpt.contactAngleDeg = 30;
+pcOpt.scalingPermComponent = "kzz";
+pcOpt.t = 1;
+pcOpt.ipAlgorithm = "fast_threshold_connectivity";
+pcOpt.deckFile = deckFile;
+pcOpt.referenceCurves = readSgofReferenceCurves(deckFile);
+end
+
+
+function deckFile = resolveOriginalDeckFile(cfg)
+% Locate the original upscaling deck, extracting upscaling.zip if needed.
+
+deckRelPath = fullfile('eclipse_data_files', ...
+    'gom_forUps_theta30_PVDO_incompRock.DATA');
+
+candidate = fullfile(cfg.upscalingRoot, deckRelPath);
+if exist(candidate, 'file') == 2
+    deckFile = candidate;
+    return
+end
+
+extractRoot = fullfile(cfg.outputRoot, 'reference_upscaling_zip');
+candidate = fullfile(extractRoot, deckRelPath);
+if exist(candidate, 'file') ~= 2
+    assert(exist(cfg.upscalingZip, 'file') == 2, ...
+        'Missing original upscaling deck and upscaling.zip: %s', cfg.upscalingZip);
+    ensureFolder(extractRoot);
+    unzip(cfg.upscalingZip, extractRoot);
+end
+
+assert(exist(candidate, 'file') == 2, ...
+    'Could not locate extracted deck file: %s', candidate);
+deckFile = candidate;
+end
+
+
+function curves = readSgofReferenceCurves(deckFile)
+% Read the two original SGOF Pc tables from the Eclipse deck.
+
+assert(exist(deckFile, 'file') == 2, 'Missing deck file: %s', deckFile);
+lines = string(readlines(deckFile));
+sgofLine = find(strtrim(lines) == "SGOF", 1, 'first');
+assert(~isempty(sgofLine), 'No SGOF keyword found in %s.', deckFile);
+
+tables = cell(1, 2);
+current = [];
+tableIndex = 1;
+for i = (sgofLine + 1):numel(lines)
+    raw = strtrim(lines(i));
+    if raw == "" || startsWith(raw, "--")
+        continue
+    end
+    if raw == "/"
+        if ~isempty(current)
+            tables{tableIndex} = current;
+            tableIndex = tableIndex + 1;
+            current = [];
+            if tableIndex > 2
+                break
+            end
+        end
+        continue
+    end
+
+    values = sscanf(erase(raw, "/"), '%f');
+    if numel(values) == 4
+        current(end+1, :) = values(:)'; %#ok<AGROW>
+    elseif ~isempty(current)
+        break
+    end
+end
+
+assert(~isempty(tables{1}) && ~isempty(tables{2}), ...
+    'Could not parse two SGOF tables from %s.', deckFile);
+curves.sand = tableToCurve(tables{1});
+curves.clay = tableToCurve(tables{2});
+end
+
+
+function curve = tableToCurve(T)
+% Convert one SGOF numeric table to an interpolation-ready Pc curve.
+
+curve.sg = T(:, 1);
+curve.krg = T(:, 2);
+curve.krog = T(:, 3);
+curve.pcBar = T(:, 4);
+curve.pcPa = curve.pcBar * 1.0e5;
+[curve.pcPaUnique, ia] = unique(curve.pcPa, 'stable');
+curve.sgAtPcUnique = curve.sg(ia);
+end
+
+
+function [curveLong, nativeCurveLong, curveSummary, curveMat] = computeIpPcCurves(replaySummary, pcOpt)
+% Compute invasion-percolation Pc curves for every replay row.
+
+n = height(replaySummary);
+sgGrid = pcOpt.sgGrid(:)';
+pcPa = nan(n, numel(sgGrid));
+rawSg = cell(n, 1);
+rawPcPa = cell(n, 1);
+summaryRows = cell(n, 37);
+longRows = cell(n * numel(sgGrid), 18);
+longIdx = 0;
+nativeRows = {};
+nativeIdx = 0;
+
+for i = 1:n
+    outputFile = char(replaySummary.OutputFile(i));
+    fprintf('IP Pc curve %3d/%3d: case %02d slice %02d %s\n', ...
+        i, n, replaySummary.Level3CaseId(i), ...
+        replaySummary.SliceIndex(i), char(replaySummary.Window(i)));
+    S = load(outputFile, 'replay');
+    curve = ipPcCurveFromReplay(S.replay, pcOpt, replaySummary.Window(i));
+    pcPa(i, :) = curve.pcPa;
+    rawSg{i} = curve.rawSg(:);
+    rawPcPa{i} = curve.rawPcPa(:);
+
+    summaryRows(i, :) = { ...
+        i, replaySummary.SourceRow(i), replaySummary.GeologyId(i), ...
+        replaySummary.ScenarioName(i), replaySummary.CaseLabel(i), ...
+        replaySummary.Level3CaseId(i), replaySummary.Level3CaseName(i), ...
+        replaySummary.Window(i), replaySummary.SliceIndex(i), ...
+        replaySummary.AssignedState(i), replaySummary.SamplingPool(i), ...
+        replaySummary.SelectedSampleIndex(i), replaySummary.ReplaySeed(i), ...
+        curve.poreVolume, curve.bulkVolume, curve.upscaledPorosity, ...
+        curve.numCells, curve.numRegions, ...
+        curve.numClayRegions, curve.clayPoreVolumeFraction, ...
+        curve.meanLog10KzzMD, curve.medianLog10KzzMD, ...
+        curve.p05Log10KzzMD, curve.p95Log10KzzMD, ...
+        curve.pcAtSg20Pa, curve.pcAtSg50Pa, curve.pcAtSg65Pa, ...
+        curve.bulkSgMax, curve.effectiveSwi, curve.rawNumPoints, ...
+        curve.percolationPcPa, curve.percolationSg, ...
+        curve.pcMinPa, curve.pcMaxPa, ...
+        pcOpt.scalingPermComponent, pcOpt.t, ...
+        pcOpt.clayPceUncertaintyQuantile};
+
+    for j = 1:numel(sgGrid)
+        longIdx = longIdx + 1;
+        longRows(longIdx, :) = { ...
+            i, replaySummary.SourceRow(i), replaySummary.GeologyId(i), ...
+            replaySummary.Level3CaseId(i), replaySummary.Level3CaseName(i), ...
+            replaySummary.Window(i), replaySummary.SliceIndex(i), ...
+            replaySummary.AssignedState(i), replaySummary.SamplingPool(i), ...
+            replaySummary.SelectedSampleIndex(i), replaySummary.ReplaySeed(i), ...
+            sgGrid(j), curve.pcPa(j), curve.pcPa(j) / 1.0e5, ...
+            log10(max(curve.pcPa(j), realmin)), curve.clayPoreVolumeFraction, ...
+            curve.medianLog10KzzMD, curve.percolationPcPa / 1.0e5};
+    end
+
+    for j = 1:numel(curve.rawSg)
+        nativeIdx = nativeIdx + 1;
+        nativeRows(nativeIdx, :) = { ...
+            i, replaySummary.SourceRow(i), replaySummary.GeologyId(i), ...
+            replaySummary.Level3CaseId(i), replaySummary.Level3CaseName(i), ...
+            replaySummary.Window(i), replaySummary.SliceIndex(i), ...
+            replaySummary.AssignedState(i), replaySummary.SamplingPool(i), ...
+            replaySummary.SelectedSampleIndex(i), replaySummary.ReplaySeed(i), ...
+            j, curve.rawSg(j), curve.rawPcPa(j), curve.rawPcPa(j) / 1.0e5, ...
+            log10(max(curve.rawPcPa(j), realmin)), curve.bulkSgMax, ...
+            curve.effectiveSwi, j == numel(curve.rawSg)};
+    end
+end
+
+curveSummary = cell2table(summaryRows, 'VariableNames', ...
+    {'CurveId', 'ReplaySourceRow', 'GeologyId', 'ScenarioName', ...
+     'CaseLabel', 'Level3CaseId', 'Level3CaseName', 'Window', ...
+     'SliceIndex', 'AssignedState', 'SamplingPool', 'SelectedSampleIndex', ...
+     'ReplaySeed', 'PoreVolume', 'BulkVolume', 'UpscaledPorosity', ...
+     'NumCells', 'NumRegions', ...
+     'NumClayRegions', 'ClayPoreVolumeFraction', 'MeanLog10KzzMD', ...
+     'MedianLog10KzzMD', 'P05Log10KzzMD', 'P95Log10KzzMD', ...
+     'PcAtSg20Pa', 'PcAtSg50Pa', 'PcAtSg65Pa', 'BulkSgMax', ...
+     'EffectiveSwi', 'RawNumPoints', 'PercolationPcPa', 'PercolationSg', ...
+     'PcMinPa', 'PcMaxPa', 'ScalingPermComponent', 'IpT', ...
+     'ClayPceUncertaintyQuantile'});
+
+curveLong = cell2table(longRows(1:longIdx, :), 'VariableNames', ...
+    {'CurveId', 'ReplaySourceRow', 'GeologyId', 'Level3CaseId', ...
+     'Level3CaseName', 'Window', 'SliceIndex', 'AssignedState', ...
+     'SamplingPool', 'SelectedSampleIndex', 'ReplaySeed', ...
+     'GasSaturation', 'PcPa', 'PcBar', 'Log10PcPa', ...
+     'ClayPoreVolumeFraction', 'MedianLog10KzzMD', ...
+     'PercolationPcBar'});
+
+nativeCurveLong = cell2table(nativeRows, 'VariableNames', ...
+    {'CurveId', 'ReplaySourceRow', 'GeologyId', 'Level3CaseId', ...
+     'Level3CaseName', 'Window', 'SliceIndex', 'AssignedState', ...
+     'SamplingPool', 'SelectedSampleIndex', 'ReplaySeed', ...
+     'NativePointIndex', 'GasSaturation', 'PcPa', 'PcBar', ...
+     'Log10PcPa', 'BulkSgMax', 'EffectiveSwi', 'IsEndpoint'});
+
+curveMat = struct();
+curveMat.sgGrid = sgGrid;
+curveMat.pcPa = pcPa;
+curveMat.pcBar = pcPa / 1.0e5;
+curveMat.rawSg = rawSg;
+curveMat.rawPcPa = rawPcPa;
+curveMat.summary = curveSummary;
+end
+
+
+function curve = ipPcCurveFromReplay(replay, pcOpt, windowName)
+% Compute one invasion-percolation upscaled Pc curve from replay data.
+
+[G, rock, fluid, opt, diagnostics] = buildIpInputsFromReplay( ...
+    replay, pcOpt, windowName);
+[pcRaw, sgRaw, ipDiagnostics] = fastInvasionPercolationPcReg( ...
+    G, fluid, rock, opt);
+
+valid = isfinite(sgRaw(:)) & isfinite(pcRaw(:)) & pcRaw(:) >= 0;
+sgRaw = sgRaw(valid);
+pcRaw = pcRaw(valid);
+[sgRaw, order] = sort(sgRaw(:));
+pcRaw = pcRaw(order);
+[sgUnique, ia] = unique(sgRaw, 'stable');
+pcUnique = pcRaw(ia);
+sgUnique = sgUnique(:);
+pcUnique = pcUnique(:);
+
+if numel(sgUnique) < 2
+    error('IP curve has fewer than two unique saturation points.');
+end
+
+pcAtSg = interp1(sgUnique, pcUnique, pcOpt.sgGrid, 'linear', 'extrap');
+pcAtSg = max(pcAtSg, realmin);
+
+positive = find(pcUnique > 0 & sgUnique > 0, 1, 'first');
+if isempty(positive)
+    percolationPc = NaN;
+    percolationSg = NaN;
+else
+    percolationPc = pcUnique(positive);
+    percolationSg = sgUnique(positive);
+end
+
+curve = diagnostics;
+curve.rawSg = sgUnique;
+curve.rawPcPa = pcUnique;
+curve.pcPa = pcAtSg;
+curve.rawNumPoints = numel(sgUnique);
+curve.percolationPcPa = percolationPc;
+curve.percolationSg = percolationSg;
+curve.firstBottomConnectedPcPa = ipDiagnostics.firstBottomConnectedPcPa;
+curve.firstBottomConnectedSg = ipDiagnostics.firstBottomConnectedSg;
+curve.pcAtSg20Pa = interp1(pcOpt.sgGrid, pcAtSg, 0.20, 'linear', 'extrap');
+curve.pcAtSg50Pa = interp1(pcOpt.sgGrid, pcAtSg, 0.50, 'linear', 'extrap');
+curve.pcAtSg65Pa = interp1(pcOpt.sgGrid, pcAtSg, 0.65, 'linear', 'extrap');
+curve.bulkSgMax = max(sgUnique);
+curve.effectiveSwi = max(0, min(1, 1 - curve.bulkSgMax));
+curve.pcMinPa = min(pcUnique);
+curve.pcMaxPa = max(pcUnique);
+end
+
+
+function [pcVal, sVal, diagnostics] = fastInvasionPercolationPcReg(G, fluid, rock, opt)
+% Connectivity-threshold implementation of t=1 invasion percolation.
+%
+% A cell is invaded at pressure pc if it is connected to the inlet boundary
+% through cells with entry pressures <= pc. The bulk saturation is kept at
+% zero until an invaded path first reaches the outlet boundary, matching the
+% original upscalePcReg inv-per convention.
+
+reg = rock.regions.saturation;
+idReg = unique(reg);
+nreg = numel(idReg);
+
+fluid.pcInv = cell(1, max(reg));
+pcMin = inf;
+pcMax = 0;
+pcv2 = inf;
+sgmax = zeros(1, nreg);
+pce = zeros(G.cells.num, 1);
+pcAtSgMax = zeros(1, max(idReg));
+
+for n = 1:nreg
+    regId = idReg(n);
+    if strcmp(opt.sg, 'sandClay')
+        if fluid.isclay(n)
+            sgmin = fluid.krPts.g(2, 1);
+            sgmax(n) = fluid.krPts.g(2, 3);
+        else
+            sgmin = fluid.krPts.g(1, 1);
+            sgmax(n) = fluid.krPts.g(1, 3) - 0.01;
+        end
+    else
+        sgmin = fluid.krPts.g(n, 1);
+        sgmax(n) = fluid.krPts.g(n, 3);
+    end
+
+    sgvals = linspace(sgmin, sgmax(n), pow2(6)-1)';
+    sgvals = [sgvals(1); sgvals(1)+1e-3; sgvals(2:end)];
+    pcvals = fluid.pcOG{regId}(sgvals);
+    pcvals = makeStrictlyIncreasing(pcvals);
+    pcv2 = min(pcv2, pcvals(2));
+    fluid.pcInv{regId} = @(pcOG) interp1(pcvals, sgvals, pcOG, ...
+        'linear', 'extrap');
+    pcMin = min(pcMin, fluid.pcOG{regId}(sgmin));
+    pcAtSgMax(regId) = fluid.pcOG{regId}(sgmax(n));
+    if fluid.isclay(n)
+        pcMax = max(pcMax, pcAtSgMax(regId));
+    end
+    pce(reg == regId) = fluid.pcOG{regId}(1e-3);
+end
+
+if ~(isfinite(pcMax) && pcMax > pcv2)
+    pcMax = max(pcAtSgMax(pcAtSgMax > 0));
+end
+pcVal = logspace(log10(pcv2), log10(0.99 * pcMax), pow2(6)-2);
+pcVal = [0, 0.98 * pcv2, pcVal];
+
+topCells = (1:(G.cartDims(1) * G.cartDims(2)))';
+bottomCells = ((G.cells.num - G.cartDims(1) * G.cartDims(2) + 1):G.cells.num)';
+adj = buildCellAdjacency(G);
+volume = sum(G.cells.volumes .* rock.poro);
+sVal = zeros(numel(pcVal), 1);
+sgCells = zeros(G.cells.num, 1);
+idrem = false(numel(pcVal), 1);
+idPercolation = [];
+sLast = 0;
+firstBottomPc = NaN;
+
+for k = 2:numel(pcVal)
+    pcv = pcVal(k);
+    openMask = pce <= pcv;
+    invaded = connectedOpenCells(adj, openMask, topCells);
+    if any(invaded(bottomCells)) && isempty(idPercolation)
+        idPercolation = k;
+        firstBottomPc = pcv;
+    end
+
+    invadedIds = find(invaded);
+    for n = 1:nreg
+        regId = idReg(n);
+        cells = invadedIds(reg(invadedIds) == regId);
+        if ~isempty(cells)
+            pcvId = min(pcv, pcAtSgMax(regId));
+            sgCells(cells) = fluid.pcInv{regId}(pcvId * ones(numel(cells), 1));
+        end
+    end
+
+    if isempty(idPercolation)
+        sVal(k) = 0;
+    else
+        sVal(k) = sum(sgCells .* G.cells.volumes .* rock.poro, 'omitnan') / volume;
+    end
+
+    if abs(sVal(k) - sLast) < 1e-3
+        idrem(k) = true;
+    else
+        sLast = sVal(k);
+    end
+end
+
+if isempty(idPercolation)
+    error('No percolating path found in IP Pc upscaling.');
+end
+sVal(idPercolation - 1) = 1e-5;
+idrem(idPercolation - 1) = false;
+idrem(idPercolation) = false;
+idrem(end) = false;
+pcVal = pcVal(:);
+sVal = sVal(:);
+pcVal(idrem(:)) = [];
+sVal(idrem(:)) = [];
+firstBottomSg = sVal(find(sVal > 1e-5, 1, 'first'));
+
+diagnostics = struct();
+diagnostics.pcMinPa = pcMin;
+diagnostics.pcMaxPa = pcMax;
+diagnostics.firstBottomConnectedPcPa = firstBottomPc;
+diagnostics.firstBottomConnectedSg = firstBottomSg;
+end
+
+
+function adj = buildCellAdjacency(G)
+% Build an undirected cell-neighbor list from MRST face neighbors.
+
+neighbors = G.faces.neighbors;
+neighbors = neighbors(all(neighbors > 0, 2), :);
+n = G.cells.num;
+counts = accumarray([neighbors(:, 1); neighbors(:, 2)], 1, [n, 1]);
+adj = cell(n, 1);
+for i = 1:n
+    adj{i} = zeros(counts(i), 1);
+end
+fill = zeros(n, 1);
+for e = 1:size(neighbors, 1)
+    a = neighbors(e, 1);
+    b = neighbors(e, 2);
+    fill(a) = fill(a) + 1;
+    adj{a}(fill(a)) = b;
+    fill(b) = fill(b) + 1;
+    adj{b}(fill(b)) = a;
+end
+end
+
+
+function visited = connectedOpenCells(adj, openMask, inletCells)
+% Return open cells connected to the inlet boundary.
+
+n = numel(openMask);
+visited = false(n, 1);
+queue = zeros(n, 1);
+start = inletCells(openMask(inletCells));
+if isempty(start)
+    return
+end
+tail = numel(start);
+queue(1:tail) = start;
+visited(start) = true;
+head = 1;
+while head <= tail
+    c = queue(head);
+    head = head + 1;
+    nb = adj{c};
+    nb = nb(openMask(nb) & ~visited(nb));
+    if ~isempty(nb)
+        visited(nb) = true;
+        queue((tail+1):(tail+numel(nb))) = nb;
+        tail = tail + numel(nb);
+    end
+end
+end
+
+
+function [G, rock, fluid, opt, diagnostics] = buildIpInputsFromReplay( ...
+        replay, pcOpt, windowName)
+% Build MRST-style G/rock/fluid/opt inputs for original IP upscaling.
+
+G = replay.G;
+grid = replay.Grid;
+rawPoro = double(grid.poro(:));
+poroAll = max(rawPoro, pcOpt.minPoro);
+perm = grid.perm;
+units = grid.units(:);
+isSmear = logical(grid.isSmear(:));
+volume = G.cells.volumes(:);
+permComponentSI = selectPermComponent(perm, pcOpt);
+permComponentSI = max(permComponentSI(:), pcOpt.minPermMD * pcOpt.mDInM2);
+log10KzzMD = log10(permComponentSI ./ pcOpt.mDInM2);
+
+valid = isfinite(poroAll) & isfinite(permComponentSI) & ...
+    isfinite(volume) & volume > 0 & units > 0;
+assert(all(valid), 'IP runner expects valid replay cells for all fault-core cells.');
+assert(all(rawPoro >= 0 & rawPoro <= 1), ...
+    'IP runner expects physical fine-grid porosity in [0,1].');
+
+rock = struct();
+rock.poro = poroAll;
+rock.perm = perm;
+rock.regions = struct();
+rock.regions.saturation = units;
+rock.regions.rocknum = ones(G.cells.num, 1);
+rock.regions.rocknum(isSmear) = 2;
+
+idReg = unique(units(:))';
+fluid = struct();
+fluid.krPts = struct();
+fluid.krPts.g = [ ...
+    pcOpt.referenceCurves.sand.sg(1), NaN, pcOpt.referenceCurves.sand.sg(end); ...
+    pcOpt.referenceCurves.clay.sg(1), NaN, pcOpt.referenceCurves.clay.sg(end)];
+fluid.pcOG = cell(1, max(idReg));
+fluid.isclay = false(1, numel(idReg));
+
+for n = 1:numel(idReg)
+    id = units == idReg(n);
+    smearFrac = mean(double(isSmear(id)), 'omitnan');
+    isClay = smearFrac >= 0.5;
+    fluid.isclay(n) = isClay;
+    region = struct();
+    region.isClay = isClay;
+    region.permSI = mean(permComponentSI(id), 'omitnan');
+    region.poro = mean(poroAll(id), 'omitnan');
+    [sgRef, pcRefPa] = scaledRegionPc(region, pcOpt);
+    fluid.pcOG{idReg(n)} = @(sg) interp1(sgRef, pcRefPa, sg, ...
+        'linear', 'extrap');
+end
+
+opt = struct();
+opt.pc_mode = 'inv-per';
+opt.t = pcOpt.t;
+opt.sg = 'sandClay';
+opt.window = char(windowName);
+opt.fault = 'predict_3D';
+opt.dir = 'z';
+opt.theta = [pcOpt.contactAngleDeg, pcOpt.contactAngleDeg];
+
+poreWeights = poroAll .* volume;
+diagnostics = struct();
+diagnostics.bulkVolume = sum(volume, 'omitnan');
+diagnostics.poreVolume = sum(rawPoro .* volume, 'omitnan');
+diagnostics.upscaledPorosity = diagnostics.poreVolume ./ ...
+    max(diagnostics.bulkVolume, realmin);
+diagnostics.numCells = G.cells.num;
+diagnostics.numRegions = numel(idReg);
+diagnostics.numClayRegions = sum(fluid.isclay);
+diagnostics.clayPoreVolumeFraction = ...
+    sum(poreWeights(isSmear), 'omitnan') ./ max(sum(poreWeights, 'omitnan'), realmin);
+diagnostics.meanLog10KzzMD = mean(log10KzzMD, 'omitnan');
+diagnostics.medianLog10KzzMD = median(log10KzzMD, 'omitnan');
+diagnostics.p05Log10KzzMD = prctile(log10KzzMD, 5);
+diagnostics.p95Log10KzzMD = prctile(log10KzzMD, 95);
+end
+
+
+function summary = addPorosityToCachedSummary(summary, replaySummary)
+% Add exact volume-weighted porosity without rerunning Pc upscaling.
+
+n = height(summary);
+bulkVolume = nan(n, 1);
+upscaledPorosity = nan(n, 1);
+replaySourceRows = numericValues(replaySummary.SourceRow);
+summarySourceRows = numericValues(summary.ReplaySourceRow);
+
+for i = 1:n
+    sourceRow = summarySourceRows(i);
+    replayIndex = find(replaySourceRows == sourceRow, 1, 'first');
+    assert(~isempty(replayIndex), 'PcPorosity:ReplaySourceMissing', ...
+        'Replay source row %d is missing while backfilling porosity.', ...
+        sourceRow);
+    S = load(char(replaySummary.OutputFile(replayIndex)), 'replay');
+    [bulkVolume(i), upscaledPorosity(i)] = ...
+        volumeWeightedPorosity(S.replay);
+end
+
+summary.BulkVolume = bulkVolume;
+summary.UpscaledPorosity = upscaledPorosity;
+summary.PoreVolume = bulkVolume .* upscaledPorosity;
+end
+
+
+function [bulkVolume, upscaledPorosity] = volumeWeightedPorosity(replay)
+% Preserve fine-scale pore volume in one coarse fault-cell porosity.
+
+volume = double(replay.G.cells.volumes(:));
+porosity = double(replay.Grid.poro(:));
+assert(numel(volume) == numel(porosity), ...
+    'PcPorosity:GridSizeMismatch', ...
+    'Fine-grid volume and porosity arrays have different lengths.');
+assert(all(isfinite(volume) & volume > 0), ...
+    'PcPorosity:InvalidVolume', ...
+    'Fine-grid cell volumes must be finite and positive.');
+assert(all(isfinite(porosity) & porosity >= 0 & porosity <= 1), ...
+    'PcPorosity:InvalidPorosity', ...
+    'Fine-grid porosity must be finite and lie in [0,1].');
+
+bulkVolume = sum(volume);
+upscaledPorosity = sum(porosity .* volume) ./ bulkVolume;
+end
+
+
+function values = numericValues(values)
+% Convert numeric, string, or cell text table columns to doubles.
+
+if ~isnumeric(values)
+    values = str2double(string(values));
+end
+values = double(values(:));
+assert(all(isfinite(values)), 'PcPorosity:NonfiniteTableValue', ...
+    'Expected finite numeric replay-source values.');
+end
+
+
+function [sgRef, pcPa] = scaledRegionPc(region, pcOpt)
+% Return scaled material Pc curve for one material region.
+
+if region.isClay
+    ref = pcOpt.referenceCurves.clay;
+    log10KMD = log10(max(region.permSI / pcOpt.mDInM2, pcOpt.minPermMD));
+    pceHgBar = 10.^(-0.1992 * log10KMD + 1.407 - pcOpt.clayPceRmse + ...
+        pcOpt.clayPceUncertaintyQuantile * 2 * pcOpt.clayPceRmse);
+    pceCo2WaterPa = 1.0e5 * pceHgBar * ...
+        abs(cosd(pcOpt.contactAngleDeg) * 25 / (cosd(140) * 485));
+    entryRefPa = interp1(ref.sg, ref.pcPa, 0.10, 'linear', 'extrap');
+    pcPa = ref.pcPa .* (pceCo2WaterPa ./ entryRefPa);
+else
+    ref = pcOpt.referenceCurves.sand;
+    scale = sqrt((pcOpt.refPermSandSI * region.poro) ./ ...
+        (pcOpt.refPoroSand * region.permSI));
+    pcPa = ref.pcPa .* scale;
+end
+sgRef = ref.sg;
+pcPa = makeStrictlyIncreasing(pcPa);
+end
+
+
+function pcPa = makeStrictlyIncreasing(pcPa)
+% Add tiny monotonic increments so inverse interpolation remains stable.
+
+pcPa = pcPa(:);
+for i = 2:numel(pcPa)
+    if pcPa(i) <= pcPa(i-1)
+        pcPa(i) = pcPa(i-1) + max(abs(pcPa(i-1)) * 1e-9, 1e-6);
+    end
+end
+end
+
+
+function kSI = selectPermComponent(perm, pcOpt)
+% Select the permeability component used for Pc scaling.
+
+switch lower(string(pcOpt.scalingPermComponent))
+    case "kxx"
+        col = 1;
+    case "kyy"
+        if size(perm, 2) >= 4
+            col = 4;
+        elseif size(perm, 2) >= 2
+            col = 2;
+        else
+            col = 1;
+        end
+    case "kzz"
+        if size(perm, 2) >= 6
+            col = 6;
+        elseif size(perm, 2) >= 3
+            col = 3;
+        else
+            col = 1;
+        end
+    otherwise
+        error('Unknown permeability component: %s', pcOpt.scalingPermComponent);
+end
+kSI = perm(:, col);
+end
+
+
+function results = analyzeIpMedoids(curveMat, cfg)
+% Select one medoid IP curve per Level-3 case and window.
+
+summary = curveMat.summary;
+windows = cfg.windows;
+medoidRows = {};
+distanceRows = {};
+
+for c = 1:numel(cfg.level3CaseIds)
+    caseId = cfg.level3CaseIds(c);
+    for w = 1:numel(windows)
+        windowName = windows(w);
+        idx = find(summary.Level3CaseId == caseId & summary.Window == windowName);
+        if isfinite(cfg.maxRows)
+            if isempty(idx)
+                continue
+            end
+        else
+            assert(numel(idx) == 87, ...
+                'Expected 87 curves for case %02d, %s; found %d.', ...
+                caseId, windowName, numel(idx));
+        end
+
+        curves = curveMat.pcPa(idx, :);
+        logCurves = log10(max(curves, realmin));
+        distances = pairwiseRmsDistance(logCurves);
+        meanDistance = mean(distances, 2, 'omitnan');
+        [minMeanDistance, localMedoid] = min(meanDistance);
+        medoidCurveId = idx(localMedoid);
+        upper = distances(triu(true(size(distances)), 1));
+
+        medoidRows(end+1, :) = { ...
+            summary.GeologyId(idx(1)), caseId, ...
+            summary.Level3CaseName(idx(1)), windowName, medoidCurveId, ...
+            summary.SliceIndex(medoidCurveId), ...
+            summary.SelectedSampleIndex(medoidCurveId), ...
+            summary.ReplaySeed(medoidCurveId), ...
+            minMeanDistance, median(upper, 'omitnan'), ...
+            prctile(upper, 95), summary.PcAtSg20Pa(medoidCurveId), ...
+            summary.PcAtSg50Pa(medoidCurveId), ...
+            summary.PcAtSg65Pa(medoidCurveId), ...
+            summary.PercolationPcPa(medoidCurveId), ...
+            summary.PercolationSg(medoidCurveId), ...
+            summary.ClayPoreVolumeFraction(medoidCurveId), ...
+            summary.MedianLog10KzzMD(medoidCurveId)};
+
+        for j = 1:numel(idx)
+            distanceRows(end+1, :) = { ...
+                summary.GeologyId(idx(j)), caseId, ...
+                summary.Level3CaseName(idx(j)), windowName, ...
+                summary.SliceIndex(idx(j)), summary.SelectedSampleIndex(idx(j)), ...
+                summary.ReplaySeed(idx(j)), idx(j), medoidCurveId, ...
+                distances(j, localMedoid), meanDistance(j)};
+        end
+    end
+end
+
+results = struct();
+results.MedoidSummary = cell2table(medoidRows, 'VariableNames', ...
+    {'GeologyId', 'Level3CaseId', 'Level3CaseName', 'Window', ...
+     'MedoidCurveId', 'MedoidSliceIndex', 'MedoidSelectedSampleIndex', ...
+     'MedoidReplaySeed', 'MedoidMeanRmsLog10PcDistance', ...
+     'MedianPairwiseRmsLog10PcDistance', 'P95PairwiseRmsLog10PcDistance', ...
+     'MedoidPcAtSg20Pa', 'MedoidPcAtSg50Pa', 'MedoidPcAtSg65Pa', ...
+     'MedoidPercolationPcPa', 'MedoidPercolationSg', ...
+     'MedoidClayPoreVolumeFraction', 'MedoidMedianLog10KzzMD'});
+results.DistanceSummary = cell2table(distanceRows, 'VariableNames', ...
+    {'GeologyId', 'Level3CaseId', 'Level3CaseName', 'Window', ...
+     'SliceIndex', 'SelectedSampleIndex', 'ReplaySeed', 'CurveId', ...
+     'MedoidCurveId', 'RmsLog10PcDistanceToMedoid', ...
+     'MeanRmsLog10PcDistanceToAllCurves'});
+end
+
+
+function D = pairwiseRmsDistance(logCurves)
+% Pairwise RMS distance between rows of a log-curve matrix.
+
+n = size(logCurves, 1);
+D = zeros(n, n);
+for i = 1:n
+    for j = (i+1):n
+        diffv = logCurves(i, :) - logCurves(j, :);
+        d = sqrt(mean(diffv.^2, 'omitnan'));
+        D(i, j) = d;
+        D(j, i) = d;
+    end
+end
+end
+
+
+function makeIpFigures(curveMat, results, cfg)
+% Plot native-endpoint IP full-87 curves and medoids by Level-3 case.
+%
+% The fixed Sg grid in curveMat.pcBar is retained for curve comparison and
+% medoid selection. Presentation figures use the native IP curves instead so
+% each curve's BulkSgMax endpoint, and therefore effective Swi, remains
+% visible.
+
+summary = curveMat.summary;
+windows = cfg.windows;
+
+for c = 1:numel(cfg.level3CaseIds)
+    caseId = cfg.level3CaseIds(c);
+    caseRows = find(summary.Level3CaseId == caseId);
+    if isempty(caseRows)
+        continue
+    end
+    caseName = displayCaseName(summary.Level3CaseName(caseRows(1)));
+    fig = figure('Color', 'w', 'Position', [60 35 2100 1420]);
+    tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+    for w = 1:numel(windows)
+        nexttile;
+        windowName = windows(w);
+        idx = find(summary.Level3CaseId == caseId & summary.Window == windowName);
+        if isempty(idx)
+            title(sprintf('%s | no smoke data', upper(char(windowName))), ...
+                'FontSize', 16, 'FontWeight', 'bold');
+            axis off;
+            continue
+        end
+        medoidMask = results.MedoidSummary.Level3CaseId == caseId & ...
+            results.MedoidSummary.Window == windowName;
+        medoidId = results.MedoidSummary.MedoidCurveId(medoidMask);
+        hold on;
+        set(gca, 'YScale', 'log');
+        for j = 1:numel(idx)
+            curveId = idx(j);
+            nativeSg = curveMat.rawSg{curveId};
+            nativePcBar = max(curveMat.rawPcPa{curveId} ./ 1.0e5, 1.0e-12);
+            semilogy(nativeSg(:), nativePcBar(:), '-', ...
+                'Color', [0.72 0.74 0.78], 'LineWidth', 0.8);
+            semilogy(nativeSg(end), nativePcBar(end), 'o', ...
+                'MarkerFaceColor', [0.58 0.61 0.65], ...
+                'MarkerEdgeColor', [0.42 0.44 0.48], ...
+                'MarkerSize', 3.5);
+        end
+        medoidSg = curveMat.rawSg{medoidId};
+        medoidPcBar = max(curveMat.rawPcPa{medoidId} ./ 1.0e5, 1.0e-12);
+        semilogy(medoidSg(:), medoidPcBar(:), '-', ...
+            'Color', [0.86 0.22 0.16], 'LineWidth', 2.8);
+        semilogy(medoidSg(end), medoidPcBar(end), 'o', ...
+            'MarkerFaceColor', [0.86 0.22 0.16], ...
+            'MarkerEdgeColor', 'w', 'LineWidth', 0.8, ...
+            'MarkerSize', 7);
+        grid on;
+        title(sprintf('%s | invasion percolation', upper(char(windowName))), ...
+            'FontSize', 16, 'FontWeight', 'bold');
+        xlabel('Gas saturation');
+        ylabel('Pc [bar]');
+        xlim([0, 1]);
+        ylim([1e-2, 1e3]);
+        set(gca, 'FontSize', 13, 'LineWidth', 1.0);
+    end
+    sgtitle({sprintf('Case %02d: %s', caseId, caseName), ...
+        'Optional full-Pc-curve medoid diagnostic', ...
+        'Grey = all slices; red = curve medoid; medoid is not a reservoir input'}, ...
+        'FontSize', 22, 'FontWeight', 'bold', 'Interpreter', 'none');
+    saveFigureBoth(fig, cfg.figureDir, ...
+        sprintf('%s_case%02d_ip_full87_pc_medoid_diagnostic', ...
+        cfg.geologyId, caseId));
+end
+
+nCasePanels = numel(cfg.level3CaseIds);
+nColumns = min(3, max(1, nCasePanels));
+nRows = ceil(nCasePanels / nColumns);
+fig = figure('Color', 'w', 'Position', ...
+    [120 120 580 * nColumns 450 * nRows]);
+tiledlayout(nRows, nColumns, 'TileSpacing', 'compact', ...
+    'Padding', 'compact');
+for c = 1:numel(cfg.level3CaseIds)
+    caseId = cfg.level3CaseIds(c);
+    nexttile;
+    rows = results.MedoidSummary(results.MedoidSummary.Level3CaseId == caseId, :);
+    if isempty(rows)
+        title(sprintf('Case %02d: no smoke data', caseId), ...
+            'FontSize', 15, 'FontWeight', 'bold');
+        axis off;
+        continue
+    end
+    rows.WindowOrder = windowOrder(rows.Window);
+    rows = sortrows(rows, 'WindowOrder');
+    barData = [rows.MedoidPcAtSg20Pa, rows.MedoidPcAtSg50Pa, ...
+               rows.MedoidPcAtSg65Pa, rows.MedoidPercolationPcPa] ./ 1.0e5;
+    bar(categorical(rows.Window), barData);
+    grid on;
+    ylabel('Medoid Pc [bar]');
+    title(sprintf('Case %02d: %s', caseId, displayCaseName(rows.Level3CaseName(1))), ...
+        'FontSize', 15, 'FontWeight', 'bold', 'Interpreter', 'none');
+    set(gca, 'FontSize', 12, 'LineWidth', 1.0);
+    if c == 1
+        legend({'Sg = 0.20', 'Sg = 0.50', 'Sg = 0.65', 'IP threshold'}, ...
+            'Location', 'northwest');
+    end
+end
+sgtitle('Optional full-Pc-curve medoid diagnostic levels', ...
+    'FontSize', 22, 'FontWeight', 'bold');
+saveFigureBoth(fig, cfg.figureDir, ...
+    sprintf('%s_%s_ip_medoid_pc_levels_diagnostic', ...
+    cfg.geologyId, cfg.caseToken));
+end
+
+
+function label = displayCaseName(rawName)
+% Convert internal Level-3 case names to presentation-friendly labels.
+
+name = lower(strtrim(string(rawName)));
+switch name
+    case "independent_draw_1"
+        label = 'Independent draw 1';
+    case "strong_fault_wide_low"
+        label = 'Strong fault-wide low';
+    case "strong_fault_wide_high"
+        label = 'Strong fault-wide high';
+    case "strong_grouped_g3_low_g4_high"
+        label = 'Strong grouped G3 low / G4 high';
+    otherwise
+        label = char(strrep(string(rawName), "_", " "));
+end
+end
+
+
+function order = windowOrder(windowNames)
+% Numeric sorting key for famp1 ... famp6.
+
+text = string(windowNames);
+order = nan(size(text));
+for i = 1:numel(text)
+    digits = regexp(char(text(i)), '\d+', 'match', 'once');
+    order(i) = str2double(digits);
+end
+end
+
+
+function ensureFolder(folderPath)
+% Create folder if it does not already exist.
+
+if exist(folderPath, 'dir') ~= 7
+    mkdir(folderPath);
+end
+end
+
+
+function saveFigureBoth(fig, folderPath, baseName)
+% Save one figure as PNG and PDF.
+
+ensureFolder(folderPath);
+try
+    set(fig, 'DefaultAxesToolbarVisible', 'off');
+catch
+end
+axesList = findall(fig, 'Type', 'axes');
+for i = 1:numel(axesList)
+    try
+        disableDefaultInteractivity(axesList(i));
+    catch
+    end
+    try
+        axtoolbar(axesList(i), 'none');
+    catch
+    end
+end
+drawnow;
+pngFile = fullfile(folderPath, baseName + ".png");
+pdfFile = fullfile(folderPath, baseName + ".pdf");
+exportgraphics(fig, pngFile, 'Resolution', 220);
+exportgraphics(fig, pdfFile, 'ContentType', 'vector');
+fprintf('Saved figure: %s\n', pngFile);
+fprintf('Saved figure: %s\n', pdfFile);
+end
+
+
+function value = envOrDefault(name, defaultValue)
+% Read an environment variable or return a default value.
+
+raw = getenv(char(name));
+if isempty(raw)
+    value = defaultValue;
+else
+    value = raw;
+end
+end
+
+
+function ids = parseIdList(textValue)
+% Parse comma-separated integer ids from a string.
+
+parts = regexp(char(textValue), '\s*,\s*', 'split');
+ids = str2double(parts);
+ids = ids(isfinite(ids));
+assert(~isempty(ids), 'No valid integer ids were provided.');
+end
+
+
+function token = caseTokenFromIds(caseIds)
+% Build a stable case-token string such as cases_01_03_04_07.
+
+parts = strings(1, numel(caseIds));
+for i = 1:numel(caseIds)
+    parts(i) = sprintf('%02d', caseIds(i));
+end
+token = "cases_" + strjoin(parts, "_");
+end
+
+
+function rootPath = defaultWorkflowRoot()
+% Return the default workflow root for the current platform.
+
+if ispc
+    rootPath = fullfile('D:', 'codex_gom', 'UQ_workflow');
+else
+    rootPath = fullfile('/home', 'shaowen', 'orcd', 'scratch', ...
+        'predict_shaowen', 'runs', 'manual');
+end
+end
+
+
+function rootPath = defaultReplayRoot()
+% Return the default replay root for the current platform.
+
+rootPath = fullfile(defaultWorkflowRoot(), 'full87_replay_median_examples');
+end
+
+
+function rootPath = defaultUpscalingRoot()
+% Return a platform-appropriate temporary upscaling-code root.
+
+if ispc
+    rootPath = fullfile('D:', 'codex_gom', 'tmp_upscaling_zip_inspect');
+else
+    rootPath = fullfile(tempdir, 'tmp_upscaling_zip_inspect');
+end
+end
+
+
+function rootPath = defaultMrstRoot()
+% Return the default MRST root for the current platform.
+
+if ispc
+    rootPath = fullfile('C:', 'Users', 'Shaow', 'OneDrive', 'MIT', ...
+        'mrst-2025a', 'SINTEF-AppliedCompSci-MRST-75749fa');
+else
+    rootPath = fullfile('/home', 'shaowen', 'orcd', 'pool', ...
+        'predict_shaowen', 'software', 'mrst-current');
+end
+end
+
+
+function tf = parseLogicalEnv(name, defaultValue)
+% Parse a logical environment variable.
+
+txt = lower(strtrim(string(getenv(char(name)))));
+if txt == ""
+    tf = defaultValue;
+    return
+end
+tf = any(txt == ["1", "true", "yes", "y", "on"]);
+end

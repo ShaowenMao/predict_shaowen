@@ -14,8 +14,8 @@ export build_slice_draw_groups,
 
 Build ordered draw groups for `num_slices` field slices.
 
-Each slice normally receives its own draw group. Shared groups, such as
-`[43, 44]`, force those slices to use the same sampled PREDICT realization.
+Each slice normally receives its own draw group. Optional shared groups can be
+provided to force selected slices to use the same sampled PREDICT realization.
 """
 function build_slice_draw_groups(num_slices::Integer, shared_slice_groups::Vector)
     num_slices > 0 || error("num_slices must be positive")

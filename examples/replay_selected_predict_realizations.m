@@ -24,6 +24,15 @@ function summaryTable = replay_selected_predict_realizations(selectionCsv, outpu
 %   'Level3CaseIds'   - Level-3 case IDs, e.g. 4 for fault-wide high.
 %   'Windows'         - e.g. {'famp1','famp2'}.
 %   'MaxRows'         - maximum number of filtered rows to replay.
+%   'SmearOverlapRule' - 'auto' (default), 'random', or
+%                        'cell_union_psmear'. In 'auto' mode this is read
+%                        from the source production metadata when present.
+%   'CollapseAdjacentLithology' - 'auto' (default), true, or false. In
+%                        'auto' mode this is read from source metadata.
+%   'PredictCodeRoot' - optional repository root containing the PREDICT
+%                       code version that generated the source data. This
+%                       is useful when replaying older production runs
+%                       after the working repository has changed.
 %
 % Saved fields:
 %   replay.G              - MRST fine grid.
@@ -59,12 +68,16 @@ parser.addParameter('Windows', [], @(x) isempty(x) || iscell(x) || ischar(x) || 
 parser.addParameter('MaxRows', inf, @(x) isnumeric(x) && isscalar(x) && x >= 1);
 parser.addParameter('CorrCoef', 0.6, @(x) isnumeric(x) && isscalar(x));
 parser.addParameter('BaseSeed', 1729, @(x) isnumeric(x) && isscalar(x));
+parser.addParameter('SmearOverlapRule', 'auto', @(x) ischar(x) || isstring(x));
+parser.addParameter('CollapseAdjacentLithology', 'auto', ...
+                    @(x) ischar(x) || isstring(x) || (islogical(x) && isscalar(x)));
+parser.addParameter('PredictCodeRoot', '', @(x) ischar(x) || isstring(x));
 parser.addParameter('VerifyToleranceLog10', 1e-8, @(x) isnumeric(x) && isscalar(x) && x > 0);
 parser.addParameter('RequireDirectReplay', false, @(x) islogical(x) && isscalar(x));
 parser.parse(varargin{:});
 opt = parser.Results;
 
-setupPredictPaths();
+setupPredictPaths(opt.PredictCodeRoot);
 assert(exist('mrstModule', 'file') == 2, ...
        ['MRST is not on the MATLAB path. Run startup.m in your MRST ' ...
         'folder before replaying PREDICT realizations.'])
@@ -98,13 +111,20 @@ for irow = 1:height(selectionTable)
     scenarioWindow = getScenarioWindowRow(scenarioTable, row.scenario_label, row.window);
     caseInfo = getGeologyCaseRow(geologyCaseTable, row.case_label);
     baseWindowOpt = getWindowOptions(char(row.window));
-    variedWindowOpt = applyThicknessGeologyCase(baseWindowOpt, scenarioWindow, caseInfo);
+    replayRunOpt = resolveReplayRunOptions(row, opt);
+    variedWindowOpt = applyThicknessGeologyCase( ...
+        baseWindowOpt, scenarioWindow, caseInfo, ...
+        replayRunOpt.CollapseAdjacentLithology);
     mySect = buildFaultedSection(variedWindowOpt);
 
-    [seed, attemptIndex, replayMode] = resolveReplaySeed(row, opt, mySect, variedWindowOpt, U);
+    [seed, attemptIndex, replayMode] = resolveReplaySeed( ...
+        row, opt, mySect, variedWindowOpt, U, replayRunOpt.SmearOverlapRule);
     rng(seed, 'twister');
     [replay, ok, errMsg] = runSingleWindowPermRealizationDetailed( ...
-        mySect, variedWindowOpt, opt.CorrCoef, U);
+        mySect, variedWindowOpt, opt.CorrCoef, U, ...
+        replayRunOpt.SmearOverlapRule);
+    replay.SmearOverlapRule = replayRunOpt.SmearOverlapRule;
+    replay.CollapseAdjacentLithology = replayRunOpt.CollapseAdjacentLithology;
 
     sourcePermMD = loadSourcePermRow(row, opt.DataRoot);
     verification = makeVerification(row, replay, ok, errMsg, seed, attemptIndex, ...
@@ -119,6 +139,7 @@ for irow = 1:height(selectionTable)
         row.scenario_name, row.case_label, row.case_id, row.case_name, ...
         row.window, row.assigned_state, row.sampling_pool, ...
         row.selected_sample_index, seed, attemptIndex, replayMode, ...
+        replayRunOpt.SmearOverlapRule, replayRunOpt.CollapseAdjacentLithology, ...
         verification.Status, verification.MaxAbsLog10Diff, outputFile}; %#ok<AGROW>
 end
 
@@ -126,7 +147,8 @@ summaryTable = cell2table(summaryRows, 'VariableNames', ...
     {'SourceRow', 'GeologyId', 'ScenarioLabel', 'ScenarioName', ...
      'CaseLabel', 'Level3CaseId', 'Level3CaseName', 'Window', ...
      'AssignedState', 'SamplingPool', 'SelectedSampleIndex', ...
-     'ReplaySeed', 'AttemptIndex', 'ReplayMode', 'VerificationStatus', ...
+     'ReplaySeed', 'AttemptIndex', 'ReplayMode', ...
+     'SmearOverlapRule', 'CollapseAdjacentLithology', 'VerificationStatus', ...
      'MaxAbsLog10Diff', 'OutputFile'});
 
 summaryCsv = fullfile(outputDir, 'replay_summary.csv');
@@ -135,12 +157,16 @@ fprintf('Saved replay summary: %s\n', summaryCsv);
 end
 
 
-function setupPredictPaths()
+function setupPredictPaths(predictCodeRoot)
 % Add repository folders needed by the PREDICT examples.
 
 thisFile = mfilename('fullpath');
 examplesDir = fileparts(thisFile);
-repoRoot = fileparts(examplesDir);
+if strlength(string(predictCodeRoot)) > 0
+    repoRoot = char(predictCodeRoot);
+else
+    repoRoot = fileparts(examplesDir);
+end
 pathsToAdd = {repoRoot, ...
               fullfile(repoRoot, 'classes'), ...
               fullfile(repoRoot, 'functions'), ...
@@ -148,7 +174,7 @@ pathsToAdd = {repoRoot, ...
               fullfile(repoRoot, 'utils', 'mrst-based')};
 for i = 1:numel(pathsToAdd)
     if exist(pathsToAdd{i}, 'dir')
-        addpath(pathsToAdd{i});
+        addpath(pathsToAdd{i}, '-begin');
     end
 end
 end
@@ -181,13 +207,14 @@ end
 function T = attachSourceMetadata(T, dataRoot, baseSeed)
 % Attach production metadata so replay can recover seed and source status.
 
-metadataFile = fullfile(dataRoot, 'tables', 'varying_thickness_geology_run_metadata.csv');
+metadataFile = findProductionMetadataFile(dataRoot);
 if exist(metadataFile, 'file') ~= 2
     warning('Production metadata not found: %s', metadataFile)
     return
 end
 
 M = readtable(metadataFile, 'TextType', 'string');
+T.source_metadata_file = repmat(string(metadataFile), height(T), 1);
 if ~any(strcmp(T.Properties.VariableNames, 'source_checkpoint_file'))
     T.source_checkpoint_file = strings(height(T), 1);
 end
@@ -199,6 +226,12 @@ if ~any(strcmp(T.Properties.VariableNames, 'source_num_attempts'))
 end
 if ~any(strcmp(T.Properties.VariableNames, 'source_num_rejected'))
     T.source_num_rejected = NaN(height(T), 1);
+end
+if ~any(strcmp(T.Properties.VariableNames, 'source_smear_overlap_rule'))
+    T.source_smear_overlap_rule = strings(height(T), 1);
+end
+if ~any(strcmp(T.Properties.VariableNames, 'source_collapse_adjacent_lithology'))
+    T.source_collapse_adjacent_lithology = false(height(T), 1);
 end
 T.source_seed_base = tableColumnToDouble(T, 'source_seed_base');
 T.source_num_attempts = tableColumnToDouble(T, 'source_num_attempts');
@@ -214,6 +247,17 @@ for i = 1:height(T)
         T.source_seed_base(i) = M.SeedBase(mid);
         T.source_num_attempts(i) = M.NumAttempts(mid);
         T.source_num_rejected(i) = M.NumRejected(mid);
+        if any(strcmp(M.Properties.VariableNames, 'SmearOverlapRule'))
+            T.source_smear_overlap_rule(i) = string(M.SmearOverlapRule(mid));
+        else
+            T.source_smear_overlap_rule(i) = "random";
+        end
+        if any(strcmp(M.Properties.VariableNames, 'CollapseAdjacentLithology'))
+            T.source_collapse_adjacent_lithology(i) = ...
+                scalarToLogical(M.CollapseAdjacentLithology(mid), false);
+        else
+            T.source_collapse_adjacent_lithology(i) = false;
+        end
     elseif ~any(strcmp(T.Properties.VariableNames, 'source_seed_base')) || ...
            ismissing(T.source_seed_base(i))
         windowId = parseWindowId(T.window(i));
@@ -222,7 +266,26 @@ for i = 1:height(T)
         T.source_seed_base(i) = makeScenarioCaseSeed( ...
             baseSeed, scenarioId, windowId, caseIndex);
         T.source_num_rejected(i) = NaN;
+        T.source_smear_overlap_rule(i) = "random";
+        T.source_collapse_adjacent_lithology(i) = false;
     end
+end
+end
+
+
+function metadataFile = findProductionMetadataFile(dataRoot)
+% Return the production metadata table for legacy or collapsed-cell-union data.
+
+legacyFile = fullfile(dataRoot, 'tables', 'varying_thickness_geology_run_metadata.csv');
+collapsedFile = fullfile(dataRoot, 'tables', ...
+                         'collapsed_cell_union_geology_run_metadata.csv');
+
+if exist(collapsedFile, 'file') == 2
+    metadataFile = collapsedFile;
+elseif exist(legacyFile, 'file') == 2
+    metadataFile = legacyFile;
+else
+    metadataFile = legacyFile;
 end
 end
 
@@ -278,14 +341,26 @@ caseInfo = geologyCaseTable(match, :);
 end
 
 
-function variedWindowOpt = applyThicknessGeologyCase(baseWindowOpt, scenarioWindow, caseInfo)
-% Apply one fixed-grid thickness pattern and one geology parameter case.
+function variedWindowOpt = applyThicknessGeologyCase(baseWindowOpt, scenarioWindow, caseInfo, collapseAdjacent)
+% Apply one thickness pattern and one geology parameter case.
 
 variedWindowOpt = baseWindowOpt;
+fwPattern = char(scenarioWindow.FWPattern);
+hwPattern = char(scenarioWindow.HWPattern);
+
+if collapseAdjacent
+    [fwPattern, variedWindowOpt.thick{1}, variedWindowOpt.zmax{1}] = ...
+        collapseAdjacentLithology(fwPattern, variedWindowOpt.thick{1}, ...
+                                  variedWindowOpt.zmax{1});
+    [hwPattern, variedWindowOpt.thick{2}, variedWindowOpt.zmax{2}] = ...
+        collapseAdjacentLithology(hwPattern, variedWindowOpt.thick{2}, ...
+                                  variedWindowOpt.zmax{2});
+end
+
 variedWindowOpt.zf = [caseInfo.FaultingDepth, caseInfo.FaultingDepth];
 variedWindowOpt.vcl = { ...
-    patternToVcl(scenarioWindow.FWPattern, caseInfo.SandVcl, caseInfo.ClayVcl), ...
-    patternToVcl(scenarioWindow.HWPattern, caseInfo.SandVcl, caseInfo.ClayVcl)};
+    patternToVcl(fwPattern, caseInfo.SandVcl, caseInfo.ClayVcl), ...
+    patternToVcl(hwPattern, caseInfo.SandVcl, caseInfo.ClayVcl)};
 end
 
 
@@ -297,6 +372,33 @@ vcl = nan(1, numel(pattern));
 vcl(pattern == 'S') = sandVcl;
 vcl(pattern == 'C') = clayVcl;
 assert(all(isfinite(vcl)), 'Pattern must contain only S and C values.')
+end
+
+
+function [collapsedPattern, collapsedThick, collapsedZmax] = collapseAdjacentLithology(pattern, thick, zmax)
+% Combine adjacent layers with the same lithology while conserving thickness.
+
+pattern = upper(char(pattern));
+thick = reshape(double(thick), 1, []);
+zmax = reshape(double(zmax), 1, []);
+assert(numel(pattern) == numel(thick), ...
+       'Pattern and thickness vectors must have the same length.')
+assert(numel(zmax) == numel(thick), ...
+       'Depth-burial vector and thickness vector must have the same length.')
+
+collapsedPattern = '';
+collapsedThick = [];
+collapsedZmax = [];
+startIdx = 1;
+for i = 2:(numel(pattern) + 1)
+    if i > numel(pattern) || pattern(i) ~= pattern(startIdx)
+        ids = startIdx:(i - 1);
+        collapsedPattern(end+1) = pattern(startIdx); %#ok<AGROW>
+        collapsedThick(end+1) = sum(thick(ids)); %#ok<AGROW>
+        collapsedZmax(end+1) = zmax(ids(end)); %#ok<AGROW>
+        startIdx = i;
+    end
+end
 end
 
 
@@ -326,7 +428,41 @@ mySect = mySect.getMatPropDistr();
 end
 
 
-function [seed, attemptIndex, replayMode] = resolveReplaySeed(row, opt, mySect, windowOpt, U)
+function replayRunOpt = resolveReplayRunOptions(row, opt)
+% Decide which production material-placement mode to reproduce.
+
+ruleOverride = lower(string(opt.SmearOverlapRule));
+if ruleOverride == "auto"
+    sourceRule = rowStringValue(row, 'source_smear_overlap_rule');
+    if strlength(sourceRule) == 0
+        sourceRule = readCheckpointString(row, 'SmearOverlapRule');
+    end
+    if strlength(sourceRule) == 0
+        sourceRule = "random";
+    end
+    replayRunOpt.SmearOverlapRule = char(sourceRule);
+else
+    replayRunOpt.SmearOverlapRule = char(ruleOverride);
+end
+
+collapseOverride = opt.CollapseAdjacentLithology;
+if ischar(collapseOverride) || isstring(collapseOverride)
+    if lower(string(collapseOverride)) == "auto"
+        sourceCollapse = rowLogicalValue(row, 'source_collapse_adjacent_lithology', false);
+        if ~sourceCollapse
+            sourceCollapse = readCheckpointLogical(row, 'CollapseAdjacentLithology', false);
+        end
+        replayRunOpt.CollapseAdjacentLithology = sourceCollapse;
+    else
+        replayRunOpt.CollapseAdjacentLithology = stringToLogical(collapseOverride, false);
+    end
+else
+    replayRunOpt.CollapseAdjacentLithology = logical(collapseOverride);
+end
+end
+
+
+function [seed, attemptIndex, replayMode] = resolveReplaySeed(row, opt, mySect, windowOpt, U, smearOverlapRule)
 % Determine the exact RNG seed for a selected valid realization.
 
 selectedIndex = tableValueAsDouble(row, 'selected_sample_index');
@@ -338,6 +474,14 @@ if isfinite(directSeed) && directSeed > 0
     seed = round(directSeed);
     attemptIndex = seed - round(seedBase) + 1;
     replayMode = "direct_seed_from_selection_table";
+    return
+end
+
+[matSeed, matAttemptIndex] = readAcceptedSeedFromSource(row, selectedIndex);
+if isfinite(matSeed) && matSeed > 0
+    seed = round(matSeed);
+    attemptIndex = round(matAttemptIndex);
+    replayMode = "direct_seed_from_source_predict_runs_mat";
     return
 end
 
@@ -357,12 +501,13 @@ if opt.RequireDirectReplay
 end
 
 [seed, attemptIndex] = findAttemptSeedForValidIndex( ...
-    mySect, windowOpt, opt.CorrCoef, U, round(seedBase), round(selectedIndex));
+    mySect, windowOpt, opt.CorrCoef, U, round(seedBase), ...
+    round(selectedIndex), smearOverlapRule);
 replayMode = "remapped_by_replaying_valid_attempts";
 end
 
 
-function [seed, attemptIndex] = findAttemptSeedForValidIndex(mySect, windowOpt, rho, U, seedBase, selectedIndex)
+function [seed, attemptIndex] = findAttemptSeedForValidIndex(mySect, windowOpt, rho, U, seedBase, selectedIndex, smearOverlapRule)
 % Replay attempts until the selected valid realization index is reached.
 
 validCount = 0;
@@ -372,7 +517,8 @@ while validCount < selectedIndex && attemptIndex < maxAttempts
     attemptIndex = attemptIndex + 1;
     seed = seedBase + attemptIndex - 1;
     rng(seed, 'twister');
-    [replay, ok] = runSingleWindowPermRealizationDetailed(mySect, windowOpt, rho, U); %#ok<ASGLU>
+    [replay, ok] = runSingleWindowPermRealizationDetailed( ...
+        mySect, windowOpt, rho, U, smearOverlapRule); %#ok<ASGLU>
     if ok
         validCount = validCount + 1;
     end
@@ -383,7 +529,7 @@ assert(validCount == selectedIndex, ...
 end
 
 
-function [replay, ok, errMsg] = runSingleWindowPermRealizationDetailed(mySect, windowOpt, rho, U)
+function [replay, ok, errMsg] = runSingleWindowPermRealizationDetailed(mySect, windowOpt, rho, U, smearOverlapRule)
 % Run one realization and retain fine-scale fields for export.
 
 replay = struct();
@@ -417,7 +563,15 @@ try
         end
 
         smear = Smear(mySect, myFaultSection, G, 1);
-        myFaultSection = myFaultSection.placeMaterials(mySect, smear, G);
+        if strcmpi(string(smearOverlapRule), "random")
+            % Older production PREDICT versions did not expose
+            % SmearOverlapRule as a name-value argument; their default
+            % behavior is the legacy random-overlap rule.
+            myFaultSection = myFaultSection.placeMaterials(mySect, smear, G);
+        else
+            myFaultSection = myFaultSection.placeMaterials( ...
+                mySect, smear, G, 'SmearOverlapRule', smearOverlapRule);
+        end
 
         sectionDetails(k).MatProps = myFaultSection.MatProps;
         sectionDetails(k).MatMap = myFaultSection.MatMap;
@@ -463,8 +617,7 @@ if ~isfinite(selectedIndex)
     return
 end
 
-matFile = fullfile(dataRoot, 'data', char(row.scenario_label), ...
-                   char(row.window), char(row.case_label), 'predict_runs.mat');
+matFile = sourcePredictRunsFile(row, dataRoot);
 if exist(matFile, 'file') ~= 2
     return
 end
@@ -473,6 +626,59 @@ S = load(matFile, 'perms');
 idx = round(selectedIndex);
 if isfield(S, 'perms') && idx >= 1 && idx <= size(S.perms, 1)
     sourcePermMD = S.perms(idx, :);
+end
+end
+
+
+function matFile = sourcePredictRunsFile(row, dataRoot)
+% Return the source predict_runs.mat path from provenance or data root.
+
+matFile = char(rowStringValue(row, 'source_checkpoint_file'));
+if ~isempty(matFile) && exist(matFile, 'file') == 2
+    return
+end
+
+if strlength(string(dataRoot)) == 0
+    matFile = '';
+    return
+end
+
+matFile = fullfile(char(dataRoot), 'data', char(row.scenario_label), ...
+                   char(row.window), char(row.case_label), 'predict_runs.mat');
+end
+
+
+function [seed, attemptIndex] = readAcceptedSeedFromSource(row, selectedIndex)
+% Read direct accepted-seed metadata from source predict_runs.mat if present.
+
+seed = NaN;
+attemptIndex = NaN;
+if ~isfinite(selectedIndex)
+    return
+end
+
+matFile = sourcePredictRunsFile(row, "");
+if exist(matFile, 'file') ~= 2
+    return
+end
+
+S = load(matFile, 'meta');
+idx = round(selectedIndex);
+if ~isfield(S, 'meta') || ~isfield(S.meta, 'AcceptedSeeds')
+    return
+end
+if idx < 1 || idx > numel(S.meta.AcceptedSeeds)
+    return
+end
+
+seed = S.meta.AcceptedSeeds(idx);
+if isfield(S.meta, 'AcceptedAttemptIndices') && idx <= numel(S.meta.AcceptedAttemptIndices)
+    attemptIndex = S.meta.AcceptedAttemptIndices(idx);
+else
+    seedBase = tableValueAsDouble(row, 'source_seed_base');
+    if isfinite(seedBase)
+        attemptIndex = seed - seedBase + 1;
+    end
 end
 end
 
@@ -539,6 +745,124 @@ if ismissing(raw)
     return
 end
 value = str2double(string(raw));
+end
+
+
+function value = rowStringValue(row, name)
+% Robustly read one scalar string from a one-row table.
+
+value = "";
+if ~any(strcmp(row.Properties.VariableNames, name))
+    return
+end
+raw = row.(name);
+if istable(raw)
+    raw = raw{1, 1};
+elseif iscell(raw)
+    raw = raw{1};
+elseif numel(raw) > 1
+    raw = raw(1);
+end
+if ismissing(raw)
+    return
+end
+value = string(raw);
+if ismissing(value)
+    value = "";
+end
+end
+
+
+function value = rowLogicalValue(row, name, defaultValue)
+% Robustly read one scalar logical from a one-row table.
+
+value = defaultValue;
+if ~any(strcmp(row.Properties.VariableNames, name))
+    return
+end
+raw = row.(name);
+if istable(raw)
+    raw = raw{1, 1};
+elseif iscell(raw)
+    raw = raw{1};
+elseif numel(raw) > 1
+    raw = raw(1);
+end
+value = scalarToLogical(raw, defaultValue);
+end
+
+
+function value = readCheckpointString(row, fieldName)
+% Read one string field from source checkpointInfo, if available.
+
+value = "";
+matFile = sourcePredictRunsFile(row, "");
+if exist(matFile, 'file') ~= 2
+    return
+end
+S = load(matFile, 'checkpointInfo');
+if isfield(S, 'checkpointInfo') && isfield(S.checkpointInfo, fieldName)
+    value = string(S.checkpointInfo.(fieldName));
+end
+if ismissing(value)
+    value = "";
+end
+end
+
+
+function value = readCheckpointLogical(row, fieldName, defaultValue)
+% Read one logical field from source checkpointInfo, if available.
+
+value = defaultValue;
+matFile = sourcePredictRunsFile(row, "");
+if exist(matFile, 'file') ~= 2
+    return
+end
+S = load(matFile, 'checkpointInfo');
+if isfield(S, 'checkpointInfo') && isfield(S.checkpointInfo, fieldName)
+    value = scalarToLogical(S.checkpointInfo.(fieldName), defaultValue);
+end
+end
+
+
+function value = stringToLogical(raw, defaultValue)
+% Convert common string/numeric/logical spellings into a logical scalar.
+
+value = scalarToLogical(raw, defaultValue);
+end
+
+
+function value = scalarToLogical(raw, defaultValue)
+% Convert a scalar from table/checkpoint storage into logical.
+
+value = defaultValue;
+if isempty(raw)
+    return
+end
+if iscell(raw)
+    raw = raw{1};
+end
+if numel(raw) > 1
+    raw = raw(1);
+end
+if ismissing(raw)
+    return
+end
+if islogical(raw)
+    value = logical(raw);
+    return
+end
+if isnumeric(raw)
+    value = raw ~= 0;
+    return
+end
+
+s = lower(strtrim(string(raw)));
+if any(s == ["true", "t", "yes", "y", "1"])
+    value = true;
+elseif any(s == ["false", "f", "no", "n", "0"])
+    value = false;
+end
 end
 
 
