@@ -11,7 +11,7 @@ using Printf
     run_three_level_sampling_workflow.jl
 
 Batch driver that applies the current three-level UQ sampling workflow to all
-162 geologic scenarios in `examples/thickness_scenario_data`.
+geologic scenarios under the configured PREDICT data root.
 
 The script builds a Level 1 geology catalog from the completed PREDICT outputs,
 generates one Level 2 manifest/config per geology, runs the existing modular
@@ -37,6 +37,7 @@ function parse_args(args::Vector{String})
         "resume" => "",
         "run-level2" => "",
         "run-level3" => "",
+        "parallel-geologies" => "",
         "list-only" => "false",
     )
 
@@ -75,6 +76,7 @@ function print_help()
     println("  --resume <true|false>   Override resume behavior")
     println("  --run-level2 <true|false>")
     println("  --run-level3 <true|false>")
+    println("  --parallel-geologies <n>  Concurrent independent geology workers")
     println("  --list-only <true|false>  Build catalogs/manifests but do not run drivers")
     println("  -h, --help              Show this help")
 end
@@ -102,6 +104,7 @@ function read_batch_config(path::AbstractString, cli::Dict{String, String})
         "resume" => Bool(get(run_cfg, "resume", true)),
         "stop_on_error" => Bool(get(run_cfg, "stop_on_error", true)),
         "max_geologies" => Int(get(run_cfg, "max_geologies", 0)),
+        "parallel_geologies" => Int(get(run_cfg, "parallel_geologies", 1)),
         "list_only" => parse_bool(get(cli, "list-only", "false")),
         "raw" => raw,
     )
@@ -121,6 +124,11 @@ function read_batch_config(path::AbstractString, cli::Dict{String, String})
     if !isempty(cli["run-level3"])
         cfg["run_level3"] = parse_bool(cli["run-level3"])
     end
+    if !isempty(cli["parallel-geologies"])
+        cfg["parallel_geologies"] = parse(Int, cli["parallel-geologies"])
+    end
+    cfg["parallel_geologies"] >= 1 ||
+        error("parallel_geologies must be at least 1")
     cfg["only_geology"] = cli["only-geology"]
 
     isdir(cfg["predict_data_root"]) ||
@@ -598,6 +606,116 @@ function write_status(path::AbstractString, rows::Vector{Dict{String, String}})
 end
 
 """
+    run_geology_with_status(index, total, geology, cfg, generated)
+
+Run one geology and return both its status row and any captured exception.
+Capturing the exception allows concurrent workers to finish their current
+geology while preserving a complete restartable status table.
+"""
+function run_geology_with_status(index::Int,
+                                  total::Int,
+                                  geology::Dict{String, Any},
+                                  cfg::Dict{String, Any},
+                                  generated::Dict{String, String})
+    geology_id = String(geology["geology_id"])
+    println()
+    println("[$index / $total] $geology_id | $(geology["scenario_label"]) | $(geology["case_label"])")
+    try
+        row = run_geology_workflow(geology, cfg, generated)
+        row["message"] = "ok"
+        return row, nothing
+    catch err
+        message = sprint(showerror, err)
+        row = Dict{String, String}(
+            "geology_id" => geology_id,
+            "scenario_label" => String(geology["scenario_label"]),
+            "case_label" => String(geology["case_label"]),
+            "level2_status" => "failed",
+            "level3_status" => "failed",
+            "level2_root" => get(generated, "level2_root", ""),
+            "level3_root" => get(generated, "level3_root", ""),
+            "message" => message,
+        )
+        return row, err
+    end
+end
+
+"""
+    run_selected_geologies(selected, cfg, status_path)
+
+Run selected geologies sequentially or with a bounded worker pool. Each worker
+launches the existing Level 2 and Level 3 Julia drivers in separate processes,
+so scientific state and deterministic random seeds remain geology-local.
+"""
+function run_selected_geologies(selected::Vector{Dict{String, Any}},
+                                 cfg::Dict{String, Any},
+                                 status_path::AbstractString)
+    total = length(selected)
+    generated = [prepare_geology_configs(geology, cfg) for geology in selected]
+    status_slots = Union{Nothing, Dict{String, String}}[nothing for _ in 1:total]
+    requested_workers = min(Int(cfg["parallel_geologies"]), total)
+    worker_count = min(requested_workers, Threads.nthreads())
+
+    if worker_count < requested_workers
+        @warn "Reducing geology workers to available Julia threads" requested_workers worker_count
+    end
+    println("Geology worker count: $worker_count")
+
+    status_lock = ReentrantLock()
+    first_error = Ref{Any}(nothing)
+    abort_requested = Threads.Atomic{Bool}(false)
+
+    function record_result(index, row, err)
+        lock(status_lock) do
+            status_slots[index] = row
+            completed_rows = Dict{String, String}[
+                value for value in status_slots if !isnothing(value)
+            ]
+            write_status(status_path, completed_rows)
+            if !isnothing(err) && isnothing(first_error[])
+                first_error[] = err
+            end
+        end
+        if !isnothing(err) && Bool(cfg["stop_on_error"])
+            abort_requested[] = true
+        end
+    end
+
+    if worker_count == 1
+        for index in eachindex(selected)
+            row, err = run_geology_with_status(
+                index, total, selected[index], cfg, generated[index])
+            record_result(index, row, err)
+            abort_requested[] && break
+        end
+    else
+        jobs = Channel{Int}(total)
+        for index in eachindex(selected)
+            put!(jobs, index)
+        end
+        close(jobs)
+
+        @sync for _ in 1:worker_count
+            Threads.@spawn begin
+                for index in jobs
+                    abort_requested[] && break
+                    row, err = run_geology_with_status(
+                        index, total, selected[index], cfg, generated[index])
+                    record_result(index, row, err)
+                end
+            end
+        end
+    end
+
+    if !isnothing(first_error[]) && Bool(cfg["stop_on_error"])
+        error("Geology workflow failed: $(sprint(showerror, first_error[]))")
+    end
+    return Dict{String, String}[
+        value for value in status_slots if !isnothing(value)
+    ]
+end
+
+"""
     read_csv_dicts(path)
 
 Read a small CSV file into dictionaries. Supports quoted fields, including the
@@ -715,34 +833,8 @@ function main(args::Vector{String})
         return
     end
 
-    status_rows = Dict{String, String}[]
     status_path = joinpath(String(cfg["output_root"]), "batch_status.csv")
-    for (i, geology) in enumerate(selected)
-        geology_id = String(geology["geology_id"])
-        println()
-        println("[$i / $(length(selected))] $geology_id | $(geology["scenario_label"]) | $(geology["case_label"])")
-        generated = prepare_geology_configs(geology, cfg)
-        try
-            row = run_geology_workflow(geology, cfg, generated)
-            row["message"] = "ok"
-            push!(status_rows, row)
-        catch err
-            message = sprint(showerror, err)
-            push!(status_rows, Dict{String, String}(
-                "geology_id" => geology_id,
-                "scenario_label" => String(geology["scenario_label"]),
-                "case_label" => String(geology["case_label"]),
-                "level2_status" => "failed",
-                "level3_status" => "failed",
-                "level2_root" => get(generated, "level2_root", ""),
-                "level3_root" => get(generated, "level3_root", ""),
-                "message" => message,
-            ))
-            write_status(status_path, status_rows)
-            Bool(cfg["stop_on_error"]) && rethrow(err)
-        end
-        write_status(status_path, status_rows)
-    end
+    run_selected_geologies(selected, cfg, status_path)
 
     write_aggregate_outputs(geologies, cfg)
 
