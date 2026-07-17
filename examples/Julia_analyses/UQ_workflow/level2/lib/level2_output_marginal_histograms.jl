@@ -18,6 +18,9 @@ const PANEL_LETTERS = ("(a)", "(b)", "(c)")
 const LOGK_TICKS = [-7.0, -4.0, -1.0, 2.0]
 const LOGK_TICK_LABELS = ["-7", "-4", "-1", "2"]
 const LOGK_LIMITS = (-7.1, 2.1)
+const PROBABILITY_LIMITS = (0.0, 1.0)
+const PROBABILITY_TICKS = collect(range(PROBABILITY_LIMITS...; length = 4))
+const PROBABILITY_TICK_LABELS = [@sprintf("%.2f", tick) for tick in PROBABILITY_TICKS]
 
 panel_label(index::Integer) = "($(Char(Int('a') + index - 1)))"
 
@@ -166,13 +169,6 @@ function build_window_histogram_figure(proxy::Dict{String, Any}, bin_specs)
     window = proxy["window"]
     n = proxy["n_samples"]
 
-    ymax = maximum(begin
-        _, probs = histogram_probabilities(vec(values[:, ic]), bin_specs[ic].edges)
-        maximum(probs)
-    end for ic in 1:3)
-    ytop = round(1.08 * ymax + 0.005; digits = 2)
-    yticks = collect(range(0.0, ytop, length = 5))
-    yticklabels = [@sprintf("%.2f", tick) for tick in yticks]
     fig = Figure(size = (1760, 650))
     Label(fig[0, :], "$window marginal histograms in log10(k) space", fontsize = 24, font = :bold)
 
@@ -195,7 +191,7 @@ function build_window_histogram_figure(proxy::Dict{String, Any}, bin_specs)
                   topspinevisible = false,
                   rightspinevisible = false,
                   xticks = (LOGK_TICKS, LOGK_TICK_LABELS),
-                  yticks = (yticks, yticklabels))
+                  yticks = (PROBABILITY_TICKS, PROBABILITY_TICK_LABELS))
 
         barplot!(ax, spec.centers, probs;
                  width = 0.92 .* spec.widths,
@@ -217,7 +213,7 @@ function build_window_histogram_figure(proxy::Dict{String, Any}, bin_specs)
                 linewidth = 1.8)
 
         xlims!(ax, LOGK_LIMITS...)
-        ylims!(ax, 0.0, ytop)
+        ylims!(ax, PROBABILITY_LIMITS...)
 
         text!(ax, 0.03, 0.985;
               space = :relative,
@@ -248,22 +244,12 @@ function window_short_label(window)
     return isnothing(m) ? text : "W$(m.captures[1])"
 end
 
-function probability_tick_spec(ytop::Float64)
-    yticks = collect(range(0.0, ytop, length = 5))
-    yticklabels = [@sprintf("%.2f", tick) for tick in yticks]
-    return yticks, yticklabels
+function probability_tick_spec()
+    return PROBABILITY_TICKS, PROBABILITY_TICK_LABELS
 end
 
 function build_combined_publication_figure(proxies, bin_specs)
     n_windows = length(proxies)
-    ytops = Float64[]
-    for ic in 1:3
-        ymax = maximum(begin
-            _, probs = histogram_probabilities(vec(proxy["log_perms"][:, ic]), bin_specs[ic].edges)
-            maximum(probs)
-        end for proxy in proxies)
-        push!(ytops, round(1.08 * ymax + 0.005; digits = 2))
-    end
 
     title_font_size = 42
     header_font_size = 34
@@ -293,7 +279,7 @@ function build_combined_publication_figure(proxies, bin_specs)
 
     for ic in 1:3
         spec = bin_specs[ic]
-        yticks, yticklabels = probability_tick_spec(ytops[ic])
+        yticks, yticklabels = probability_tick_spec()
         axis_row = 2 * ic
         label_row = axis_row + 1
 
@@ -339,7 +325,7 @@ function build_combined_publication_figure(proxies, bin_specs)
                     linewidth = 2.8)
 
             xlims!(ax, LOGK_LIMITS...)
-            ylims!(ax, 0.0, ytops[ic])
+            ylims!(ax, PROBABILITY_LIMITS...)
 
             text!(ax, 0.965, 0.965;
                   space = :relative,
