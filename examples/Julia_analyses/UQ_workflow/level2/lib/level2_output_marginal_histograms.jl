@@ -19,7 +19,7 @@ const LOGK_TICKS = [-7.0, -4.0, -1.0, 2.0]
 const LOGK_TICK_LABELS = ["-7", "-4", "-1", "2"]
 const LOGK_LIMITS = (-7.1, 2.1)
 const PROBABILITY_LIMITS = (0.0, 1.0)
-const PROBABILITY_TICKS = collect(range(PROBABILITY_LIMITS...; length = 4))
+const PROBABILITY_TICKS = collect(range(PROBABILITY_LIMITS...; length = 5))
 const PROBABILITY_TICK_LABELS = [@sprintf("%.2f", tick) for tick in PROBABILITY_TICKS]
 
 panel_label(index::Integer) = "($(Char(Int('a') + index - 1)))"
