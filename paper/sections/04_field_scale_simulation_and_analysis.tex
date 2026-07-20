@@ -1,0 +1,64 @@
+% !TEX root = ../manuscript.tex
+
+\section{Field-Scale Multiphase Simulation and Analysis}
+
+\subsection{Reservoir Model and Injection Scenario}
+
+High-performance multiphase simulations model megatonne-scale \coTwo{}
+injection and subsequent migration over 1,000 years in the approximately
+two-million-cell offshore Texas model. The model resolves the storage
+reservoir, top seal, and three-dimensional growth fault so that migration can
+be tracked within the reservoir and both along and across the fault.
+
+\todo{Report the simulator and nonlinear-solver configuration, fluid model,
+initial and boundary conditions, injection rate and duration, well controls,
+rock and fluid properties outside the fault, grid statistics, timestep
+strategy, convergence tolerances, and computing platform.}
+
+\subsection{Fault-Property Mapping and Ensemble Design}
+
+Each of the 162 geologic scenarios contributes 10 sampled three-dimensional
+fault-property cases, giving
+\begin{equation}
+162\times10 = 1{,}620
+\end{equation}
+field-scale simulations. Every case contains spatially variable fault
+permeability and porosity over the $6\times87$ fault representation, together
+with saturation-region assignments for the selected capillary-pressure and
+relative-permeability curves. The permeability case design is deterministic
+for a given geology and case type, while draws within the prescribed sampling
+pools vary reproducibly along strike.
+
+\todo{Define the final reservoir-ready file schema, property-to-grid mapping,
+saturation-region treatment, random-seed policy, restart protocol, and
+simulation acceptance criteria.}
+
+\subsection{Migration and Containment Quantities of Interest}
+
+The simulation ensemble is evaluated using quantities of interest that link
+fault behavior to storage security:
+\begin{enumerate}
+  \item the fraction of injected \coTwo{} retained within the intended storage
+  reservoir;
+  \item the fraction entering the fault;
+  \item the fraction entering the top seal;
+  \item the maximum upward migration distance; and
+  \item the partitioning of \coTwo{} between dissolved and free phases.
+\end{enumerate}
+
+\todo{Provide exact spatial masks, denominators, evaluation times, phase and
+component definitions, and numerical thresholds for every quantity of
+interest. Distinguish instantaneous maxima from values evaluated at the end of
+injection and after 1,000 years.}
+
+\subsection{Ensemble Analysis}
+
+The ensemble analysis compares outcomes across geologic scenarios, within-
+window stochastic states, and cross-window coupling assumptions. This
+hierarchical labeling enables both total predictive ranges and conditional
+comparisons that identify which uncertainty source controls each migration or
+containment metric.
+
+\todo{Specify the statistical estimands, uncertainty-decomposition method,
+matched comparisons among the 10 case types, treatment of failed simulations,
+and confidence or sensitivity diagnostics.}

@@ -1,0 +1,75 @@
+\documentclass[
+  draft,
+  linenumbers
+]{agujournal2025}
+
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{siunitx}
+
+\graphicspath{{figures/}}
+
+\newcommand{\coTwo}{CO$_2$}
+\newcommand{\todo}[1]{\textbf{[TODO: #1]}}
+
+\begin{document}
+
+\journalname{Water Resources Research}
+
+\title{End-to-End Uncertainty Quantification of Geologic \coTwo{} Storage in Faulted Reservoirs}
+
+\authors{Shaowen Mao\affil{1}, Llu\'{\i}s Sal\'o-Salgado\affil{2},
+Hannah Lu\affil{3}, Lisa Lun\affil{4}, Christie M. Rogers\affil{4},
+Rodrick D. Myers\affil{4}, Nathan W. Harkins\affil{4},
+Patricia Ascanio-Pellon\affil{4}, and Ruben Juanes\affil{1,5}}
+
+\affiliation{1}{Department of Civil and Environmental Engineering,
+Massachusetts Institute of Technology, Cambridge, MA, USA}
+\affiliation{2}{Department of Earth, Environmental, and Planetary Sciences,
+University of Tennessee, Knoxville, TN, USA}
+\affiliation{3}{The Oden Institute for Computational Engineering and Sciences,
+The University of Texas at Austin, Austin, TX, USA}
+\affiliation{4}{ExxonMobil Technology and Engineering Company, Spring, TX, USA}
+\affiliation{5}{Department of Earth, Atmospheric and Planetary Sciences,
+Massachusetts Institute of Technology, Cambridge, MA, USA}
+
+\authoraddr{Corresponding author: Shaowen Mao (\todo{email})}
+
+\authorrunninghead{Mao et al.}
+\titlerunninghead{End-to-end UQ of \coTwo{} storage in faulted reservoirs}
+
+\keypoints
+  {An end-to-end workflow propagates fault uncertainty from geologic scenarios to field-scale \coTwo{} migration}
+  {Hierarchical sampling preserves joint fault properties while reducing 162 geologies to 1,620 simulations}
+  {The ensemble quantifies containment, fault and top-seal entry, vertical migration, and \coTwo{} phase partitioning}
+
+\maketitle
+
+\begin{abstract}
+Faults are ubiquitous in the subsurface and can act as seals or flow conduits. In geologic carbon sequestration (GCS), uncertainty in how injected \coTwo{} interacts with faults hinders decisions about migration and containment. We develop an end-to-end uncertainty quantification workflow for \coTwo{} migration along and across faults in realistic geologic settings. First, the stochastic fault-property model PREDICT generates conditional distributions of fault permeability from local stratigraphy and fault throw. Second, a hierarchical sampling algorithm constructs representative realizations of upscaled three-dimensional fault properties. Third, high-performance multiphase reservoir simulations model megatonne-scale injection and migration over 1,000 years. We apply the workflow to an offshore Texas field represented by a roughly two-million-cell geologic model containing a three-dimensional growth fault that partially offsets the top seal. We construct 162 geologic scenarios by varying key structural and stratigraphic parameters. For each scenario, PREDICT generates fine-scale fault-core architectures and conditional distributions of upscaled fault permeability within six throw windows. Hierarchical sampling constructs 10 representative three-dimensional fault-property realizations per geology, yielding 1,620 field-scale simulations with spatially variable permeability, porosity, capillary pressure, and relative permeability. The ensemble quantifies uncertainty in the fractions of injected \coTwo{} retained within the storage reservoir and entering the fault and top seal, maximum upward migration, and dissolved-versus-free \coTwo{} partitioning. The framework propagates uncertainty from geologic characterization and stochastic fault-property prediction to field-scale migration and containment, supporting GCS site selection, injection management, and monitoring design.
+
+\begin{plainlanguagesummary}
+Faults can either impede or promote the migration of injected \coTwo{}, but their properties cannot be observed everywhere or represented by one deterministic value. We combine stochastic fault-property prediction, uncertainty-aware sampling, and field-scale reservoir simulation to carry this uncertainty from geologic interpretation through 1,000 years of modeled storage. Applied to an offshore Texas field, the workflow converts 162 plausible geologies into 1,620 reproducible simulations. The ensemble is designed to show how uncertain fault properties affect storage-reservoir retention, entry into the fault and top seal, upward migration, and the division of \coTwo{} between dissolved and free phases. These results can inform where to store \coTwo{}, how to operate injection, and what monitoring should target.
+\end{plainlanguagesummary}
+\end{abstract}
+
+\input{sections/01_introduction}
+\input{sections/02_field_case_and_geologic_scenarios}
+\input{sections/03_end_to_end_uq_workflow}
+\input{sections/04_field_scale_simulation_and_analysis}
+\input{sections/05_results}
+\input{sections/06_discussion}
+\input{sections/07_conclusions}
+
+\section*{Acknowledgments}
+\todo{Add funding, computing resources, technical contributions, and author contributions.}
+
+\section*{Conflict of Interest}
+\todo{Add the final conflict-of-interest disclosure for all authors.}
+
+\section*{Open Research Statement}
+The PREDICT source code and the reproducible analysis workflow are maintained at \url{https://github.com/ShaowenMao/predict_shaowen}. \todo{Deposit the manuscript version of the software and derived data in archival repositories, add DOIs, licenses, and citations, and state any access conditions.}
+
+\bibliography{references}
+
+\end{document}

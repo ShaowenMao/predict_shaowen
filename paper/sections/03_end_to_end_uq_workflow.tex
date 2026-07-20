@@ -1,0 +1,127 @@
+% !TEX root = ../manuscript.tex
+
+\section{End-to-End Uncertainty Quantification Workflow}
+
+\subsection{Workflow Overview}
+
+The computational pipeline has three stages: stochastic fault-property
+prediction with PREDICT, hierarchical sampling of three-dimensional fault
+properties, and field-scale multiphase reservoir simulation. Within the
+sampling stage, uncertainty is organized into three levels: (1) geologic
+scenario uncertainty, (2) within-window PREDICT stochasticity, and (3)
+cross-window coupling uncertainty. Distinguishing the pipeline stages from the
+uncertainty levels clarifies which quantities are predicted, which are sampled,
+and which are propagated through the reservoir model.
+
+\todo{Add an end-to-end workflow figure that tracks inputs, empirical
+libraries, sampled $6\times87$ property fields, upscaled multiphase
+properties, reservoir simulations, and quantities of interest.}
+
+\subsection{Stochastic Fault-Property Prediction With PREDICT}
+
+For each geology and throw window, PREDICT generates stochastic fine-scale
+fault-core architectures conditioned on the local stratigraphy, fault throw,
+and geologic parameters. Each accepted realization yields an upscaled joint
+permeability vector $(k_{xx},k_{yy},k_{zz})$. We generate 2,000 accepted
+realizations for every geology-window combination. A separate convergence
+analysis established that 2,000 realizations bring the component-distribution
+distances close to the empirical floor between independent 20,000-realization
+reference ensembles.
+
+Adjacent layers of the same lithology are collapsed before fault-core
+generation. Clay-smear placement uses the cell-union probability-of-smear
+rule: each clay source produces an active cell mask, a cell remains clay if
+any source occupies it, and overlapping sources are assigned a parent source
+after clay presence is established. This ordering prevents competition among
+overlapping sources from converting a potentially clay-occupied cell back to
+sand.
+
+\todo{Add the governing PREDICT relations, the material-placement algorithm,
+the effective-property upscaling equations, and the final validation evidence
+for the cell-union probability-of-smear option.}
+
+\subsection{Hierarchical Sampling of Fault Properties}
+
+\subsubsection{Within-window joint permeability states}
+
+Each PREDICT realization is represented by
+\begin{equation}
+\mathbf{y}^{(m)} = \left(\log_{10} k_{xx}^{(m)},
+\log_{10} k_{yy}^{(m)},\log_{10} k_{zz}^{(m)}\right).
+\end{equation}
+Joint permeability clusters are detected by $k$-medoids in physical
+log-permeability space using Euclidean distance with one log unit as the
+component scale. Candidate cluster counts are $K=1,\ldots,5$. Multi-cluster
+solutions must satisfy a minimum cluster fraction of 5\%, and the valid
+solution with the largest mean silhouette is selected. If its silhouette is
+below 0.25, the window is treated as single-cluster.
+
+For interpretation, local percentile ranks $r_{xx}$, $r_{yy}$, and $r_{zz}$
+are computed within each window. The joint rank score is
+\begin{equation}
+s^{(m)} = \frac{r_{xx}^{(m)}+r_{yy}^{(m)}+r_{zz}^{(m)}}{3}.
+\end{equation}
+Clusters are ordered from low to high by their median joint rank score. Low
+and high state libraries each contain 20\% of the full window library.
+Complete extreme clusters are included first; if the target size would be
+exceeded, only the required lowest- or highest-score samples from the boundary
+cluster are retained. This cluster-aware quantile construction preserves
+multimodal structure while maintaining a fixed state mass.
+
+Each state medoid is an actual PREDICT realization. The local perturbation
+pool contains samples nearest to the medoid within the intersection of the
+state library and the medoid-containing cluster. Its size is the smaller of
+the available candidate count and the larger of 25 samples or 10\% of that
+candidate set. The state-wide pool is the complete low or high state library.
+Independent samples are drawn from the complete window library. In every
+case, $k_{xx}$, $k_{yy}$, and $k_{zz}$ are selected together from one actual
+realization.
+
+\subsubsection{Cross-window similarity and coupling cases}
+
+For each geology, pairwise differences between the six joint permeability
+distributions are quantified with normalized multivariate energy distance.
+The normalization compares between-window distributional separation with the
+characteristic within-window spread. Windows form a similar pair when the
+normalized distance is no greater than 0.25. Optional bootstrap resampling
+tests the stability of this decision but is not required for the production
+workflow because the empirical window libraries were independently
+convergence tested.
+
+All 203 partitions of six windows are enumerated. A partition is admissible
+only when every pair within every non-singleton group satisfies the similarity
+threshold, preventing chain-link grouping. Among admissible partitions, the
+workflow first selects the smallest group count and then breaks ties using the
+smallest aggregate within-group distance. Singleton windows remain independent
+because the distributions do not support coupling them to another window.
+
+Ten multiple-window permeability cases are constructed for each geology: two
+independent cases, four fault-wide low/high cases using local or state-wide
+pools, and four grouped low/high cases. Non-singleton groups share low/high
+state assignments, whereas singleton windows remain independently sampled.
+When more than two non-singleton groups are present, candidate binary group
+splits are scored by the difference between mean opposite-side and same-side
+group distance; the highest-scoring split and its complement are retained.
+
+\subsection{Along-Strike Sampling, Exact Replay, and Multiphase Upscaling}
+
+For each of the 10 cases, the prescribed six-window design is sampled
+independently at all 87 along-strike locations. Deterministic seeds and the
+accepted PREDICT realization identifiers make every selected permeability
+vector exactly replayable. Replay reconstructs the corresponding fine-scale
+fault-core maps needed to upscale porosity, capillary pressure, and relative
+permeability without storing every fine-scale realization during the original
+PREDICT campaign.
+
+The rigorous capillary-pressure workflow uses invasion percolation on each
+replayed fault-core realization and retains spatially variable saturation
+endpoints. The reservoir-input workflow can either preserve every slice-level
+capillary-pressure curve or reduce curves within physically distinct entry-
+pressure branches using branch-specific medoids. Dynamic relative-permeability
+upscaling is performed for a representative saturation-endpoint realization
+in each window and mapped consistently to the retained saturation regions.
+
+\todo{Complete the equations and numerical details for porosity,
+invasion-percolation capillary pressure, effective irreducible water
+saturation, dynamic relative permeability, branch detection, medoid
+selection, endpoint normalization, and quality-control criteria.}

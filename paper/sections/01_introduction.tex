@@ -1,0 +1,51 @@
+% !TEX root = ../manuscript.tex
+
+\section{Introduction}
+
+Faults are ubiquitous in sedimentary basins and may either impede or promote
+subsurface fluid migration. In geologic carbon sequestration, this dual role
+creates uncertainty in whether injected \coTwo{} remains in the intended
+storage interval, enters a fault, migrates toward or into the top seal, or
+moves upward along the fault. Quantifying these possibilities is important for
+site selection, injection management, and monitoring design.
+
+The effective flow behavior of a fault emerges from unresolved internal
+structure, including juxtaposed sand and clay units, stochastic clay-smear
+continuity, burial and faulting history, and directional permeability.
+Representing the fault by one deterministic property field can therefore
+understate both the range and the structured, multimodal character of
+uncertainty relevant to reservoir-scale forecasts. PREDICT provides a
+physics-informed stochastic representation of fault-core architecture and
+effective permeability for normally consolidated sediments
+\cite{SaloSalgado2025}. Previous work has also demonstrated the importance of
+propagating fault-property uncertainty into predictions of \coTwo{} migration
+and fault response \cite{Lu2025}.
+
+The remaining challenge is computational scale. An end-to-end assessment must
+span plausible geologies, stochastic fault realizations within each throw
+window, uncertain relationships among windows, spatial variability along
+strike, upscaled multiphase properties, and long-term field-scale simulation.
+Direct enumeration of this combined space is infeasible, whereas aggressive
+averaging can remove permeability-tensor dependence, distinct probability
+modes, and capillary barriers that control migration.
+
+We develop an end-to-end uncertainty quantification workflow with three
+computational stages: stochastic fault-property prediction, hierarchical
+sampling of three-dimensional fault properties, and high-performance
+multiphase reservoir simulation. The sampling hierarchy separates geologic
+uncertainty, within-window PREDICT stochasticity, and cross-window coupling
+uncertainty. PREDICT produces window-specific distributions but does not
+identify a true cross-window joint law; consequently, distributional
+similarity is used to construct transparent candidate coupling assumptions,
+not to claim measured cross-window correlation.
+
+We apply the workflow to a megatonne-scale offshore Texas storage case with a
+three-dimensional growth fault that partially offsets the top seal. The study
+uses 162 geologic scenarios and 10 sampled fault-property cases per geology,
+yielding 1,620 reservoir simulations over a 1,000-year horizon. We quantify
+storage-reservoir retention, entry into the fault and top seal, maximum upward
+migration, and partitioning between dissolved and free \coTwo{}. The objectives
+are to determine how uncertainty propagates from geologic characterization to
+these containment outcomes, identify the dominant controls, and evaluate the
+implications for storage decisions. \todo{Add a concise statement of the main
+quantitative findings after the production ensemble is complete.}

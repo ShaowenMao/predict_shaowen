@@ -1,0 +1,36 @@
+% !TEX root = ../../supporting_information.tex
+
+\section{Hierarchical Uncertainty-Quantification Details}
+\label{sec:si-hierarchical-uq}
+
+\subsection{Within-window joint permeability states}
+
+For each window, component-wise empirical ranks are computed locally within its PREDICT library. The joint rank score for realization $m$ is
+
+\begin{equation}
+  r_{\mathrm{joint}}^{(m)} =
+  \frac{r_{xx}^{(m)} + r_{yy}^{(m)} + r_{zz}^{(m)}}{3}.
+  \label{eq:si-joint-rank-score}
+\end{equation}
+
+The score orders clusters from relatively low to relatively high joint permeability; clustering itself is performed in physical three-dimensional $\log_{10}(k)$ space. \todo{Add the final clustering settings, admissibility rules, silhouette threshold, state-library fraction, medoid definition, and local/state-wide pool construction.}
+
+\subsection{Window similarity groups}
+
+For windows with empirical libraries $A$ and $B$, the multivariate energy distance is
+
+\begin{equation}
+  E(A,B) = 2\,\mathbb{E}\lVert X-Y\rVert
+  - \mathbb{E}\lVert X-X'\rVert
+  - \mathbb{E}\lVert Y-Y'\rVert,
+  \label{eq:si-energy-distance}
+\end{equation}
+
+where $X,X'\sim A$ and $Y,Y'\sim B$ are independent samples in physical $\log_{10}(k)$ space. \todo{Define the within-window normalization, similarity threshold, all-pairs grouping rule, tie-breaking criteria, and optional bootstrap stability assessment exactly as implemented.}
+
+\subsection{Multiple-window permeability cases}
+
+\todo{Tabulate the ten case types: two independent cases, four fault-wide low/high cases, and four grouped low/high cases. Explain that similarity grouping supports candidate coupling assumptions but does not infer true cross-window correlation. State how singleton groups remain independently sampled.}
+
+% Place supporting workflow and sensitivity figures in supplement/figures and
+% use Figure S1, Figure S2, ... automatically through the numbering above.

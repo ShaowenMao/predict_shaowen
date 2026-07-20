@@ -1,0 +1,36 @@
+% !TEX root = ../../supporting_information.tex
+
+\section{Replay and Multiphase-Property Upscaling}
+\label{sec:si-replay-upscaling}
+
+\subsection{Exact realization replay}
+
+\todo{Describe how saved realization indices and deterministic random seeds reproduce every selected PREDICT realization, including fine-scale parent units, smear occupancy, porosity, and permeability fields. Report the replay-matching tolerances and validation coverage.}
+
+\subsection{Capillary-pressure upscaling}
+
+\todo{Describe the invasion-percolation calculation, Leverett scaling of local entry pressure, pore-volume aggregation, effective irreducible water saturation, and both supported saturation-region representations: full-slice curves and entry-pressure-branch medoids. State which representation is used in each reservoir experiment.}
+
+\subsection{Relative-permeability upscaling}
+
+\todo{Describe the dynamic fine-grid flow calculations, robust time-step controls, AMGCL requirement, selection of the irreducible-water-saturation medoid realization, and endpoint-consistent mapping of the representative relative-permeability curves.}
+
+\subsection{Reservoir-ready consistency checks}
+
+\todo{Report checks for complete $6\times87$ coverage, replay agreement, permeability units, porosity bounds, monotonic capillary-pressure curves, saturation endpoints, and physical relative-permeability bounds.}
+
+% Example supporting table block:
+% \begin{table}[htbp]
+%   \centering
+%   \caption{Validation checks applied to each reservoir-ready property file.}
+%   \label{tab:si-reservoir-ready-checks}
+%   \begin{tabular}{@{}lll@{}}
+%     \toprule
+%     Check & Acceptance criterion & Result \\
+%     \midrule
+%     Replay permeability & \todo{tolerance} & \todo{result} \\
+%     Pc monotonicity & Nondecreasing & \todo{result} \\
+%     Kr bounds & $0\leq k_r\leq1$ & \todo{result} \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}

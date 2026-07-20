@@ -1,0 +1,39 @@
+% !TEX root = ../../supporting_information.tex
+
+\section{PREDICT Scenario Design and Convergence Assessment}
+\label{sec:si-predict-design}
+
+\subsection{Geologic scenario matrix}
+
+\todo{Describe the full factorial construction of the 162 geologic scenarios, including sand proportion, uniform or nonuniform thickness structure, faulting depth, sand clay-volume fraction, and clay clay-volume fraction. State how adjacent units of the same material are collapsed before PREDICT simulation and document the cell-union $P(\mathrm{smear})$ material-placement option.}
+
+\refstepcounter{table}
+\label{tab:si-predict-ensemble}
+\noindent\textbf{Table \thetable.} Summary of the PREDICT ensemble used by the hierarchical workflow. Replace provisional entries and add the final scenario-level parameter values before submission.
+\begin{center}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Item & Current design \\
+    \midrule
+    Geologic scenarios & 162 \\
+    Throw windows per geology & 6 \\
+    PREDICT realizations per window & 2000 \\
+    Permeability components retained jointly & $k_{xx}$, $k_{yy}$, $k_{zz}$ \\
+    Material-placement option & Cell-union $P(\mathrm{smear})$ \\
+    Layer representation & Adjacent same-material units collapsed \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\subsection{Convergence assessment}
+
+\todo{Document the three independent 20,000-realization reference ensembles, the reference-distance floor, the repeated smaller ensembles, and the MAE, Hellinger, and Wasserstein diagnostics. Report the quantitative evidence supporting 2000 realizations per geology-window library.}
+
+% Example supporting figure block:
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=\textwidth]{predict_convergence_summary.pdf}
+%   \caption{Convergence of the empirical permeability distributions toward
+%   the reference-distance floor.}
+%   \label{fig:si-predict-convergence}
+% \end{figure}

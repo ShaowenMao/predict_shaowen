@@ -1,0 +1,71 @@
+\documentclass[
+  draft
+]{agujournal2025}
+
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{siunitx}
+
+\graphicspath{{supplement/figures/}{figures/}}
+
+\newcommand{\coTwo}{CO$_2$}
+\newcommand{\todo}[1]{\textbf{[TODO: #1]}}
+\newcommand{\papertitle}{End-to-End Uncertainty Quantification of Geologic \coTwo{} Storage in Faulted Reservoirs}
+
+% Number supporting elements independently from the main manuscript.
+\renewcommand{\thesection}{S\arabic{section}}
+\renewcommand{\thesubsection}{S\arabic{section}.\arabic{subsection}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\theequation}{S\arabic{equation}}
+
+\begin{document}
+
+\journalname{Water Resources Research}
+\supportinginfo{\papertitle}
+
+\noindent
+Shaowen Mao$^{1}$, Llu\'{\i}s Sal\'o-Salgado$^{2}$, Hannah Lu$^{3}$,
+Lisa Lun$^{4}$, Christie M. Rogers$^{4}$, Rodrick D. Myers$^{4}$,
+Nathan W. Harkins$^{4}$, Patricia Ascanio-Pellon$^{4}$, and
+Ruben Juanes$^{1,5}$
+
+\vspace{8pt}
+\noindent
+$^{1}$Department of Civil and Environmental Engineering, Massachusetts
+Institute of Technology, Cambridge, MA, USA\\
+$^{2}$Department of Earth, Environmental, and Planetary Sciences, University
+of Tennessee, Knoxville, TN, USA\\
+$^{3}$The Oden Institute for Computational Engineering and Sciences, The
+University of Texas at Austin, Austin, TX, USA\\
+$^{4}$ExxonMobil Technology and Engineering Company, Spring, TX, USA\\
+$^{5}$Department of Earth, Atmospheric and Planetary Sciences, Massachusetts
+Institute of Technology, Cambridge, MA, USA
+
+\vspace{12pt}
+\noindent
+\textbf{Corresponding author:} Shaowen Mao (\todo{email})
+
+\section*{Contents of this file}
+
+\begin{itemize}
+  \item Text S1: PREDICT scenario design and convergence assessment
+  \item Text S2: Hierarchical uncertainty-quantification details
+  \item Text S3: Replay and multiphase-property upscaling
+  \item \todo{Update the final ranges of Figures S1--S$n$ and Tables S1--S$n$}
+\end{itemize}
+
+\section*{Introduction}
+
+This Supporting Information provides methodological and diagnostic detail that supports the main manuscript but is not required to follow its principal conclusions. It documents the PREDICT ensemble design, the construction of within-window state libraries and cross-window permeability cases, and the replay and multiphase-upscaling checks used to prepare reservoir-model inputs. Key analysis and interpretation remain in the main manuscript. Data and software are deposited separately and cited through the manuscript's Open Research Statement.
+
+\input{supplement/sections/s01_predict_design_and_convergence}
+\input{supplement/sections/s02_hierarchical_uq_details}
+\input{supplement/sections/s03_replay_and_upscaling}
+
+% AGU currently requests references used in Supporting Information to appear
+% in the main manuscript under "References From the Supporting Information."
+% Do not create an independent SI bibliography unless the journal requests it.
+
+\end{document}

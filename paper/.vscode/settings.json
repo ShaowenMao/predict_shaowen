@@ -1,0 +1,48 @@
+{
+  "latex-workshop.latex.autoBuild.run": "onSave",
+  "latex-workshop.latex.outDir": "%DIR%/build",
+  "latex-workshop.view.pdf.viewer": "tab",
+  "latex-workshop.synctex.afterBuild.enabled": true,
+  "latex-workshop.latex.tools": [
+    {
+      "name": "agu-build",
+      "command": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "%DIR%/tools/build_manuscript.ps1",
+        "-Document",
+        "%DOC_EXT%",
+        "-OutputDirectory",
+        "%OUTDIR%"
+      ],
+      "env": {}
+    }
+  ],
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "AGU document (pdfLaTeX)",
+      "tools": [
+        "agu-build"
+      ]
+    }
+  ],
+  "latex-workshop.latex.recipe.default": "AGU document (pdfLaTeX)",
+  "latex-workshop.latex.clean.enabled": true,
+  "latex-workshop.latex.clean.fileTypes": [
+    "*.aux",
+    "*.bbl",
+    "*.blg",
+    "*.fdb_latexmk",
+    "*.fls",
+    "*.log",
+    "*.out",
+    "*.synctex.gz"
+  ],
+  "files.associations": {
+    "*.cls": "latex",
+    "*.sty": "latex"
+  }
+}

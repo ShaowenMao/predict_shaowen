@@ -1,0 +1,50 @@
+% !TEX root = ../manuscript.tex
+
+\section{Offshore Texas Field Case and Geologic Uncertainty}
+
+\subsection{Field Setting and Geologic Model}
+
+We apply the workflow to an offshore Texas storage setting represented by a
+three-dimensional geologic model with approximately two million grid cells.
+The model contains a growth fault that offsets the storage interval and
+partially offsets the top seal. This configuration permits migration both
+along the fault and across juxtaposed units, making the spatially variable
+fault properties central to predictions of containment.
+
+\todo{Describe the storage interval, top-seal stratigraphy, model dimensions,
+grid resolution, fault geometry, boundary conditions inherited from the field
+model, and the evidence supporting the selected geologic interpretation. Add a
+field-location and model-geometry figure.}
+
+\subsection{Fault Discretization and Throw Windows}
+
+The reservoir-scale fault representation contains 87 cells along strike and
+six throw windows, denoted W1--W6. Each throw window has a different local
+stratigraphic juxtaposition and therefore a distinct conditional distribution
+of fault properties. The six window properties are assigned independently at
+each along-strike location unless a sampled fault-wide or grouped case imposes
+a shared low/high state. This $6\times87$ representation connects the
+window-scale PREDICT libraries to the three-dimensional fault surface used by
+the reservoir model.
+
+\todo{Define the throw ranges associated with W1--W6 and show how the window
+and along-strike indices map onto the reservoir grid.}
+
+\subsection{Geologic Scenario Design}
+
+Geologic uncertainty is the outer level of the hierarchy. We consider six
+layer-thickness structures spanning low, medium, and high sand proportions,
+each represented with uniform and nonuniform layer thicknesses. Each structure
+is combined factorially with three faulting depths, three clay-volume
+fractions in sand, and three clay-volume fractions in clay, producing
+
+\begin{equation}
+6\times3\times3\times3 = 162
+\end{equation}
+
+geologic scenarios. All scenarios receive equal treatment in the downstream
+workflow; no clustering or representative-scenario reduction is applied at
+this outer level.
+
+\todo{Add the final parameter values, units, geologic rationale, and a table
+that maps scenario identifiers to the complete factorial design.}
