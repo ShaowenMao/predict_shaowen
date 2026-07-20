@@ -1,3 +1,10 @@
 *.asv
 *.m~
 *.DS_Store
+__pycache__/
+*.py[cod]
+
+# Local generated artifacts and temporary exports.
+/outputs/
+/tmp/
+/upscaling.zip
