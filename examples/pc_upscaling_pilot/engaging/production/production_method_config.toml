@@ -1,0 +1,38 @@
+schema_version = 1
+workflow_name = "collapsed_cell_union_replay_pc_dynamic_kr"
+
+[predict]
+input_variant = "collapsed_adjacent_lithology"
+smear_overlap_rule = "cell_union_psmear"
+require_checkpoint_metadata_match = true
+
+[replay]
+require_exact_seed = true
+require_permeability_match = true
+log10_permeability_tolerance = 1.0e-8
+preserve_full_3d_grid = true
+allow_strike_collapse = false
+
+[pc]
+method = "invasion_percolation"
+endpoint_mode = "native"
+preserve_effective_swi = true
+preserve_all_87_slices = true
+allow_strike_collapse = false
+
+[kr]
+method = "dynamic"
+selection_mode = "swi_medoid"
+representatives_per_case = 6
+pc_prestep_mode = "precomputed"
+linear_solver = "amgcl_require"
+preserve_full_3d_grid = true
+allow_strike_collapse = false
+
+[reservoir_export]
+pc_representations = ["full_slice", "pe_branch_medoid"]
+include_permeability_md = true
+include_permeability_m2 = true
+include_porosity = true
+validate_saturation_regions = true
+
