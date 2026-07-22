@@ -34,6 +34,7 @@ UPSCALING_ZIP="${UPSCALING_ZIP:-${PROJECT_ROOT}/software/upscaling.zip}"
 SBATCH_ACCOUNT="${SBATCH_ACCOUNT:-mit_amf_advanced_cpu}"
 SBATCH_PARTITION="${SBATCH_PARTITION:-mit_normal}"
 SBATCH_QOS="${SBATCH_QOS:-}"
+SBATCH_EXCLUDE_NODES="${SBATCH_EXCLUDE_NODES:-}"
 QUALIFICATION_GATE_JOB_ID="${QUALIFICATION_GATE_JOB_ID:-}"
 RESUME="${RESUME:-0}"
 REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-1.0e-3}"
@@ -126,6 +127,9 @@ submit_stage() {
     fi
     if [[ -n "${SBATCH_QOS}" ]]; then
         args+=(--qos="${SBATCH_QOS}")
+    fi
+    if [[ -n "${SBATCH_EXCLUDE_NODES}" ]]; then
+        args+=(--exclude="${SBATCH_EXCLUDE_NODES}")
     fi
     local submission
     submission="$(sbatch "${args[@]}" "${STAGE_SCRIPT}" "${stage}")"
@@ -250,6 +254,7 @@ sampling_csv=${SAMPLING_CSV}
 predict_root=${PREDICT_ROOT}
 account=${SBATCH_ACCOUNT}
 partition=${SBATCH_PARTITION}
+exclude_nodes=${SBATCH_EXCLUDE_NODES}
 EOF
 
 if [[ "${MODE}" == "smoke" ]]; then
