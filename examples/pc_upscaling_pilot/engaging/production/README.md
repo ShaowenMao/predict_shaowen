@@ -66,6 +66,14 @@ Each case runs as a restartable three-stage Slurm chain:
 exact PREDICT replay -> invasion-percolation Pc -> dynamic Kr (Swi medoid)
 ```
 
+The dynamic Kr model adds an artificial sand layer at its flow boundary. For
+ordinary replay maps, that layer retains the original implementation's mean
+properties over realized fault-core sand cells. A valid all-smear replay has
+no such cells; in that edge case only, the boundary properties are rebuilt
+from the replayed parent sand units using thickness-weighted porosity and
+rotated permeability tensors. This fallback does not alter the replayed fault
+map and prevents undefined pore volumes in the numerical boundary layer.
+
 The smoke replay/Pc stages use one slice across all six windows. Its Kr stage
 uses one representative curve on the complete production-size 3D grid; it
 does not use the artificial cropped-grid plumbing mode.
