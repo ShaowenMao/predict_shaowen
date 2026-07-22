@@ -314,18 +314,20 @@ end
 if isempty(idPercolation)
     error('No percolating path found in validation case.');
 end
+firstBottomPc = pcVal(idPercolation);
+firstBottomSg = sVal(idPercolation);
 idrem(idPercolation-1) = false;
 idrem(idPercolation) = false;
 idrem(end) = false;
-sVal(idPercolation-1) = 1e-5;
+sVal(idPercolation-1) = ipPrePercolationSaturationAnchor(firstBottomSg);
 pcVal(idrem) = [];
 sVal(idrem) = [];
 pcVal = pcVal(:);
 sVal = sVal(:);
 
 diagnostics = struct();
-diagnostics.firstBottomConnectedPcPa = pcVal(find(sVal > 1e-5, 1, 'first'));
-diagnostics.firstBottomConnectedSg = sVal(find(sVal > 1e-5, 1, 'first'));
+diagnostics.firstBottomConnectedPcPa = firstBottomPc;
+diagnostics.firstBottomConnectedSg = firstBottomSg;
 diagnostics.numRawPoints = numel(pcVal);
 diagnostics.ncreg = ncreg;
 end

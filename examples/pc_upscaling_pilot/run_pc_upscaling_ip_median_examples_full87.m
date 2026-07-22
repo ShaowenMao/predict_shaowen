@@ -588,7 +588,8 @@ end
 if isempty(idPercolation)
     error('No percolating path found in IP Pc upscaling.');
 end
-sVal(idPercolation - 1) = 1e-5;
+firstBottomSg = sVal(idPercolation);
+sVal(idPercolation - 1) = ipPrePercolationSaturationAnchor(firstBottomSg);
 idrem(idPercolation - 1) = false;
 idrem(idPercolation) = false;
 idrem(end) = false;
@@ -596,7 +597,6 @@ pcVal = pcVal(:);
 sVal = sVal(:);
 pcVal(idrem(:)) = [];
 sVal(idrem(:)) = [];
-firstBottomSg = sVal(find(sVal > 1e-5, 1, 'first'));
 
 diagnostics = struct();
 diagnostics.pcMinPa = pcMin;
