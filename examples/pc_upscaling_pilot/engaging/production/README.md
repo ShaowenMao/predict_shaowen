@@ -74,6 +74,14 @@ from the replayed parent sand units using thickness-weighted porosity and
 rotated permeability tensors. This fallback does not alter the replayed fault
 map and prevents undefined pore volumes in the numerical boundary layer.
 
+The 1D Corey history match uses the effective irreducible-water endpoint
+computed by the invasion-percolation Pc curve. Native Pc discretization can
+place this upscaled endpoint slightly outside the two constituent reference
+endpoints. The runtime therefore validates the physical bound
+`0 <= effective Swi < 1`, reports constituent-range excursions, and retains
+the exact Pc-derived endpoint instead of clipping it. This keeps Pc and Kr
+endpoints consistent.
+
 The smoke replay/Pc stages use one slice across all six windows. Its Kr stage
 uses one representative curve on the complete production-size 3D grid; it
 does not use the artificial cropped-grid plumbing mode.
