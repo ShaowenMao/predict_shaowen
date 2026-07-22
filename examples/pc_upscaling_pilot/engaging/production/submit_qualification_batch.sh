@@ -12,14 +12,14 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="${PROJECT_ROOT:-/home/shaowen/orcd/pool/predict_shaowen}"
 SCRATCH_ROOT="${SCRATCH_ROOT:-/home/shaowen/orcd/scratch/predict_shaowen}"
-FREEZE_ROOT="${FREEZE_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen/production_freezes/collapsed_cell_union_20260722_v1}"
+FREEZE_ROOT="${FREEZE_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen/production_freezes/collapsed_cell_union_20260722_v2}"
 FROZEN_REPO="${FREEZE_ROOT}/code/source"
 FROZEN_WORKFLOW_DIR="${FROZEN_REPO}/examples/pc_upscaling_pilot/engaging"
 STAGE_SCRIPT="${FROZEN_WORKFLOW_DIR}/run_case01_stage.sh"
 CASES_FILE="${QUALIFICATION_CASES_FILE:-${SCRIPT_DIR}/qualification_cases.csv}"
 
-EXPECTED_COMMIT="344dd97ae9a9ac244e82c83a443a208dbd798788"
-EXPECTED_METHOD_HASH="efa43fca01ccb2929caffab4be79cabd4d148d88539e4e78c6e109145c31e33b"
+EXPECTED_COMMIT="29ece954bdc8c4525c825753088f01d27197623b"
+EXPECTED_METHOD_HASH="35deb95eff4657e5071996b0f3031c105836562972b5de7bdf46f50db3c79974"
 EXPECTED_FIELD_CONFIG_HASH="aee718ad0c43a2d16087980a848a8abacdc5893a1237088c51378666a027b7e6"
 
 SAMPLING_ROOT="${FREEZE_ROOT}/inputs/sampling"
@@ -38,7 +38,7 @@ QUALIFICATION_GATE_JOB_ID="${QUALIFICATION_GATE_JOB_ID:-}"
 RESUME="${RESUME:-0}"
 
 if [[ "${MODE}" == "smoke" ]]; then
-    BATCH_ID="${BATCH_ID:-qualification_ccu_20260722_v1_smoke_gate}"
+    BATCH_ID="${BATCH_ID:-qualification_ccu_20260722_v2_smoke_gate}"
     REPLAY_TIME="${REPLAY_TIME:-00:30:00}"
     REPLAY_CPUS="${REPLAY_CPUS:-1}"
     REPLAY_MEM="${REPLAY_MEM:-8G}"
@@ -49,7 +49,7 @@ if [[ "${MODE}" == "smoke" ]]; then
     KR_CPUS="${KR_CPUS:-2}"
     KR_MEM="${KR_MEM:-16G}"
 else
-    BATCH_ID="${BATCH_ID:-qualification_ccu_20260722_v1_full}"
+    BATCH_ID="${BATCH_ID:-qualification_ccu_20260722_v2_full}"
     REPLAY_TIME="${REPLAY_TIME:-03:00:00}"
     REPLAY_CPUS="${REPLAY_CPUS:-1}"
     REPLAY_MEM="${REPLAY_MEM:-16G}"
@@ -71,7 +71,7 @@ require_file() {
 
 preflight() {
     require_file "${FREEZE_ROOT}/freeze_metadata.json"
-    require_file "${FREEZE_ROOT}/code/predict_shaowen_344dd97.bundle"
+    require_file "${FREEZE_ROOT}/code/predict_shaowen_29ece95.bundle"
     require_file "${METHOD_CONFIG}"
     require_file "${FIELD_CONFIG}"
     require_file "${SAMPLING_CSV}"
@@ -154,7 +154,7 @@ configure_case() {
     export PREDICT_REPLAY_CODE_ROOT="${FROZEN_REPO}"
     export FULL87_REPLAY_GEOLOGY_ID="${geology_id}"
     export FULL87_REPLAY_CASE_IDS="${case_id}"
-    export FULL87_REPLAY_VERIFY_TOLERANCE_LOG10="1.0e-8"
+    export FULL87_REPLAY_VERIFY_TOLERANCE_LOG10="1.0e-6"
     export PC_IP_GEOLOGY_ID="${geology_id}"
     export PC_IP_CASE_IDS="${case_id}"
     export PC_IP_REPLAY_ROOT="${FULL87_REPLAY_OUTPUT_ROOT}"

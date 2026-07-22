@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-BATCH_ROOT="${1:-/home/shaowen/orcd/scratch/predict_shaowen/runs/qualification_ccu_20260722_v1_full}"
+BATCH_ROOT="${1:-/home/shaowen/orcd/scratch/predict_shaowen/runs/qualification_ccu_20260722_v2_full}"
 MANIFEST="${BATCH_ROOT}/submission_manifest.csv"
 [[ -f "${MANIFEST}" ]] || { echo "Missing submission manifest: ${MANIFEST}" >&2; exit 2; }
 
