@@ -114,3 +114,18 @@ Summarize jobs and stage completion markers with:
 ```bash
 bash summarize_qualification_batch.sh <batch_root>
 ```
+
+If replay and Pc are complete but Kr must be resumed with a corrected frozen
+source, submit only the missing Kr stages with:
+
+```bash
+FREEZE_ROOT=<verified_freeze_root> \
+BATCH_ROOT=<existing_batch_root> \
+SBATCH_EXCLUDE_NODES=node3312 \
+  bash submit_qualification_kr_resume.sh
+```
+
+The resume script requires both upstream completion markers, skips existing
+Kr completion markers, requires AMGCL, and writes a separate resubmission
+manifest containing each Slurm job ID, frozen commit, freeze root, and stage
+script hash.
