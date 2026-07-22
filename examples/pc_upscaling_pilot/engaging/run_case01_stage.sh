@@ -29,6 +29,7 @@ cd "${REPO_ROOT}/examples/pc_upscaling_pilot"
 JOB_ID="${SLURM_JOB_ID:-manual}"
 DIAG_PREFIX="${RUN_ROOT}/diagnostics/stage_${STAGE}_${JOB_ID}"
 START_EPOCH="$(date +%s)"
+STAGE_COMPLETED=0
 
 finish_stage() {
     local status="$?"
@@ -45,7 +46,7 @@ finish_stage() {
         echo "elapsed_seconds=$((end_epoch - START_EPOCH))"
         echo "finished_at=$(date --iso-8601=seconds)"
     } > "${DIAG_PREFIX}.status"
-    if [[ "${status}" -eq 0 ]]; then
+    if [[ "${status}" -eq 0 && "${STAGE_COMPLETED}" -eq 1 ]]; then
         touch "${RUN_ROOT}/status/${STAGE}.done"
     fi
 }
@@ -102,5 +103,9 @@ case "${STAGE}" in
         run_matlab_stage "run_kr_upscaling_dyn_median_examples_full87"
         ;;
 esac
+
+# A requeue signal can run the EXIT trap while the child process is being
+# stopped. Mark completion only after the MATLAB stage returns normally.
+STAGE_COMPLETED=1
 
 echo "Finished stage=${STAGE} at $(date --iso-8601=seconds)"

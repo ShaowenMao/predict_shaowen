@@ -90,6 +90,13 @@ and records every Slurm dependency in `submission_manifest.csv`. To continue
 an interrupted batch without deleting valid replay, Pc, or Kr checkpoints,
 resubmit with the same `BATCH_ID` and `RESUME=1`.
 
+The qualification default for exact-replay verification is `1e-3` in
+`log10(k)`, equivalent to about 0.23% relative permeability. This tolerance
+admits small cross-platform differences in the effective-permeability linear
+solve while remaining far too tight to accept a different stochastic
+realization. Override it with `REPLAY_TOLERANCE_LOG10` only when the reason is
+documented in the batch provenance.
+
 Summarize jobs and stage completion markers with:
 
 ```bash

@@ -15,7 +15,7 @@ SCRATCH_ROOT="${SCRATCH_ROOT:-/home/shaowen/orcd/scratch/predict_shaowen}"
 FREEZE_ROOT="${FREEZE_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen/production_freezes/collapsed_cell_union_20260722_v2}"
 FROZEN_REPO="${FREEZE_ROOT}/code/source"
 FROZEN_WORKFLOW_DIR="${FROZEN_REPO}/examples/pc_upscaling_pilot/engaging"
-STAGE_SCRIPT="${FROZEN_WORKFLOW_DIR}/run_case01_stage.sh"
+STAGE_SCRIPT="${QUALIFICATION_STAGE_SCRIPT:-${FROZEN_WORKFLOW_DIR}/run_case01_stage.sh}"
 CASES_FILE="${QUALIFICATION_CASES_FILE:-${SCRIPT_DIR}/qualification_cases.csv}"
 
 EXPECTED_COMMIT="29ece954bdc8c4525c825753088f01d27197623b"
@@ -36,6 +36,7 @@ SBATCH_PARTITION="${SBATCH_PARTITION:-mit_normal}"
 SBATCH_QOS="${SBATCH_QOS:-}"
 QUALIFICATION_GATE_JOB_ID="${QUALIFICATION_GATE_JOB_ID:-}"
 RESUME="${RESUME:-0}"
+REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-1.0e-3}"
 
 if [[ "${MODE}" == "smoke" ]]; then
     BATCH_ID="${BATCH_ID:-qualification_ccu_20260722_v2_fullgrid_smoke_gate}"
@@ -154,7 +155,7 @@ configure_case() {
     export PREDICT_REPLAY_CODE_ROOT="${FROZEN_REPO}"
     export FULL87_REPLAY_GEOLOGY_ID="${geology_id}"
     export FULL87_REPLAY_CASE_IDS="${case_id}"
-    export FULL87_REPLAY_VERIFY_TOLERANCE_LOG10="1.0e-6"
+    export FULL87_REPLAY_VERIFY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}"
     export PC_IP_GEOLOGY_ID="${geology_id}"
     export PC_IP_CASE_IDS="${case_id}"
     export PC_IP_REPLAY_ROOT="${FULL87_REPLAY_OUTPUT_ROOT}"
@@ -218,6 +219,7 @@ submit_case_chain() {
 }
 
 preflight
+STAGE_SCRIPT_SHA256="$(sha256sum "${STAGE_SCRIPT}" | awk '{print $1}')"
 mkdir -p "${BATCH_ROOT}"
 if [[ -e "${SUBMISSION_MANIFEST}" && "${RESUME}" != "1" ]]; then
     echo "Submission manifest exists; set RESUME=1 to append a continuation." >&2
@@ -241,6 +243,9 @@ freeze_root=${FREEZE_ROOT}
 code_commit=${EXPECTED_COMMIT}
 method_config_sha256=${EXPECTED_METHOD_HASH}
 field_config_sha256=${EXPECTED_FIELD_CONFIG_HASH}
+replay_tolerance_log10=${REPLAY_TOLERANCE_LOG10}
+stage_script=${STAGE_SCRIPT}
+stage_script_sha256=${STAGE_SCRIPT_SHA256}
 sampling_csv=${SAMPLING_CSV}
 predict_root=${PREDICT_ROOT}
 account=${SBATCH_ACCOUNT}
