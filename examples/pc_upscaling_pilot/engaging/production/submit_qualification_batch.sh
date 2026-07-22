@@ -36,6 +36,7 @@ SBATCH_PARTITION="${SBATCH_PARTITION:-mit_normal}"
 SBATCH_QOS="${SBATCH_QOS:-}"
 SBATCH_EXCLUDE_NODES="${SBATCH_EXCLUDE_NODES:-}"
 QUALIFICATION_GATE_JOB_ID="${QUALIFICATION_GATE_JOB_ID:-}"
+QUALIFICATION_GATE_RECORD_ID="${QUALIFICATION_GATE_JOB_ID}"
 RESUME="${RESUME:-0}"
 REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-1.0e-3}"
 
@@ -131,9 +132,17 @@ submit_stage() {
     if [[ -n "${SBATCH_EXCLUDE_NODES}" ]]; then
         args+=(--exclude="${SBATCH_EXCLUDE_NODES}")
     fi
-    local submission
-    submission="$(sbatch "${args[@]}" "${STAGE_SCRIPT}" "${stage}")"
-    printf '%s\n' "${submission%%;*}"
+    local submission job_id
+    if ! submission="$(sbatch "${args[@]}" "${STAGE_SCRIPT}" "${stage}")"; then
+        echo "Failed to submit ${stage} stage for ${RUN_ID}." >&2
+        return 1
+    fi
+    job_id="${submission%%;*}"
+    if [[ ! "${job_id}" =~ ^[0-9]+$ ]]; then
+        echo "Invalid Slurm job ID returned for ${stage}: ${submission}" >&2
+        return 1
+    fi
+    printf '%s\n' "${job_id}"
 }
 
 configure_case() {
@@ -199,25 +208,25 @@ submit_case_chain() {
     printf -v case_two_digit '%02d' "${case_id}"
     local prefix="qccu_s${scenario_index}c012_c${case_two_digit}"
     local replay_job pc_job kr_job
-    replay_job="$(submit_stage replay "${prefix}_r" "${REPLAY_TIME}" "${REPLAY_CPUS}" "${REPLAY_MEM}" "${initial_dependency}")"
-    pc_job="$(submit_stage pc "${prefix}_p" "${PC_TIME}" "${PC_CPUS}" "${PC_MEM}" "${replay_job}")"
+    replay_job="$(submit_stage replay "${prefix}_r" "${REPLAY_TIME}" "${REPLAY_CPUS}" "${REPLAY_MEM}" "${initial_dependency}")" || return 1
+    pc_job="$(submit_stage pc "${prefix}_p" "${PC_TIME}" "${PC_CPUS}" "${PC_MEM}" "${replay_job}")" || return 1
     if [[ "${MODE}" == "smoke" ]]; then
         # Exercise one complete production-size 3D grid. RUN_MODE=full keeps
         # env_case01 from applying its artificial 20x4x20 plumbing crop.
         export RUN_MODE="full"
         export KR_DYN_MAX_ROWS="1"
         export KR_DYN_ALLOW_PARTIAL_REPLAY="1"
-        kr_job="$(submit_stage kr "${prefix}_k" "${KR_TIME}" "${KR_CPUS}" "${KR_MEM}" "${pc_job}")"
+        kr_job="$(submit_stage kr "${prefix}_k" "${KR_TIME}" "${KR_CPUS}" "${KR_MEM}" "${pc_job}")" || return 1
         export RUN_MODE="smoke"
         unset KR_DYN_MAX_ROWS KR_DYN_ALLOW_PARTIAL_REPLAY
     else
-        kr_job="$(submit_stage kr "${prefix}_k" "${KR_TIME}" "${KR_CPUS}" "${KR_MEM}" "${pc_job}")"
+        kr_job="$(submit_stage kr "${prefix}_k" "${KR_TIME}" "${KR_CPUS}" "${KR_MEM}" "${pc_job}")" || return 1
     fi
 
     printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
         "${scenario_index}" "${geology_id}" "${scenario_name}" "${case_id}" \
         "${case_category}" "${RUN_ID}" "${RUN_ROOT}" "${replay_job}" \
-        "${pc_job}" "${kr_job}" "${initial_dependency}" "${EXPECTED_COMMIT}" \
+        "${pc_job}" "${kr_job}" "${QUALIFICATION_GATE_RECORD_ID}" "${EXPECTED_COMMIT}" \
         >> "${SUBMISSION_MANIFEST}"
     echo "Submitted ${geology_id} case ${case_two_digit}: replay=${replay_job}, Pc=${pc_job}, Kr=${kr_job}"
 }
@@ -267,6 +276,19 @@ else
         echo "QUALIFICATION_GATE_JOB_ID is required for the full qualification batch." >&2
         exit 2
     fi
+    gate_state="$(sacct -X -j "${QUALIFICATION_GATE_JOB_ID}" -n -P -o State | head -n 1 | cut -d+ -f1)"
+    case "${gate_state}" in
+        COMPLETED)
+            echo "Qualification gate ${QUALIFICATION_GATE_JOB_ID} already completed; no live dependency is needed."
+            QUALIFICATION_GATE_JOB_ID=""
+            ;;
+        PENDING|RUNNING|CONFIGURING|COMPLETING|RESIZING|SUSPENDED)
+            ;;
+        *)
+            echo "Qualification gate ${QUALIFICATION_GATE_RECORD_ID} is not usable (state=${gate_state:-unknown})." >&2
+            exit 2
+            ;;
+    esac
     while IFS=, read -r scenario_index geology_id scenario_label case_id case_category; do
         [[ "${scenario_index}" == "scenario_index" ]] && continue
         submit_case_chain "${scenario_index}" "${geology_id}" \

@@ -84,6 +84,10 @@ QUALIFICATION_GATE_JOB_ID=<smoke_kr_job_id> \
   bash submit_qualification_batch.sh full
 ```
 
+If the recorded smoke job has already completed successfully, the submitter
+verifies that state with Slurm and treats the gate as satisfied rather than
+asking Slurm to create a dependency on an aged-out job record.
+
 The submission script extracts one compact, hash-recorded 522-row assignment
 table per case, writes all outputs beneath a deterministic scratch run root,
 and records every Slurm dependency in `submission_manifest.csv`. To continue
