@@ -49,7 +49,7 @@ for sectionId = 1:numel(replay.SectionDetails)
     kAcross = double(props.perm(sandUnitMask));
     anisotropy = double(props.permAnisoRatio(sandUnitMask));
     poro = double(props.poro(sandUnitMask));
-    [alpha, ~, ~] = getFaultAngles(faultThrow, double(replay.Dip), ...
+    alpha = parentFaultAngle(faultThrow, double(replay.Dip), ...
         double(props.thick));
     tensor = rotateParentSandTensors(kAcross, anisotropy, alpha);
     unitWeights = parentUnitWeights(section, sandUnitMask, nUnits);
@@ -86,6 +86,16 @@ elseif isfield(props, 'ssfc')
     % PREDICT stores SSFc only for clay-source units; sand entries are NaN.
     sandUnitMask = isnan(props.ssfc);
 end
+end
+
+
+function alpha = parentFaultAngle(faultThrow, dip, thickness)
+% Reproduce getFaultAngles without requiring PREDICT helpers on workers.
+
+gamma = 90 - dip;
+b = thickness ./ sind(dip) + faultThrow .* cotd(dip);
+delta = atand(faultThrow ./ b);
+alpha = 90 - gamma - delta;
 end
 
 
