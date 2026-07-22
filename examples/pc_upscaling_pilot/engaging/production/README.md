@@ -52,3 +52,42 @@ python examples/pc_upscaling_pilot/engaging/production/verify_restartable_manife
 
 On Engaging, also provide the copied input roots to validate every transferred
 file against its SHA-256 inventory.
+
+## Qualification batch
+
+`qualification_cases.csv` defines a controlled 24-case qualification set:
+one `c012` geology from each of the six thickness scenarios, crossed with
+Level 3 cases 01, 03, 04, and 07. The non-thickness geologic controls are held
+fixed so differences across scenarios isolate the thickness architecture.
+
+Each case runs as a restartable three-stage Slurm chain:
+
+```text
+exact PREDICT replay -> invasion-percolation Pc -> dynamic Kr (Swi medoid)
+```
+
+First submit the smoke gate:
+
+```bash
+bash submit_qualification_batch.sh smoke
+```
+
+Then use the printed Kr job ID to hold the full batch until the smoke chain
+finishes successfully:
+
+```bash
+QUALIFICATION_GATE_JOB_ID=<smoke_kr_job_id> \
+  bash submit_qualification_batch.sh full
+```
+
+The submission script extracts one compact, hash-recorded 522-row assignment
+table per case, writes all outputs beneath a deterministic scratch run root,
+and records every Slurm dependency in `submission_manifest.csv`. To continue
+an interrupted batch without deleting valid replay, Pc, or Kr checkpoints,
+resubmit with the same `BATCH_ID` and `RESUME=1`.
+
+Summarize jobs and stage completion markers with:
+
+```bash
+bash summarize_qualification_batch.sh <batch_root>
+```

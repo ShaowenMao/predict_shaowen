@@ -1,0 +1,25 @@
+scenario_index,geology_id,scenario_label,case_id,case_category
+1,s01_c012,low_sand_uniform,1,Independent cases
+1,s01_c012,low_sand_uniform,3,Fault-wide low/high cases
+1,s01_c012,low_sand_uniform,4,Fault-wide low/high cases
+1,s01_c012,low_sand_uniform,7,Grouped low/high cases
+2,s02_c012,medium_sand_uniform,1,Independent cases
+2,s02_c012,medium_sand_uniform,3,Fault-wide low/high cases
+2,s02_c012,medium_sand_uniform,4,Fault-wide low/high cases
+2,s02_c012,medium_sand_uniform,7,Grouped low/high cases
+3,s03_c012,high_sand_uniform,1,Independent cases
+3,s03_c012,high_sand_uniform,3,Fault-wide low/high cases
+3,s03_c012,high_sand_uniform,4,Fault-wide low/high cases
+3,s03_c012,high_sand_uniform,7,Grouped low/high cases
+4,s04_c012,low_sand_nonuniform,1,Independent cases
+4,s04_c012,low_sand_nonuniform,3,Fault-wide low/high cases
+4,s04_c012,low_sand_nonuniform,4,Fault-wide low/high cases
+4,s04_c012,low_sand_nonuniform,7,Grouped low/high cases
+5,s05_c012,medium_sand_nonuniform,1,Independent cases
+5,s05_c012,medium_sand_nonuniform,3,Fault-wide low/high cases
+5,s05_c012,medium_sand_nonuniform,4,Fault-wide low/high cases
+5,s05_c012,medium_sand_nonuniform,7,Grouped low/high cases
+6,s06_c012,high_sand_nonuniform,1,Independent cases
+6,s06_c012,high_sand_nonuniform,3,Fault-wide low/high cases
+6,s06_c012,high_sand_nonuniform,4,Fault-wide low/high cases
+6,s06_c012,high_sand_nonuniform,7,Grouped low/high cases
