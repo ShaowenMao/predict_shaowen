@@ -38,7 +38,7 @@ QUALIFICATION_GATE_JOB_ID="${QUALIFICATION_GATE_JOB_ID:-}"
 RESUME="${RESUME:-0}"
 
 if [[ "${MODE}" == "smoke" ]]; then
-    BATCH_ID="${BATCH_ID:-qualification_ccu_20260722_v2_smoke_gate}"
+    BATCH_ID="${BATCH_ID:-qualification_ccu_20260722_v2_fullgrid_smoke_gate}"
     REPLAY_TIME="${REPLAY_TIME:-00:30:00}"
     REPLAY_CPUS="${REPLAY_CPUS:-1}"
     REPLAY_MEM="${REPLAY_MEM:-8G}"
@@ -49,7 +49,7 @@ if [[ "${MODE}" == "smoke" ]]; then
     KR_CPUS="${KR_CPUS:-2}"
     KR_MEM="${KR_MEM:-16G}"
 else
-    BATCH_ID="${BATCH_ID:-qualification_ccu_20260722_v2_full}"
+    BATCH_ID="${BATCH_ID:-qualification_ccu_20260722_v2_fullgrid}"
     REPLAY_TIME="${REPLAY_TIME:-03:00:00}"
     REPLAY_CPUS="${REPLAY_CPUS:-1}"
     REPLAY_MEM="${REPLAY_MEM:-16G}"
@@ -196,7 +196,18 @@ submit_case_chain() {
     local replay_job pc_job kr_job
     replay_job="$(submit_stage replay "${prefix}_r" "${REPLAY_TIME}" "${REPLAY_CPUS}" "${REPLAY_MEM}" "${initial_dependency}")"
     pc_job="$(submit_stage pc "${prefix}_p" "${PC_TIME}" "${PC_CPUS}" "${PC_MEM}" "${replay_job}")"
-    kr_job="$(submit_stage kr "${prefix}_k" "${KR_TIME}" "${KR_CPUS}" "${KR_MEM}" "${pc_job}")"
+    if [[ "${MODE}" == "smoke" ]]; then
+        # Exercise one complete production-size 3D grid. RUN_MODE=full keeps
+        # env_case01 from applying its artificial 20x4x20 plumbing crop.
+        export RUN_MODE="full"
+        export KR_DYN_MAX_ROWS="1"
+        export KR_DYN_ALLOW_PARTIAL_REPLAY="1"
+        kr_job="$(submit_stage kr "${prefix}_k" "${KR_TIME}" "${KR_CPUS}" "${KR_MEM}" "${pc_job}")"
+        export RUN_MODE="smoke"
+        unset KR_DYN_MAX_ROWS KR_DYN_ALLOW_PARTIAL_REPLAY
+    else
+        kr_job="$(submit_stage kr "${prefix}_k" "${KR_TIME}" "${KR_CPUS}" "${KR_MEM}" "${pc_job}")"
+    fi
 
     printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
         "${scenario_index}" "${geology_id}" "${scenario_name}" "${case_id}" \

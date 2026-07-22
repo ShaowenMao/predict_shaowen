@@ -66,6 +66,10 @@ Each case runs as a restartable three-stage Slurm chain:
 exact PREDICT replay -> invasion-percolation Pc -> dynamic Kr (Swi medoid)
 ```
 
+The smoke replay/Pc stages use one slice across all six windows. Its Kr stage
+uses one representative curve on the complete production-size 3D grid; it
+does not use the artificial cropped-grid plumbing mode.
+
 First submit the smoke gate:
 
 ```bash
