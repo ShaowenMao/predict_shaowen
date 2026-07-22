@@ -395,7 +395,10 @@ for i = 2:(numel(pattern) + 1)
         ids = startIdx:(i - 1);
         collapsedPattern(end+1) = pattern(startIdx); %#ok<AGROW>
         collapsedThick(end+1) = sum(thick(ids)); %#ok<AGROW>
-        collapsedZmax(end+1) = zmax(ids(end)); %#ok<AGROW>
+        % Match the production collapsed-input driver exactly: burial depth
+        % is the thickness-weighted mean of the merged parent layers.
+        collapsedZmax(end+1) = ...
+            sum(zmax(ids) .* thick(ids)) ./ sum(thick(ids)); %#ok<AGROW>
         startIdx = i;
     end
 end

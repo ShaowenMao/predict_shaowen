@@ -9,7 +9,9 @@ require_checkpoint_metadata_match = true
 [replay]
 require_exact_seed = true
 require_permeability_match = true
-log10_permeability_tolerance = 1.0e-8
+# This permits only cross-MATLAB/MRST floating-point solver noise. A
+# 1e-6 log10 difference is about a 2.3e-6 relative permeability difference.
+log10_permeability_tolerance = 1.0e-6
 preserve_full_3d_grid = true
 allow_strike_collapse = false
 
@@ -35,4 +37,3 @@ include_permeability_md = true
 include_permeability_m2 = true
 include_porosity = true
 validate_saturation_regions = true
-
