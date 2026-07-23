@@ -15,6 +15,8 @@ CHECKPOINT_OUTPUT_ROOT="${CHECKPOINT_OUTPUT_ROOT:?CHECKPOINT_OUTPUT_ROOT is requ
 CASE_INPUT_ROOT="${CASE_INPUT_ROOT:?CASE_INPUT_ROOT is required}"
 WORK_CSV="${CASE_WORK_ROOT}/geology_work.csv"
 
+module load deprecated-modules gcc/12.2.0-x86_64 python/3.10.8-x86_64
+
 record="$(
     python3 - "${WORK_CSV}" "${WORK_INDEX}" <<'PY'
 import csv

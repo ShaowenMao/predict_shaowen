@@ -26,6 +26,9 @@ METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256:-21266acc83f38d374cdc966d8243834e92
 REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-1.0e-3}"
 WORK_CSV="${CASE_WORK_ROOT}/case_work.csv"
 
+module load deprecated-modules gcc/12.2.0-x86_64 \
+    python/3.10.8-x86_64 matlab/matlab-2025b
+
 record="$(awk -F, -v row="$((WORK_INDEX + 1))" 'NR == row {print; exit}' "${WORK_CSV}")"
 if [[ -z "${record}" ]]; then
     echo "No case work item at index ${WORK_INDEX}" >&2
@@ -82,8 +85,6 @@ cleanup() {
     exit "${status}"
 }
 trap cleanup EXIT
-
-module load matlab/matlab-2025b
 
 echo "geology_id=${geology_id}"
 echo "case_id=${case_two_digit}"

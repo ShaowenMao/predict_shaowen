@@ -24,6 +24,9 @@ PHYSICS_COMMIT="${PHYSICS_COMMIT:-68351e35f3679317b35532a9ca0533674e0aafb5}"
 METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256:-21266acc83f38d374cdc966d8243834e92b786b75ab1f90dd0a99f4244717a8f}"
 REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-1.0e-3}"
 
+module load deprecated-modules gcc/12.2.0-x86_64 \
+    python/3.10.8-x86_64 matlab/matlab-2025b
+
 GROUPS_CSV="${CHECKPOINT_MANIFEST_ROOT}/checkpoint_groups.csv"
 [[ -f "${GROUPS_CSV}" ]] || {
     echo "Missing checkpoint group manifest: ${GROUPS_CSV}" >&2
@@ -93,8 +96,6 @@ cleanup() {
     exit "${status}"
 }
 trap cleanup EXIT
-
-module load matlab/matlab-2025b
 
 echo "group_id=${group_id}"
 echo "geology_id=${geology_id}"
