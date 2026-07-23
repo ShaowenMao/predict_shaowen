@@ -29,12 +29,39 @@ WORK_CSV="${CASE_WORK_ROOT}/case_work.csv"
 module load deprecated-modules gcc/12.2.0-x86_64 \
     python/3.10.8-x86_64 matlab/matlab-2025b
 
-record="$(awk -F, -v row="$((WORK_INDEX + 1))" 'NR == row {print; exit}' "${WORK_CSV}")"
+record="$(
+    python3 - "${WORK_CSV}" "${WORK_INDEX}" <<'PY'
+import csv
+import sys
+
+work_csv = sys.argv[1]
+work_index = int(sys.argv[2])
+with open(work_csv, newline="", encoding="utf-8-sig") as stream:
+    rows = list(csv.DictReader(stream))
+if work_index < 1 or work_index > len(rows):
+    raise SystemExit(0)
+row = rows[work_index - 1]
+fields = [
+    "case_work_index",
+    "geology_id",
+    "scenario_index",
+    "scenario_label",
+    "case_id",
+    "case_name",
+    "case_category",
+    "case_relative_path",
+]
+values = [row[field] for field in fields]
+if any("\t" in value or "\n" in value for value in values):
+    raise SystemExit("Manifest fields must not contain tabs or newlines")
+print("\t".join(values))
+PY
+)"
 if [[ -z "${record}" ]]; then
     echo "No case work item at index ${WORK_INDEX}" >&2
     exit 2
 fi
-IFS=, read -r manifest_index geology_id scenario_index scenario_label case_id \
+IFS=$'\t' read -r manifest_index geology_id scenario_index scenario_label case_id \
     case_name case_category case_relative_path <<< "${record}"
 if [[ "${manifest_index}" != "${WORK_INDEX}" ]]; then
     echo "Manifest index mismatch: ${manifest_index} != ${WORK_INDEX}" >&2

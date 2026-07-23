@@ -33,12 +33,43 @@ GROUPS_CSV="${CHECKPOINT_MANIFEST_ROOT}/checkpoint_groups.csv"
     exit 2
 }
 
-record="$(awk -F, -v row="$((GROUP_INDEX + 1))" 'NR == row {print; exit}' "${GROUPS_CSV}")"
+record="$(
+    python3 - "${GROUPS_CSV}" "${GROUP_INDEX}" <<'PY'
+import csv
+import sys
+
+groups_csv = sys.argv[1]
+group_index = int(sys.argv[2])
+with open(groups_csv, newline="", encoding="utf-8-sig") as stream:
+    rows = list(csv.DictReader(stream))
+if group_index < 1 or group_index > len(rows):
+    raise SystemExit(0)
+row = rows[group_index - 1]
+fields = [
+    "group_index",
+    "group_id",
+    "geology_id",
+    "scenario_index",
+    "window",
+    "checkpoint_relative_path",
+    "checkpoint_sha256",
+    "task_count",
+    "usage_count",
+    "selection_relative_path",
+    "output_relative_path",
+    "done_marker_relative_path",
+]
+values = [row[field] for field in fields]
+if any("\t" in value or "\n" in value for value in values):
+    raise SystemExit("Manifest fields must not contain tabs or newlines")
+print("\t".join(values))
+PY
+)"
 if [[ -z "${record}" ]]; then
     echo "No checkpoint group at index ${GROUP_INDEX}" >&2
     exit 2
 fi
-IFS=, read -r manifest_index group_id geology_id scenario_index window_name \
+IFS=$'\t' read -r manifest_index group_id geology_id scenario_index window_name \
     checkpoint_relative_path checkpoint_sha256 task_count usage_count \
     selection_relative_path output_relative_path done_relative_path <<< "${record}"
 if [[ "${manifest_index}" != "${GROUP_INDEX}" ]]; then
