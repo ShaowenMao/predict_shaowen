@@ -9,11 +9,11 @@ placement or uncollapsed stratigraphy) from entering the production workflow.
 from __future__ import annotations
 
 import argparse
+import ast
 import csv
 import hashlib
 import json
 import sys
-import tomllib
 from pathlib import Path
 
 
@@ -68,9 +68,44 @@ def checkpoint_root_name(path_text: str) -> str:
     return normalized.split(marker, 1)[0].rstrip("/").rsplit("/", 1)[-1]
 
 
+def load_simple_toml(config_path: Path) -> dict:
+    """Parse the scalar/list subset used by production_method_config.toml."""
+
+    config: dict[str, dict[str, object]] = {"": {}}
+    section = ""
+    for line_number, raw_line in enumerate(
+        config_path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            section = line[1:-1].strip()
+            if not section:
+                raise ValueError(f"Empty TOML section at line {line_number}")
+            config.setdefault(section, {})
+            continue
+        if "=" not in line:
+            raise ValueError(f"Unsupported TOML syntax at line {line_number}: {line}")
+        key, raw_value = (part.strip() for part in line.split("=", 1))
+        lowered = raw_value.lower()
+        if lowered == "true":
+            value: object = True
+        elif lowered == "false":
+            value = False
+        else:
+            try:
+                value = ast.literal_eval(raw_value)
+            except (SyntaxError, ValueError) as error:
+                raise ValueError(
+                    f"Unsupported TOML value at line {line_number}: {raw_value}"
+                ) from error
+        config.setdefault(section, {})[key] = value
+    return config
+
+
 def verify_method_config(config_path: Path) -> dict:
-    with config_path.open("rb") as stream:
-        config = tomllib.load(stream)
+    config = load_simple_toml(config_path)
 
     required = {
         ("predict", "input_variant"): "collapsed_adjacent_lithology",
