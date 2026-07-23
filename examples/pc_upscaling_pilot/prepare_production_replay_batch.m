@@ -5,9 +5,10 @@ function contextCsv = prepare_production_replay_batch( ...
 %
 % CONTEXTCSV = PREPARE_PRODUCTION_REPLAY_BATCH(SELECTIONCSV, OUTPUTROOT,
 % DATAROOT, PREDICTCODEROOT, MRSTROOT, TOLERANCE) replays every unique
-% PREDICT realization in a checkpoint-centered selection table, enforces
-% exact permeability verification, and writes the context table consumed
-% by the unchanged invasion-percolation Pc driver.
+% PREDICT realization in either a checkpoint-centered selection table or a
+% six-window representative selection table, enforces exact permeability
+% verification, and writes the context table consumed by the unchanged
+% Pc/Kr drivers.
 %
 % Fine-scale replay MAT files are intentionally written beneath OUTPUTROOT.
 % The Engaging checkpoint worker deletes that temporary directory only after
@@ -69,9 +70,17 @@ assert(numel(unique(selection.task_id)) == height(selection), ...
 assert(numel(unique(selection.geology_id)) == 1, ...
     'ProductionReplay:MixedGeology', ...
     'One checkpoint batch must contain exactly one geology.');
-assert(numel(unique(lower(selection.window))) == 1, ...
-    'ProductionReplay:MixedWindow', ...
-    'One checkpoint batch must contain exactly one window.');
+windowNames = lower(string(selection.window));
+uniqueWindows = unique(windowNames);
+expectedWindows = "famp" + (1:6)';
+isCheckpointBatch = numel(uniqueWindows) == 1;
+isRepresentativeBatch = height(selection) == 6 && ...
+    isequal(sort(uniqueWindows), expectedWindows) && ...
+    all(groupcounts(categorical(windowNames)) == 1);
+assert(isCheckpointBatch || isRepresentativeBatch, ...
+    'ProductionReplay:InvalidWindowCoverage', ...
+    ['A production replay batch must contain either one checkpoint window ', ...
+     'or exactly one representative from each of famp1-famp6.']);
 assert(numel(unique(str2double(selection.case_id))) == 1, ...
     'ProductionReplay:MixedLevel3Case', ...
     'One production replay batch must contain exactly one Level-3 case ID.');
@@ -81,10 +90,17 @@ tableDir = fullfile(outputRoot, 'tables');
 ensureFolder(replayDir);
 ensureFolder(tableDir);
 
-fprintf('\n=== Replay checkpoint-centered production batch ===\n');
+if isCheckpointBatch
+    batchLabel = "checkpoint-centered";
+    windowLabel = uniqueWindows;
+else
+    batchLabel = "six-window representative";
+    windowLabel = strjoin(sort(uniqueWindows), ',');
+end
+fprintf('\n=== Replay %s production batch ===\n', batchLabel);
 fprintf('Selection: %s\n', selectionCsv);
 fprintf('Tasks: %d | geology: %s | window: %s\n', ...
-    height(selection), selection.geology_id(1), selection.window(1));
+    height(selection), selection.geology_id(1), windowLabel);
 
 summary = replay_selected_predict_realizations( ...
     selectionCsv, replayDir, ...
