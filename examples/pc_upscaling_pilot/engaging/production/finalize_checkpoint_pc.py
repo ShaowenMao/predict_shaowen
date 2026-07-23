@@ -133,7 +133,8 @@ def validate_summary(
             raise ValueError(f"Invalid EffectiveSwi for {task_id}: {effective_swi}")
         if abs(effective_swi - (1.0 - bulk_sg_max)) > 1.0e-8:
             raise ValueError(f"Pc endpoint mismatch for {task_id}")
-        if not 0.0 < pc_min <= pc_max:
+        # Native invasion-percolation tables include a zero-pressure origin.
+        if not 0.0 <= pc_min < pc_max:
             raise ValueError(f"Invalid Pc range for {task_id}: {pc_min}, {pc_max}")
     if seen != expected_tasks:
         raise ValueError("Pc summary task coverage does not match selection")
