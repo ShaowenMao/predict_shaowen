@@ -15,12 +15,39 @@ CHECKPOINT_OUTPUT_ROOT="${CHECKPOINT_OUTPUT_ROOT:?CHECKPOINT_OUTPUT_ROOT is requ
 CASE_INPUT_ROOT="${CASE_INPUT_ROOT:?CASE_INPUT_ROOT is required}"
 WORK_CSV="${CASE_WORK_ROOT}/geology_work.csv"
 
-record="$(awk -F, -v row="$((WORK_INDEX + 1))" 'NR == row {print; exit}' "${WORK_CSV}")"
+record="$(
+    python3 - "${WORK_CSV}" "${WORK_INDEX}" <<'PY'
+import csv
+import sys
+
+work_csv = sys.argv[1]
+work_index = int(sys.argv[2])
+with open(work_csv, newline="", encoding="utf-8-sig") as stream:
+    rows = list(csv.DictReader(stream))
+if work_index < 1 or work_index > len(rows):
+    raise SystemExit(0)
+row = rows[work_index - 1]
+fields = [
+    "geology_work_index",
+    "geology_id",
+    "scenario_index",
+    "scenario_label",
+    "case_ids",
+    "assignment_count",
+    "assignment_relative_path",
+    "assignment_sha256",
+]
+values = [row[field] for field in fields]
+if any("\t" in value or "\n" in value for value in values):
+    raise SystemExit("Manifest fields must not contain tabs or newlines")
+print("\t".join(values))
+PY
+)"
 if [[ -z "${record}" ]]; then
     echo "No geology work item at index ${WORK_INDEX}" >&2
     exit 2
 fi
-IFS=, read -r manifest_index geology_id scenario_index scenario_label case_ids \
+IFS=$'\t' read -r manifest_index geology_id scenario_index scenario_label case_ids \
     assignment_count assignment_relative_path assignment_sha256 <<< "${record}"
 if [[ "${manifest_index}" != "${WORK_INDEX}" ]]; then
     echo "Manifest index mismatch: ${manifest_index} != ${WORK_INDEX}" >&2
