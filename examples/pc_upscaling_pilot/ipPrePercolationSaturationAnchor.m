@@ -11,5 +11,10 @@ validateattributes(firstConnectedSg, {'numeric'}, ...
     {'real', 'finite', 'scalar', 'positive'}, mfilename, ...
     'firstConnectedSg');
 
-anchorSg = min(1.0e-5, 0.5 .* double(firstConnectedSg));
+legacyAnchorSg = 1.0e-5;
+if firstConnectedSg > legacyAnchorSg
+    anchorSg = legacyAnchorSg;
+else
+    anchorSg = 0.5 .* double(firstConnectedSg);
+end
 end
