@@ -19,6 +19,7 @@ PHYSICS_COMMIT="${PHYSICS_COMMIT:-68351e35f3679317b35532a9ca0533674e0aafb5}"
 METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256:-21266acc83f38d374cdc966d8243834e92b786b75ab1f90dd0a99f4244717a8f}"
 PROJECT_DATA_ROOT="${PROJECT_DATA_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen}"
 SCRATCH_ROOT="${SCRATCH_ROOT:-/home/shaowen/orcd/scratch/predict_shaowen}"
+SLURM_QOS="${SLURM_QOS:-mit_amf_advanced_cpu}"
 
 if [[ "${MODE}" == "qualification60" ]]; then
     RUN_ID="${RUN_ID:-production_qualification60_20260723_v1}"
@@ -87,12 +88,14 @@ checkpoint_manifest_root=${CHECKPOINT_MANIFEST_ROOT}
 compact_output_root=${COMPACT_OUTPUT_ROOT}
 group_count=${GROUP_COUNT}
 max_concurrent=${MAX_CONCURRENT}
+slurm_qos=${SLURM_QOS}
 EOF
 
 submission="$(
     sbatch \
         --parsable \
         --account=mit_amf_advanced_cpu \
+        --qos="${SLURM_QOS}" \
         --partition=mit_normal \
         --job-name="rpc_${RUN_ID}" \
         --time="${CHECKPOINT_WALLTIME:-04:00:00}" \

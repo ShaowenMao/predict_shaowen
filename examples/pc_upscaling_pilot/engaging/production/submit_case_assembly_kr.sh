@@ -14,6 +14,7 @@ RUNTIME_REPO="${RUNTIME_REPO:-/home/shaowen/orcd/pool/predict_shaowen}"
 FREEZE_ROOT="${FREEZE_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen/production_freezes/collapsed_cell_union_20260722_v7}"
 PROJECT_DATA_ROOT="${PROJECT_DATA_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen}"
 SCRATCH_ROOT="${SCRATCH_ROOT:-/home/shaowen/orcd/scratch/predict_shaowen}"
+SLURM_QOS="${SLURM_QOS:-mit_amf_advanced_cpu}"
 
 if [[ "${MODE}" == "qualification60" ]]; then
     RUN_ID="${RUN_ID:-production_qualification60_20260723_v1}"
@@ -87,6 +88,7 @@ assembly_submission="$(
     sbatch \
         --parsable \
         --account=mit_amf_advanced_cpu \
+        --qos="${SLURM_QOS}" \
         --partition=mit_normal \
         --job-name="asm_${RUN_ID}" \
         --time="${ASSEMBLY_WALLTIME:-02:00:00}" \
@@ -105,6 +107,7 @@ kr_submission="$(
     sbatch \
         --parsable \
         --account=mit_amf_advanced_cpu \
+        --qos="${SLURM_QOS}" \
         --partition=mit_normal \
         --job-name="kr_${RUN_ID}" \
         --time="${KR_WALLTIME:-08:00:00}" \
@@ -130,6 +133,7 @@ geology_count=${GEOLOGY_COUNT}
 case_count=${CASE_COUNT}
 kr_max_concurrent=${KR_MAX_CONCURRENT}
 replay_tolerance_log10=${REPLAY_TOLERANCE_LOG10}
+slurm_qos=${SLURM_QOS}
 EOF
 echo "${ASSEMBLY_JOB_ID}" > "${RUN_ROOT}/assembly_array_job_id.txt"
 echo "${KR_JOB_ID}" > "${RUN_ROOT}/kr_array_job_id.txt"
