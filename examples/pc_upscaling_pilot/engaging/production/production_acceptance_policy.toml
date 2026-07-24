@@ -1,0 +1,45 @@
+schema_version = 1
+policy_name = "collapsed_cell_union_full_production_v1"
+
+[science]
+physics_commit = "68351e35f3679317b35532a9ca0533674e0aafb5"
+method_config_sha256 = "21266acc83f38d374cdc966d8243834e92b786b75ab1f90dd0a99f4244717a8f"
+smear_overlap_rule = "cell_union_psmear"
+collapse_adjacent_lithology = true
+strike_collapse_allowed = false
+
+[replay]
+tolerance_log10 = 0.005
+require_exact_seed = true
+require_selected_sample_index = true
+require_checkpoint_sha256 = true
+
+[pc]
+method = "invasion_percolation"
+assignment_count_per_case = 522
+required_representations = ["full_slice", "pe_branch_medoid"]
+
+[kr]
+method = "dynamic"
+selection_mode = "swi_medoid"
+representative_count_per_case = 6
+linear_solver = "amgcl_require"
+require_monotonic_curves = true
+require_physical_bounds = true
+
+[qualification]
+report = "/orcd/data/juanes/001/shaowen/predict_shaowen/production_runs/production_qualification60_20260723_v1/case_completion_gate.json"
+required_status = "complete"
+required_case_count = 60
+required_error_count = 0
+
+[slurm]
+account = "mit_amf_advanced_cpu"
+qos = "mit_amf_advanced_cpu"
+partition = "mit_normal"
+checkpoint_max_concurrent = 96
+checkpoint_cpus_per_task = 1
+checkpoint_memory_gb = 16
+case_max_concurrent = 24
+case_cpus_per_task = 6
+case_memory_gb = 48

@@ -69,7 +69,24 @@ print(data["geology_count"], data["case_count"])
 PY
 )
 
-checkpoint_state="$(sacct -X -j "${CHECKPOINT_JOB_ID}" -n -P -o State | head -n 1 | cut -d+ -f1)"
+checkpoint_state=""
+for _ in $(seq 1 10); do
+    checkpoint_state="$(
+        sacct -X -j "${CHECKPOINT_JOB_ID}" -n -P -o State \
+            | head -n 1 \
+            | cut -d+ -f1
+    )"
+    if [[ -n "${checkpoint_state}" ]]; then
+        break
+    fi
+    checkpoint_state="$(
+        squeue -h -j "${CHECKPOINT_JOB_ID}" -o "%T" | head -n 1
+    )"
+    if [[ -n "${checkpoint_state}" ]]; then
+        break
+    fi
+    sleep 1
+done
 dependency=()
 case "${checkpoint_state}" in
     COMPLETED)

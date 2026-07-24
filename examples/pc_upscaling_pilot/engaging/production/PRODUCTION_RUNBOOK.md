@@ -44,6 +44,36 @@ Slurm logs are written to flash scratch:
 /home/shaowen/orcd/scratch/predict_shaowen/production_logs/<run_id>/
 ```
 
+## Controlled Full-Production Launch
+
+Use the integrated launcher for the accepted 162-geology, 1,620-case
+production run. It verifies the frozen input counts and completed
+qualification report before submitting any work:
+
+```bash
+RUN_ID=production_all1620_20260724_v1 \
+RUNTIME_REPO=/path/to/immutable/runtime_repo \
+ORCHESTRATION_COMMIT=<runtime-commit> \
+bash /path/to/immutable/runtime_repo/examples/pc_upscaling_pilot/engaging/production/submit_full_production_chain.sh plan
+
+RUN_ID=production_all1620_20260724_v1 \
+RUNTIME_REPO=/path/to/immutable/runtime_repo \
+ORCHESTRATION_COMMIT=<runtime-commit> \
+bash /path/to/immutable/runtime_repo/examples/pc_upscaling_pilot/engaging/production/submit_full_production_chain.sh submit
+```
+
+The accepted settings are recorded in
+`production_acceptance_policy.toml`. The launcher submits the complete
+restartable dependency chain:
+
+```text
+checkpoint replay/Pc -> strict checkpoint gate -> case assembly
+                     -> dynamic Kr -> final case QA gate
+```
+
+It also writes `production_launch_manifest.json`, containing immutable input
+hashes, method provenance, resource settings, and all Slurm job IDs.
+
 ## Phase 1: Checkpoint-Centered Replay and Pc
 
 Qualification tranche:
@@ -130,7 +160,7 @@ python3 examples/pc_upscaling_pilot/engaging/production/summarize_production_sta
 1. One real checkpoint job must match trusted qualification results.
 2. The 60-case tranche must complete all ten case types in all six thickness
    scenarios.
-3. One complete 27-geology thickness scenario must pass before launching the
-   remaining five scenarios.
-4. Full production starts only after replay, Pc, Kr, storage, and restart
-   diagnostics from the preceding gate are reviewed.
+3. Replay, Pc, Kr, storage, and restart diagnostics from the qualification
+   tranche must pass the final case-completion gate.
+4. Full production must use the immutable accepted policy and integrated
+   dependency-gated launcher.
