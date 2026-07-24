@@ -25,12 +25,14 @@ def read_csv_count(path: Path) -> int:
         return sum(1 for _ in csv.DictReader(stream))
 
 
-def marker_status(paths: list[Path], expected_identity: str) -> Counter:
+def marker_status(
+    paths: list[Path], expected_identity: str, expected_status: str
+) -> Counter:
     counts: Counter = Counter()
     for path in paths:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-            if data.get("status") != "complete":
+            if data.get("status") != expected_status:
                 counts["invalid_status"] += 1
             elif expected_identity not in data:
                 counts["missing_identity"] += 1
@@ -70,18 +72,18 @@ def main() -> int:
         "checkpoint": {
             "expected": checkpoint_expected,
             "markers_found": len(checkpoint_markers),
-            "status": marker_status(checkpoint_markers, "group_id"),
+            "status": marker_status(checkpoint_markers, "group_id", "complete"),
         },
         "case_inputs": {
             "expected_geologies": geology_expected,
             "expected_cases": case_expected,
             "markers_found": len(case_input_markers),
-            "status": marker_status(case_input_markers, "case_id"),
+            "status": marker_status(case_input_markers, "case_id", "assembled"),
         },
         "case_results": {
             "expected": case_expected,
             "markers_found": len(case_result_markers),
-            "status": marker_status(case_result_markers, "case_id"),
+            "status": marker_status(case_result_markers, "case_id", "complete"),
         },
     }
     output_path = args.output_json or run_root / "production_status.json"

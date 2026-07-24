@@ -34,6 +34,7 @@ LOG_ROOT="${LOG_ROOT:-${SCRATCH_ROOT}/production_logs/${RUN_ID}}"
 SAMPLING_CSV="${FREEZE_ROOT}/inputs/sampling/texas_field_slice_window_values.csv"
 ASSIGNMENT_CSV="${FREEZE_ROOT}/manifests/assignment_to_task.csv"
 CHECKPOINT_JOB_ID="${CHECKPOINT_JOB_ID:-}"
+REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-1.0e-3}"
 
 if [[ -z "${CHECKPOINT_JOB_ID}" && -f "${RUN_ROOT}/checkpoint_array_job_id.txt" ]]; then
     CHECKPOINT_JOB_ID="$(<"${RUN_ROOT}/checkpoint_array_job_id.txt")"
@@ -113,7 +114,7 @@ kr_submission="$(
         --dependency="afterok:${ASSEMBLY_JOB_ID}" \
         --output="${LOG_ROOT}/kr/%x_%A_%a.out" \
         --error="${LOG_ROOT}/kr/%x_%A_%a.err" \
-        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",FREEZE_ROOT="${FREEZE_ROOT}",CASE_WORK_ROOT="${CASE_WORK_ROOT}",CASE_INPUT_ROOT="${CASE_INPUT_ROOT}",CASE_RESULT_ROOT="${CASE_RESULT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}" \
+        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",FREEZE_ROOT="${FREEZE_ROOT}",CASE_WORK_ROOT="${CASE_WORK_ROOT}",CASE_INPUT_ROOT="${CASE_INPUT_ROOT}",CASE_RESULT_ROOT="${CASE_RESULT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}" \
         "${RUNTIME_REPO}/examples/pc_upscaling_pilot/engaging/production/run_case_dynamic_kr.sh"
 )"
 KR_JOB_ID="${kr_submission%%;*}"
@@ -128,6 +129,7 @@ kr_job_id=${KR_JOB_ID}
 geology_count=${GEOLOGY_COUNT}
 case_count=${CASE_COUNT}
 kr_max_concurrent=${KR_MAX_CONCURRENT}
+replay_tolerance_log10=${REPLAY_TOLERANCE_LOG10}
 EOF
 echo "${ASSEMBLY_JOB_ID}" > "${RUN_ROOT}/assembly_array_job_id.txt"
 echo "${KR_JOB_ID}" > "${RUN_ROOT}/kr_array_job_id.txt"
