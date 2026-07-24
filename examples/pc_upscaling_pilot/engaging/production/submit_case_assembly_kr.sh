@@ -20,10 +20,18 @@ if [[ "${MODE}" == "qualification60" ]]; then
     RUN_ID="${RUN_ID:-production_qualification60_20260723_v1}"
     CASE_FILTER="${CASE_FILTER:-${SCRIPT_DIR}/production_qualification_60_cases.csv}"
     KR_MAX_CONCURRENT="${KR_MAX_CONCURRENT:-12}"
+    GEOLOGIES_PER_ARRAY_TASK="${GEOLOGIES_PER_ARRAY_TASK:-1}"
+    CASES_PER_ARRAY_TASK="${CASES_PER_ARRAY_TASK:-1}"
+    ASSEMBLY_WALLTIME_DEFAULT="02:00:00"
+    KR_WALLTIME_DEFAULT="08:00:00"
 else
     RUN_ID="${RUN_ID:-production_all1620_20260723_v1}"
     CASE_FILTER=""
     KR_MAX_CONCURRENT="${KR_MAX_CONCURRENT:-24}"
+    GEOLOGIES_PER_ARRAY_TASK="${GEOLOGIES_PER_ARRAY_TASK:-6}"
+    CASES_PER_ARRAY_TASK="${CASES_PER_ARRAY_TASK:-10}"
+    ASSEMBLY_WALLTIME_DEFAULT="04:00:00"
+    KR_WALLTIME_DEFAULT="12:00:00"
 fi
 
 RUN_ROOT="${RUN_ROOT:-${PROJECT_DATA_ROOT}/production_runs/${RUN_ID}}"
@@ -68,6 +76,12 @@ data = json.load(open(sys.argv[1], encoding="utf-8"))
 print(data["geology_count"], data["case_count"])
 PY
 )
+if [[ "${GEOLOGIES_PER_ARRAY_TASK}" -le 0 || "${CASES_PER_ARRAY_TASK}" -le 0 ]]; then
+    echo "Array-task chunk sizes must be positive." >&2
+    exit 2
+fi
+ASSEMBLY_ARRAY_TASK_COUNT=$(( (GEOLOGY_COUNT + GEOLOGIES_PER_ARRAY_TASK - 1) / GEOLOGIES_PER_ARRAY_TASK ))
+KR_ARRAY_TASK_COUNT=$(( (CASE_COUNT + CASES_PER_ARRAY_TASK - 1) / CASES_PER_ARRAY_TASK ))
 
 checkpoint_state=""
 for _ in $(seq 1 10); do
@@ -108,15 +122,15 @@ assembly_submission="$(
         --qos="${SLURM_QOS}" \
         --partition=mit_normal \
         --job-name="asm_${RUN_ID}" \
-        --time="${ASSEMBLY_WALLTIME:-02:00:00}" \
+        --time="${ASSEMBLY_WALLTIME:-${ASSEMBLY_WALLTIME_DEFAULT}}" \
         --cpus-per-task=1 \
         --mem="${ASSEMBLY_MEMORY:-16G}" \
-        --array="1-${GEOLOGY_COUNT}%${ASSEMBLY_MAX_CONCURRENT:-12}" \
+        --array="1-${ASSEMBLY_ARRAY_TASK_COUNT}%${ASSEMBLY_MAX_CONCURRENT:-12}" \
         --output="${LOG_ROOT}/assembly/%x_%A_%a.out" \
         --error="${LOG_ROOT}/assembly/%x_%A_%a.err" \
         "${dependency[@]}" \
-        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",CASE_WORK_ROOT="${CASE_WORK_ROOT}",CHECKPOINT_OUTPUT_ROOT="${CHECKPOINT_OUTPUT_ROOT}",CASE_INPUT_ROOT="${CASE_INPUT_ROOT}" \
-        "${RUNTIME_REPO}/examples/pc_upscaling_pilot/engaging/production/run_assemble_geology_cases.sh"
+        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",CASE_WORK_ROOT="${CASE_WORK_ROOT}",CHECKPOINT_OUTPUT_ROOT="${CHECKPOINT_OUTPUT_ROOT}",CASE_INPUT_ROOT="${CASE_INPUT_ROOT}",GEOLOGY_COUNT="${GEOLOGY_COUNT}",GEOLOGIES_PER_ARRAY_TASK="${GEOLOGIES_PER_ARRAY_TASK}" \
+        "${RUNTIME_REPO}/examples/pc_upscaling_pilot/engaging/production/run_assemble_geology_cases_chunk.sh"
 )"
 ASSEMBLY_JOB_ID="${assembly_submission%%;*}"
 
@@ -127,15 +141,15 @@ kr_submission="$(
         --qos="${SLURM_QOS}" \
         --partition=mit_normal \
         --job-name="kr_${RUN_ID}" \
-        --time="${KR_WALLTIME:-08:00:00}" \
+        --time="${KR_WALLTIME:-${KR_WALLTIME_DEFAULT}}" \
         --cpus-per-task=6 \
         --mem="${KR_MEMORY:-48G}" \
-        --array="1-${CASE_COUNT}%${KR_MAX_CONCURRENT}" \
+        --array="1-${KR_ARRAY_TASK_COUNT}%${KR_MAX_CONCURRENT}" \
         --dependency="afterok:${ASSEMBLY_JOB_ID}" \
         --output="${LOG_ROOT}/kr/%x_%A_%a.out" \
         --error="${LOG_ROOT}/kr/%x_%A_%a.err" \
-        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",FREEZE_ROOT="${FREEZE_ROOT}",CASE_WORK_ROOT="${CASE_WORK_ROOT}",CASE_INPUT_ROOT="${CASE_INPUT_ROOT}",CASE_RESULT_ROOT="${CASE_RESULT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}" \
-        "${RUNTIME_REPO}/examples/pc_upscaling_pilot/engaging/production/run_case_dynamic_kr.sh"
+        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",FREEZE_ROOT="${FREEZE_ROOT}",CASE_WORK_ROOT="${CASE_WORK_ROOT}",CASE_INPUT_ROOT="${CASE_INPUT_ROOT}",CASE_RESULT_ROOT="${CASE_RESULT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",CASE_COUNT="${CASE_COUNT}",CASES_PER_ARRAY_TASK="${CASES_PER_ARRAY_TASK}" \
+        "${RUNTIME_REPO}/examples/pc_upscaling_pilot/engaging/production/run_case_dynamic_kr_chunk.sh"
 )"
 KR_JOB_ID="${kr_submission%%;*}"
 
@@ -148,11 +162,15 @@ assembly_job_id=${ASSEMBLY_JOB_ID}
 kr_job_id=${KR_JOB_ID}
 geology_count=${GEOLOGY_COUNT}
 case_count=${CASE_COUNT}
+geologies_per_array_task=${GEOLOGIES_PER_ARRAY_TASK}
+assembly_array_task_count=${ASSEMBLY_ARRAY_TASK_COUNT}
+cases_per_array_task=${CASES_PER_ARRAY_TASK}
+kr_array_task_count=${KR_ARRAY_TASK_COUNT}
 kr_max_concurrent=${KR_MAX_CONCURRENT}
 replay_tolerance_log10=${REPLAY_TOLERANCE_LOG10}
 slurm_qos=${SLURM_QOS}
 EOF
 echo "${ASSEMBLY_JOB_ID}" > "${RUN_ROOT}/assembly_array_job_id.txt"
 echo "${KR_JOB_ID}" > "${RUN_ROOT}/kr_array_job_id.txt"
-echo "Submitted assembly job ${ASSEMBLY_JOB_ID} (${GEOLOGY_COUNT} geologies)."
-echo "Submitted dynamic-Kr job ${KR_JOB_ID} (${CASE_COUNT} cases)."
+echo "Submitted assembly job ${ASSEMBLY_JOB_ID} (${GEOLOGY_COUNT} geologies in ${ASSEMBLY_ARRAY_TASK_COUNT} array tasks)."
+echo "Submitted dynamic-Kr job ${KR_JOB_ID} (${CASE_COUNT} cases in ${KR_ARRAY_TASK_COUNT} array tasks)."

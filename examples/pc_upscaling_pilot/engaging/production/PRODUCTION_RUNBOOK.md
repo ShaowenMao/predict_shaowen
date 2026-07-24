@@ -74,6 +74,20 @@ checkpoint replay/Pc -> strict checkpoint gate -> case assembly
 It also writes `production_launch_manifest.json`, containing immutable input
 hashes, method provenance, resource settings, and all Slurm job IDs.
 
+Engaging limits each user to 400 submitted job elements. The full workload is
+therefore scheduler-batched without changing the scientific calculations:
+
+```text
+972 replay/Pc groups  -> 195 array elements, 5 groups per element
+162 geology assemblies -> 27 array elements, 6 geologies per element
+1,620 dynamic-Kr cases -> 162 array elements, 10 cases per element
+2 scalar QA gates       -> 2 job elements
+total                    -> 386 submitted job elements
+```
+
+Each array element calls the same qualified worker with explicit manifest
+indices. Per-group and per-case done markers remain the restart boundary.
+
 ## Phase 1: Checkpoint-Centered Replay and Pc
 
 Qualification tranche:

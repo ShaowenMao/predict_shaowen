@@ -28,7 +28,33 @@ SLURM_QOS="${SLURM_QOS:-mit_amf_advanced_cpu}"
 SLURM_PARTITION="${SLURM_PARTITION:-mit_normal}"
 CHECKPOINT_MAX_CONCURRENT="${CHECKPOINT_MAX_CONCURRENT:-96}"
 KR_MAX_CONCURRENT="${KR_MAX_CONCURRENT:-24}"
+CHECKPOINT_GROUPS_PER_ARRAY_TASK="${CHECKPOINT_GROUPS_PER_ARRAY_TASK:-5}"
+ASSEMBLY_GEOLOGIES_PER_ARRAY_TASK="${ASSEMBLY_GEOLOGIES_PER_ARRAY_TASK:-6}"
+KR_CASES_PER_ARRAY_TASK="${KR_CASES_PER_ARRAY_TASK:-10}"
+SLURM_MAX_SUBMITTED_JOBS="${SLURM_MAX_SUBMITTED_JOBS:-400}"
 RESUME="${RESUME:-0}"
+
+CHECKPOINT_GROUP_COUNT=972
+GEOLOGY_COUNT=162
+CASE_COUNT=1620
+for positive_integer in \
+    "${CHECKPOINT_GROUPS_PER_ARRAY_TASK}" \
+    "${ASSEMBLY_GEOLOGIES_PER_ARRAY_TASK}" \
+    "${KR_CASES_PER_ARRAY_TASK}" \
+    "${SLURM_MAX_SUBMITTED_JOBS}"; do
+    if [[ ! "${positive_integer}" =~ ^[1-9][0-9]*$ ]]; then
+        echo "Chunk sizes and scheduler limits must be positive integers." >&2
+        exit 2
+    fi
+done
+CHECKPOINT_ARRAY_TASK_COUNT=$(( (CHECKPOINT_GROUP_COUNT + CHECKPOINT_GROUPS_PER_ARRAY_TASK - 1) / CHECKPOINT_GROUPS_PER_ARRAY_TASK ))
+ASSEMBLY_ARRAY_TASK_COUNT=$(( (GEOLOGY_COUNT + ASSEMBLY_GEOLOGIES_PER_ARRAY_TASK - 1) / ASSEMBLY_GEOLOGIES_PER_ARRAY_TASK ))
+KR_ARRAY_TASK_COUNT=$(( (CASE_COUNT + KR_CASES_PER_ARRAY_TASK - 1) / KR_CASES_PER_ARRAY_TASK ))
+TOTAL_SUBMITTED_JOB_ELEMENTS=$(( CHECKPOINT_ARRAY_TASK_COUNT + ASSEMBLY_ARRAY_TASK_COUNT + KR_ARRAY_TASK_COUNT + 2 ))
+if (( TOTAL_SUBMITTED_JOB_ELEMENTS > SLURM_MAX_SUBMITTED_JOBS )); then
+    echo "Planned ${TOTAL_SUBMITTED_JOB_ELEMENTS} submitted jobs exceed the scheduler limit ${SLURM_MAX_SUBMITTED_JOBS}." >&2
+    exit 2
+fi
 
 module load deprecated-modules gcc/12.2.0-x86_64 python/3.10.8-x86_64
 
@@ -113,8 +139,10 @@ Production launch plan
   qualification_sha256: ${qualification_sha256}
   replay_tolerance_log10: ${REPLAY_TOLERANCE_LOG10}
   Slurm: account=${SLURM_ACCOUNT}, qos=${SLURM_QOS}, partition=${SLURM_PARTITION}
-  checkpoint concurrency: ${CHECKPOINT_MAX_CONCURRENT}
-  dynamic-Kr concurrency: ${KR_MAX_CONCURRENT}
+  checkpoint: ${CHECKPOINT_ARRAY_TASK_COUNT} array tasks, ${CHECKPOINT_GROUPS_PER_ARRAY_TASK} groups/task, concurrency ${CHECKPOINT_MAX_CONCURRENT}
+  assembly: ${ASSEMBLY_ARRAY_TASK_COUNT} array tasks, ${ASSEMBLY_GEOLOGIES_PER_ARRAY_TASK} geologies/task
+  dynamic Kr: ${KR_ARRAY_TASK_COUNT} array tasks, ${KR_CASES_PER_ARRAY_TASK} cases/task, concurrency ${KR_MAX_CONCURRENT}
+  total submitted job elements: ${TOTAL_SUBMITTED_JOB_ELEMENTS}/${SLURM_MAX_SUBMITTED_JOBS}
 EOF
 
 if [[ "${ACTION}" == "plan" ]]; then
@@ -134,6 +162,7 @@ export RUNTIME_REPO FREEZE_ROOT PROJECT_DATA_ROOT SCRATCH_ROOT RUN_ID RUN_ROOT
 export PHYSICS_COMMIT METHOD_CONFIG_SHA256 REPLAY_TOLERANCE_LOG10
 export SLURM_QOS
 export MAX_CONCURRENT="${CHECKPOINT_MAX_CONCURRENT}"
+export GROUPS_PER_ARRAY_TASK="${CHECKPOINT_GROUPS_PER_ARRAY_TASK}"
 
 bash "${SCRIPT_DIR}/submit_checkpoint_replay_pc.sh" full
 CHECKPOINT_JOB_ID="$(<"${RUN_ROOT}/checkpoint_array_job_id.txt")"
@@ -160,6 +189,8 @@ CHECKPOINT_GATE_JOB_ID="${checkpoint_gate_submission%%;*}"
 
 export CHECKPOINT_JOB_ID="${CHECKPOINT_GATE_JOB_ID}"
 export KR_MAX_CONCURRENT
+export GEOLOGIES_PER_ARRAY_TASK="${ASSEMBLY_GEOLOGIES_PER_ARRAY_TASK}"
+export CASES_PER_ARRAY_TASK="${KR_CASES_PER_ARRAY_TASK}"
 bash "${SCRIPT_DIR}/submit_case_assembly_kr.sh" full
 ASSEMBLY_JOB_ID="$(<"${RUN_ROOT}/assembly_array_job_id.txt")"
 KR_JOB_ID="$(<"${RUN_ROOT}/kr_array_job_id.txt")"
@@ -201,6 +232,14 @@ python3 - \
     "${SLURM_PARTITION}" \
     "${CHECKPOINT_MAX_CONCURRENT}" \
     "${KR_MAX_CONCURRENT}" \
+    "${CHECKPOINT_GROUPS_PER_ARRAY_TASK}" \
+    "${ASSEMBLY_GEOLOGIES_PER_ARRAY_TASK}" \
+    "${KR_CASES_PER_ARRAY_TASK}" \
+    "${CHECKPOINT_ARRAY_TASK_COUNT}" \
+    "${ASSEMBLY_ARRAY_TASK_COUNT}" \
+    "${KR_ARRAY_TASK_COUNT}" \
+    "${TOTAL_SUBMITTED_JOB_ELEMENTS}" \
+    "${SLURM_MAX_SUBMITTED_JOBS}" \
     "${CHECKPOINT_JOB_ID}" \
     "${CHECKPOINT_GATE_JOB_ID}" \
     "${ASSEMBLY_JOB_ID}" \
@@ -227,6 +266,14 @@ import sys
     slurm_partition,
     checkpoint_concurrency,
     kr_concurrency,
+    checkpoint_groups_per_array_task,
+    assembly_geologies_per_array_task,
+    kr_cases_per_array_task,
+    checkpoint_array_task_count,
+    assembly_array_task_count,
+    kr_array_task_count,
+    total_submitted_job_elements,
+    slurm_max_submitted_jobs,
     checkpoint_job_id,
     checkpoint_gate_job_id,
     assembly_job_id,
@@ -258,6 +305,18 @@ manifest = {
         "partition": slurm_partition,
         "checkpoint_max_concurrent": int(checkpoint_concurrency),
         "dynamic_kr_max_concurrent": int(kr_concurrency),
+        "checkpoint_groups_per_array_task": int(
+            checkpoint_groups_per_array_task
+        ),
+        "assembly_geologies_per_array_task": int(
+            assembly_geologies_per_array_task
+        ),
+        "dynamic_kr_cases_per_array_task": int(kr_cases_per_array_task),
+        "checkpoint_array_task_count": int(checkpoint_array_task_count),
+        "assembly_array_task_count": int(assembly_array_task_count),
+        "dynamic_kr_array_task_count": int(kr_array_task_count),
+        "total_submitted_job_elements": int(total_submitted_job_elements),
+        "scheduler_submitted_job_limit": int(slurm_max_submitted_jobs),
     },
     "jobs": {
         "checkpoint_array": checkpoint_job_id,

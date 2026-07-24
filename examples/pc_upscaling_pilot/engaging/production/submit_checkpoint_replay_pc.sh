@@ -26,10 +26,14 @@ if [[ "${MODE}" == "qualification60" ]]; then
     RUN_ID="${RUN_ID:-production_qualification60_20260723_v1}"
     CASE_FILTER="${CASE_FILTER:-${SCRIPT_DIR}/production_qualification_60_cases.csv}"
     MAX_CONCURRENT="${MAX_CONCURRENT:-18}"
+    GROUPS_PER_ARRAY_TASK="${GROUPS_PER_ARRAY_TASK:-1}"
+    CHECKPOINT_WALLTIME_DEFAULT="04:00:00"
 else
     RUN_ID="${RUN_ID:-production_all1620_20260723_v1}"
     CASE_FILTER=""
     MAX_CONCURRENT="${MAX_CONCURRENT:-96}"
+    GROUPS_PER_ARRAY_TASK="${GROUPS_PER_ARRAY_TASK:-5}"
+    CHECKPOINT_WALLTIME_DEFAULT="12:00:00"
 fi
 
 RUN_ROOT="${RUN_ROOT:-${PROJECT_DATA_ROOT}/production_runs/${RUN_ID}}"
@@ -37,7 +41,7 @@ CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT:-${RUN_ROOT}/checkpoint_man
 COMPACT_OUTPUT_ROOT="${COMPACT_OUTPUT_ROOT:-${RUN_ROOT}/checkpoint_pc}"
 LOG_ROOT="${LOG_ROOT:-${SCRATCH_ROOT}/production_logs/${RUN_ID}/checkpoint_pc}"
 SEMANTIC_PREFLIGHT="${RUN_ROOT}/semantic_preflight.json"
-WORKER="${RUNTIME_REPO}/examples/pc_upscaling_pilot/engaging/production/run_checkpoint_replay_pc.sh"
+WORKER="${RUNTIME_REPO}/examples/pc_upscaling_pilot/engaging/production/run_checkpoint_replay_pc_chunk.sh"
 
 mkdir -p "${RUN_ROOT}" "${LOG_ROOT}"
 module load deprecated-modules gcc/12.2.0-x86_64 python/3.10.8-x86_64
@@ -77,6 +81,11 @@ if [[ "${GROUP_COUNT}" -le 0 ]]; then
     echo "Checkpoint manifest contains no work units." >&2
     exit 2
 fi
+if [[ "${GROUPS_PER_ARRAY_TASK}" -le 0 ]]; then
+    echo "GROUPS_PER_ARRAY_TASK must be positive." >&2
+    exit 2
+fi
+ARRAY_TASK_COUNT=$(( (GROUP_COUNT + GROUPS_PER_ARRAY_TASK - 1) / GROUPS_PER_ARRAY_TASK ))
 
 cat > "${RUN_ROOT}/checkpoint_submission.env" <<EOF
 run_id=${RUN_ID}
@@ -88,6 +97,8 @@ method_config_sha256=${METHOD_CONFIG_SHA256}
 checkpoint_manifest_root=${CHECKPOINT_MANIFEST_ROOT}
 compact_output_root=${COMPACT_OUTPUT_ROOT}
 group_count=${GROUP_COUNT}
+groups_per_array_task=${GROUPS_PER_ARRAY_TASK}
+array_task_count=${ARRAY_TASK_COUNT}
 max_concurrent=${MAX_CONCURRENT}
 slurm_qos=${SLURM_QOS}
 replay_tolerance_log10=${REPLAY_TOLERANCE_LOG10}
@@ -100,16 +111,16 @@ submission="$(
         --qos="${SLURM_QOS}" \
         --partition=mit_normal \
         --job-name="rpc_${RUN_ID}" \
-        --time="${CHECKPOINT_WALLTIME:-04:00:00}" \
+        --time="${CHECKPOINT_WALLTIME:-${CHECKPOINT_WALLTIME_DEFAULT}}" \
         --cpus-per-task=1 \
         --mem="${CHECKPOINT_MEMORY:-16G}" \
-        --array="1-${GROUP_COUNT}%${MAX_CONCURRENT}" \
+        --array="1-${ARRAY_TASK_COUNT}%${MAX_CONCURRENT}" \
         --output="${LOG_ROOT}/%x_%A_%a.out" \
         --error="${LOG_ROOT}/%x_%A_%a.err" \
-        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",FREEZE_ROOT="${FREEZE_ROOT}",CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT}",COMPACT_OUTPUT_ROOT="${COMPACT_OUTPUT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}" \
+        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",FREEZE_ROOT="${FREEZE_ROOT}",CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT}",COMPACT_OUTPUT_ROOT="${COMPACT_OUTPUT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",GROUP_COUNT="${GROUP_COUNT}",GROUPS_PER_ARRAY_TASK="${GROUPS_PER_ARRAY_TASK}" \
         "${WORKER}"
 )"
 JOB_ID="${submission%%;*}"
 echo "${JOB_ID}" > "${RUN_ROOT}/checkpoint_array_job_id.txt"
-echo "Submitted ${GROUP_COUNT} checkpoint replay/Pc work units: job ${JOB_ID}"
+echo "Submitted ${GROUP_COUNT} checkpoint replay/Pc work units in ${ARRAY_TASK_COUNT} array tasks: job ${JOB_ID}"
 echo "Run root: ${RUN_ROOT}"
