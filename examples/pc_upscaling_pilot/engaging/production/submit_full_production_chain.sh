@@ -165,7 +165,7 @@ export MAX_CONCURRENT="${CHECKPOINT_MAX_CONCURRENT}"
 export GROUPS_PER_ARRAY_TASK="${CHECKPOINT_GROUPS_PER_ARRAY_TASK}"
 
 bash "${SCRIPT_DIR}/submit_checkpoint_replay_pc.sh" full
-CHECKPOINT_JOB_ID="$(<"${RUN_ROOT}/checkpoint_array_job_id.txt")"
+CHECKPOINT_ARRAY_JOB_ID="$(<"${RUN_ROOT}/checkpoint_array_job_id.txt")"
 
 CHECKPOINT_GATE_LOG_ROOT="${SCRATCH_ROOT}/production_logs/${RUN_ID}/checkpoint_gate"
 mkdir -p "${CHECKPOINT_GATE_LOG_ROOT}"
@@ -179,7 +179,7 @@ checkpoint_gate_submission="$(
         --time="${CHECKPOINT_GATE_WALLTIME:-04:00:00}" \
         --cpus-per-task=1 \
         --mem="${CHECKPOINT_GATE_MEMORY:-8G}" \
-        --dependency="afterany:${CHECKPOINT_JOB_ID}" \
+        --dependency="afterany:${CHECKPOINT_ARRAY_JOB_ID}" \
         --output="${CHECKPOINT_GATE_LOG_ROOT}/%x_%j.out" \
         --error="${CHECKPOINT_GATE_LOG_ROOT}/%x_%j.err" \
         --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",RUN_ROOT="${RUN_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",DEFAULT_REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}" \
@@ -240,7 +240,7 @@ python3 - \
     "${KR_ARRAY_TASK_COUNT}" \
     "${TOTAL_SUBMITTED_JOB_ELEMENTS}" \
     "${SLURM_MAX_SUBMITTED_JOBS}" \
-    "${CHECKPOINT_JOB_ID}" \
+    "${CHECKPOINT_ARRAY_JOB_ID}" \
     "${CHECKPOINT_GATE_JOB_ID}" \
     "${ASSEMBLY_JOB_ID}" \
     "${KR_JOB_ID}" \
