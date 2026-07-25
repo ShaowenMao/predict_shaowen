@@ -98,11 +98,14 @@ JOB_TOKEN="${SLURM_JOB_ID:-manual}_${WORK_INDEX}"
 CASE_TEMP_ROOT="${CASE_TEMP_ROOT:-${SCRATCH_ROOT}/tmp}"
 LOCAL_BASE="${CASE_TEMP_ROOT}"
 LOCAL_ROOT="${LOCAL_BASE}/predict_case_${JOB_TOKEN}"
+SCRATCH_CANONICAL_ROOT="$(readlink -f "${SCRATCH_ROOT}")"
+MATLAB_SHORT_ROOT="${MATLAB_SHORT_ROOT:-$(dirname "${SCRATCH_CANONICAL_ROOT}")/mt}"
+MATLAB_RUNTIME_ROOT="${MATLAB_SHORT_ROOT}/${JOB_TOKEN}"
 REPLAY_ROOT="${LOCAL_ROOT}/representative_replay"
 KR_ROOT="${LOCAL_ROOT}/kr"
 UPSCALING_ROOT="${LOCAL_ROOT}/upscaling"
-export TMPDIR="${LOCAL_ROOT}/system_tmp"
-export MATLAB_PREFDIR="${LOCAL_ROOT}/matlab_prefdir"
+export TMPDIR="${MATLAB_RUNTIME_ROOT}/t"
+export MATLAB_PREFDIR="${MATLAB_RUNTIME_ROOT}/p"
 mkdir -p \
     "${REPLAY_ROOT}" \
     "${KR_ROOT}" \
@@ -113,7 +116,7 @@ mkdir -p \
 cleanup() {
     local status="$?"
     if [[ "${KEEP_CASE_TEMP:-0}" != "1" ]]; then
-        rm -rf "${LOCAL_ROOT}"
+        rm -rf "${LOCAL_ROOT}" "${MATLAB_RUNTIME_ROOT}"
     else
         echo "Retaining case temporary files: ${LOCAL_ROOT}" >&2
     fi
@@ -125,6 +128,8 @@ echo "geology_id=${geology_id}"
 echo "case_id=${case_two_digit}"
 echo "case_name=${case_name}"
 echo "hostname=$(hostname)"
+echo "matlab_tempdir=${TMPDIR}"
+echo "matlab_prefdir=${MATLAB_PREFDIR}"
 echo "started_at=$(date --iso-8601=seconds)"
 
 matlab -batch \

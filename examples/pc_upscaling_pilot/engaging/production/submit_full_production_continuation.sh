@@ -153,9 +153,9 @@ checkpoint_submission="$(
         --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",FREEZE_ROOT="${FREEZE_ROOT}",CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT}",COMPACT_OUTPUT_ROOT="${CHECKPOINT_OUTPUT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",CHECKPOINT_TEMP_ROOT="${CHECKPOINT_TEMP_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",GROUP_COUNT="${GROUP_COUNT}",GROUPS_PER_ARRAY_TASK=1 \
         "${WORKER}"
 )"
-CHECKPOINT_JOB_ID="${checkpoint_submission%%;*}"
-echo "${CHECKPOINT_JOB_ID}" > "${RUN_ROOT}/checkpoint_array_job_id.txt"
-echo "${CHECKPOINT_JOB_ID}" > "${RUN_ROOT}/checkpoint_continuation_job_id.txt"
+CHECKPOINT_ARRAY_JOB_ID="${checkpoint_submission%%;*}"
+echo "${CHECKPOINT_ARRAY_JOB_ID}" > "${RUN_ROOT}/checkpoint_array_job_id.txt"
+echo "${CHECKPOINT_ARRAY_JOB_ID}" > "${RUN_ROOT}/checkpoint_continuation_job_id.txt"
 
 checkpoint_gate_submission="$(
     sbatch \
@@ -167,7 +167,7 @@ checkpoint_gate_submission="$(
         --time="${CHECKPOINT_GATE_WALLTIME:-04:00:00}" \
         --cpus-per-task=1 \
         --mem="${CHECKPOINT_GATE_MEMORY:-8G}" \
-        --dependency="afterany:${CHECKPOINT_JOB_ID}" \
+        --dependency="afterany:${CHECKPOINT_ARRAY_JOB_ID}" \
         --output="${LOG_ROOT}/checkpoint_gate_continuation/%x_%j.out" \
         --error="${LOG_ROOT}/checkpoint_gate_continuation/%x_%j.err" \
         --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",RUN_ROOT="${RUN_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",DEFAULT_REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}" \
@@ -211,7 +211,7 @@ python3 - \
     "${MISSING_COUNT}" \
     "${CHECKPOINT_TEMP_ROOT}" \
     "${CHECKPOINT_WALLTIME}" \
-    "${CHECKPOINT_JOB_ID}" \
+    "${CHECKPOINT_ARRAY_JOB_ID}" \
     "${CHECKPOINT_GATE_JOB_ID}" \
     "${ASSEMBLY_JOB_ID}" \
     "${KR_JOB_ID}" \

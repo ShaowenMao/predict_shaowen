@@ -113,11 +113,14 @@ fi
 JOB_TOKEN="${SLURM_JOB_ID:-manual}_${GROUP_INDEX}"
 LOCAL_BASE="${CHECKPOINT_TEMP_ROOT}"
 LOCAL_ROOT="${LOCAL_BASE}/predict_checkpoint_${JOB_TOKEN}"
+SCRATCH_CANONICAL_ROOT="$(readlink -f "${SCRATCH_ROOT}")"
+MATLAB_SHORT_ROOT="${MATLAB_SHORT_ROOT:-$(dirname "${SCRATCH_CANONICAL_ROOT}")/mt}"
+MATLAB_RUNTIME_ROOT="${MATLAB_SHORT_ROOT}/${JOB_TOKEN}"
 REPLAY_ROOT="${LOCAL_ROOT}/replay"
 PC_ROOT="${LOCAL_ROOT}/pc_ip"
 UPSCALING_ROOT="${LOCAL_ROOT}/upscaling_empty"
-export TMPDIR="${LOCAL_ROOT}/system_tmp"
-export MATLAB_PREFDIR="${LOCAL_ROOT}/matlab_prefdir"
+export TMPDIR="${MATLAB_RUNTIME_ROOT}/t"
+export MATLAB_PREFDIR="${MATLAB_RUNTIME_ROOT}/p"
 mkdir -p \
     "${REPLAY_ROOT}" \
     "${PC_ROOT}" \
@@ -128,7 +131,7 @@ mkdir -p \
 cleanup() {
     local status="$?"
     if [[ "${KEEP_CHECKPOINT_TEMP:-0}" != "1" ]]; then
-        rm -rf "${LOCAL_ROOT}"
+        rm -rf "${LOCAL_ROOT}" "${MATLAB_RUNTIME_ROOT}"
     else
         echo "Retaining checkpoint temporary files: ${LOCAL_ROOT}" >&2
     fi
@@ -143,6 +146,8 @@ echo "task_count=${task_count}"
 echo "usage_count=${usage_count}"
 echo "hostname=$(hostname)"
 echo "local_root=${LOCAL_ROOT}"
+echo "matlab_tempdir=${TMPDIR}"
+echo "matlab_prefdir=${MATLAB_PREFDIR}"
 echo "output_dir=${OUTPUT_DIR}"
 echo "started_at=$(date --iso-8601=seconds)"
 
