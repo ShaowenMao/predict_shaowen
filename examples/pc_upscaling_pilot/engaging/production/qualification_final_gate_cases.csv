@@ -1,0 +1,6 @@
+scenario_index,geology_id,scenario_label,case_id,case_category
+6,s06_c012,high_sand_nonuniform,5,Fault-wide low/high cases
+6,s06_c012,high_sand_nonuniform,6,Fault-wide low/high cases
+6,s06_c012,high_sand_nonuniform,8,Grouped low/high cases
+6,s06_c012,high_sand_nonuniform,9,Grouped low/high cases
+6,s06_c012,high_sand_nonuniform,10,Grouped low/high cases

@@ -18,16 +18,21 @@ FROZEN_WORKFLOW_DIR="${FROZEN_REPO}/examples/pc_upscaling_pilot/engaging"
 STAGE_SCRIPT="${QUALIFICATION_STAGE_SCRIPT:-${FROZEN_WORKFLOW_DIR}/run_case01_stage.sh}"
 CASES_FILE="${QUALIFICATION_CASES_FILE:-${SCRIPT_DIR}/qualification_cases.csv}"
 
-EXPECTED_COMMIT="29ece954bdc8c4525c825753088f01d27197623b"
-EXPECTED_METHOD_HASH="35deb95eff4657e5071996b0f3031c105836562972b5de7bdf46f50db3c79974"
-EXPECTED_FIELD_CONFIG_HASH="aee718ad0c43a2d16087980a848a8abacdc5893a1237088c51378666a027b7e6"
+EXPECTED_COMMIT="${EXPECTED_COMMIT:-29ece954bdc8c4525c825753088f01d27197623b}"
+EXPECTED_METHOD_HASH="${EXPECTED_METHOD_HASH:-35deb95eff4657e5071996b0f3031c105836562972b5de7bdf46f50db3c79974}"
+EXPECTED_FIELD_CONFIG_HASH="${EXPECTED_FIELD_CONFIG_HASH:-aee718ad0c43a2d16087980a848a8abacdc5893a1237088c51378666a027b7e6}"
+FROZEN_BUNDLE="${FROZEN_BUNDLE:-${FREEZE_ROOT}/code/predict_shaowen_${EXPECTED_COMMIT:0:7}.bundle}"
 
 SAMPLING_ROOT="${FREEZE_ROOT}/inputs/sampling"
 PREDICT_ROOT="${FREEZE_ROOT}/inputs/predict"
 SAMPLING_CSV="${SAMPLING_ROOT}/texas_field_slice_window_values.csv"
 SAMPLING_MAT="${SAMPLING_ROOT}/texas_field_sampling_compact.mat"
-METHOD_CONFIG="${FREEZE_ROOT}/config/production_method_config.toml"
-FIELD_CONFIG="${FREEZE_ROOT}/config/texas_field_collapsed_cell_union_config.toml"
+METHOD_CONFIG="${METHOD_CONFIG:-${FREEZE_ROOT}/config/production_method_config.toml}"
+default_field_config="${FREEZE_ROOT}/config/texas_field_collapsed_cell_union_config.toml"
+if [[ ! -f "${default_field_config}" ]]; then
+    default_field_config="${FROZEN_REPO}/examples/Julia_analyses/UQ_workflow/applications/texas_offshore_field/texas_field_collapsed_cell_union_config.toml"
+fi
+FIELD_CONFIG="${FIELD_CONFIG:-${default_field_config}}"
 MRST_ROOT="${MRST_ROOT:-${PROJECT_ROOT}/software/mrst-current}"
 UPSCALING_ZIP="${UPSCALING_ZIP:-${PROJECT_ROOT}/software/upscaling.zip}"
 
@@ -74,7 +79,7 @@ require_file() {
 
 preflight() {
     require_file "${FREEZE_ROOT}/freeze_metadata.json"
-    require_file "${FREEZE_ROOT}/code/predict_shaowen_29ece95.bundle"
+    require_file "${FROZEN_BUNDLE}"
     require_file "${METHOD_CONFIG}"
     require_file "${FIELD_CONFIG}"
     require_file "${SAMPLING_CSV}"
@@ -256,6 +261,8 @@ freeze_root=${FREEZE_ROOT}
 code_commit=${EXPECTED_COMMIT}
 method_config_sha256=${EXPECTED_METHOD_HASH}
 field_config_sha256=${EXPECTED_FIELD_CONFIG_HASH}
+field_config=${FIELD_CONFIG}
+frozen_bundle=${FROZEN_BUNDLE}
 replay_tolerance_log10=${REPLAY_TOLERANCE_LOG10}
 stage_script=${STAGE_SCRIPT}
 stage_script_sha256=${STAGE_SCRIPT_SHA256}

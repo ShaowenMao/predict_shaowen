@@ -33,8 +33,10 @@ def main():
     with args.cases_csv.open(newline="", encoding="utf-8") as stream:
         case_rows = list(csv.DictReader(stream))
     wanted = {(row["geology_id"], row["case_id"]) for row in case_rows}
-    if len(wanted) != 24:
-        raise ValueError("Qualification case list must contain 24 unique cases")
+    if not case_rows:
+        raise ValueError("Qualification case list must not be empty")
+    if len(wanted) != len(case_rows):
+        raise ValueError("Qualification case list contains duplicate geology/case pairs")
 
     streams = {}
     writers = {}
