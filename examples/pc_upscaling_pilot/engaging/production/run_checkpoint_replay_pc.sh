@@ -15,6 +15,7 @@ FROZEN_REPO="${FROZEN_REPO:-${FREEZE_ROOT}/code/source}"
 CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT:?CHECKPOINT_MANIFEST_ROOT is required}"
 COMPACT_OUTPUT_ROOT="${COMPACT_OUTPUT_ROOT:?COMPACT_OUTPUT_ROOT is required}"
 SCRATCH_ROOT="${SCRATCH_ROOT:-/home/shaowen/orcd/scratch/predict_shaowen}"
+CHECKPOINT_TEMP_ROOT="${CHECKPOINT_TEMP_ROOT:-${SCRATCH_ROOT}/tmp}"
 PROJECT_ROOT="${PROJECT_ROOT:-/home/shaowen/orcd/pool/predict_shaowen}"
 MRST_ROOT="${MRST_ROOT:-${PROJECT_ROOT}/software/mrst-current}"
 UPSCALING_ZIP="${UPSCALING_ZIP:-${PROJECT_ROOT}/software/upscaling.zip}"
@@ -110,12 +111,19 @@ PY
 fi
 
 JOB_TOKEN="${SLURM_JOB_ID:-manual}_${GROUP_INDEX}"
-LOCAL_BASE="${SLURM_TMPDIR:-${TMPDIR:-${SCRATCH_ROOT}/tmp}}"
+LOCAL_BASE="${CHECKPOINT_TEMP_ROOT}"
 LOCAL_ROOT="${LOCAL_BASE}/predict_checkpoint_${JOB_TOKEN}"
 REPLAY_ROOT="${LOCAL_ROOT}/replay"
 PC_ROOT="${LOCAL_ROOT}/pc_ip"
 UPSCALING_ROOT="${LOCAL_ROOT}/upscaling_empty"
-mkdir -p "${REPLAY_ROOT}" "${PC_ROOT}" "${UPSCALING_ROOT}"
+export TMPDIR="${LOCAL_ROOT}/system_tmp"
+export MATLAB_PREFDIR="${LOCAL_ROOT}/matlab_prefdir"
+mkdir -p \
+    "${REPLAY_ROOT}" \
+    "${PC_ROOT}" \
+    "${UPSCALING_ROOT}" \
+    "${TMPDIR}" \
+    "${MATLAB_PREFDIR}"
 
 cleanup() {
     local status="$?"

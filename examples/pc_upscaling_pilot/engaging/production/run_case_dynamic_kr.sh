@@ -95,12 +95,20 @@ replay_template=("${INPUT_DIR}"/replay_summary_template_*.csv)
     echo "Expected one replay template in ${INPUT_DIR}." >&2; exit 2; }
 
 JOB_TOKEN="${SLURM_JOB_ID:-manual}_${WORK_INDEX}"
-LOCAL_BASE="${SLURM_TMPDIR:-${TMPDIR:-${SCRATCH_ROOT}/tmp}}"
+CASE_TEMP_ROOT="${CASE_TEMP_ROOT:-${SCRATCH_ROOT}/tmp}"
+LOCAL_BASE="${CASE_TEMP_ROOT}"
 LOCAL_ROOT="${LOCAL_BASE}/predict_case_${JOB_TOKEN}"
 REPLAY_ROOT="${LOCAL_ROOT}/representative_replay"
 KR_ROOT="${LOCAL_ROOT}/kr"
 UPSCALING_ROOT="${LOCAL_ROOT}/upscaling"
-mkdir -p "${REPLAY_ROOT}" "${KR_ROOT}" "${UPSCALING_ROOT}"
+export TMPDIR="${LOCAL_ROOT}/system_tmp"
+export MATLAB_PREFDIR="${LOCAL_ROOT}/matlab_prefdir"
+mkdir -p \
+    "${REPLAY_ROOT}" \
+    "${KR_ROOT}" \
+    "${UPSCALING_ROOT}" \
+    "${TMPDIR}" \
+    "${MATLAB_PREFDIR}"
 
 cleanup() {
     local status="$?"

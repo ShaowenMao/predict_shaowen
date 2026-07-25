@@ -26,9 +26,10 @@ Durable, compact results are stored under:
 /orcd/data/juanes/001/shaowen/predict_shaowen/production_runs/<run_id>/
 ```
 
-Large temporary replay maps are written to node-local temporary storage when
-available, with scratch as the fallback. They are deleted only after replay
-verification and compact Pc publication succeed.
+Large temporary replay maps and isolated MATLAB preference files are written
+to flash scratch. They are deleted only after replay verification and compact
+Pc publication succeed. Node-local `/tmp` is not used because many concurrent
+replay jobs can exhaust its shared capacity.
 
 ```text
 checkpoint_manifest/   one selection per geology-window checkpoint
@@ -117,6 +118,24 @@ Each checkpoint job:
 
 Re-running the same submission is safe. A checkpoint is skipped only when its
 done marker matches the checkpoint hash, frozen physics commit, and method hash.
+
+For a missing-only continuation after a partial full run:
+
+```bash
+RUN_ID=production_all1620_20260724_v1 \
+RUNTIME_REPO=/path/to/immutable/runtime_repo \
+ORCHESTRATION_COMMIT=<runtime-commit> \
+bash /path/to/immutable/runtime_repo/examples/pc_upscaling_pilot/engaging/production/submit_full_production_continuation.sh plan
+
+RUN_ID=production_all1620_20260724_v1 \
+RUNTIME_REPO=/path/to/immutable/runtime_repo \
+ORCHESTRATION_COMMIT=<runtime-commit> \
+bash /path/to/immutable/runtime_repo/examples/pc_upscaling_pilot/engaging/production/submit_full_production_continuation.sh submit
+```
+
+The continuation submits one Slurm task per missing checkpoint group, reuses
+validated completed checkpoints, and creates a new checkpoint gate, assembly,
+dynamic-Kr, and final-QA dependency chain.
 
 ## Phase 2: Case Assembly and Dynamic Kr
 
