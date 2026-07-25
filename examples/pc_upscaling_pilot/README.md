@@ -136,6 +136,33 @@ Production runs leave it disabled.
   SATNUM and one Pc/Kr curve pair per global saturation region.
 - `regenerate_reservoir_ready_with_saturation_regions.m`: non-destructive
   upgrader for existing validated reservoir-ready MAT files.
+- `export_geology_stratigraphy_input.m`: packages the six-window FW/HW
+  stratigraphy for one canonical geology ID and validates optional links to
+  case-specific reservoir-ready fault-property MAT files.
+
+## Geology Stratigraphy Input
+
+The stratigraphy is geology-specific but independent of the ten Level-3
+fault-property cases. Store it once per `geologyId`, then link every case MAT
+to it by the canonical ID and deterministic geology hash. For example:
+
+```matlab
+outputs = export_geology_stratigraphy_input( ...
+    fullfile(pwd, 'examples', ...
+        'thickness_scenario_data_collapsed_cell_union'), ...
+    's05_c012', outputDir, ...
+    'ReservoirReadyFiles', reservoirReadyFiles, ...
+    'ExpectedCaseIds', [1 3 4 7]);
+```
+
+The geology MAT contains original and collapsed FW/HW patterns, thicknesses,
+Vcl values, burial depths, wall and fault dips, faulting depth, units,
+PREDICT provenance, QA flags, and a SHA-256 geology hash. The downstream hash
+is intentionally scoped to the fixed-grid reservoir mapping fields: geology
+ID, ordered windows, and original FW/HW lithology and thickness sequences.
+Seeds, Vcl, burial depth, and collapsed records cannot change this mapping
+hash. The MAT deliberately does not duplicate permeability, porosity, Pc, or
+Kr from the case MAT files.
 
 The historical `median_examples` filenames identify the original development
 examples. The production selection terminology is **Swi medoid**.
@@ -155,9 +182,21 @@ PC_IP_ENABLE_MEDOID_DIAGNOSTICS=0
 
 Use `KR_DYN_SELECTION_MODE=all` only for full-87 validation benchmarks.
 
-## Reservoir-Ready Output
+## Downstream Fault-Property Output
 
-Each `reservoir_ready_<geology>_caseNN.mat` contains:
+The full-slice Pc representation is written as:
+
+```text
+fault_properties_<geology>_caseNN_pc_full_slice.mat
+```
+
+The optional Pe-branch-medoid representation is written as:
+
+```text
+fault_properties_<geology>_caseNN_pc_branch_medoid.mat
+```
+
+Each fault-property MAT contains:
 
 - `windowLabels` and `sliceIndices`;
 - an `effectivePermeability` block with 6-by-87-by-3 `kxx`, `kyy`, and `kzz`
@@ -184,3 +223,17 @@ represented by a medoid and requires no additional flow simulation.
 
 The companion `reservoir_ready_qa_summary.csv` must report `Passed = 1`
 before the artifact is used downstream.
+
+Finalize copied downstream artifacts after exporting the shared stratigraphy:
+
+```matlab
+package = finalize_downstream_input_package( ...
+    geologyStratigraphyMat, faultPropertyMats, packageRoot, ...
+    'ExpectedCaseIds', [1 3 4 7]);
+```
+
+The finalizer embeds the deterministic stratigraphy `geologyHash` into every
+fault-property MAT, verifies the pairing, and writes
+`downstream_input_manifest.csv` plus a standard `SHA256SUMS` file. The
+embedded hash detects incorrect geology/fault pairing; the external SHA-256
+checksums detect file corruption or changes during transfer.
