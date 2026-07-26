@@ -70,15 +70,24 @@ def validate_representative_curves(
     windows = {row["Window"] for row in summary}
     if windows != {f"famp{i}" for i in range(1, 7)}:
         raise ValueError(f"Dynamic Kr window coverage is invalid: {sorted(windows)}")
+    native_single_segment_count = 0
     for row in summary:
         if row["GeologyId"] != geology_id:
             raise ValueError("Dynamic Kr geology does not match requested case")
         if int(float(row["Level3CaseId"])) != case_id:
             raise ValueError("Dynamic Kr case ID does not match requested case")
-        if int(float(row["OriginalCartDimY"])) != int(float(row["RuntimeCartDimY"])):
+        original_cart_dim_y = int(float(row["OriginalCartDimY"]))
+        runtime_cart_dim_y = int(float(row["RuntimeCartDimY"]))
+        if original_cart_dim_y < 1 or runtime_cart_dim_y < 1:
+            raise ValueError("Dynamic Kr has an invalid strike dimension")
+        if original_cart_dim_y != runtime_cart_dim_y:
             raise ValueError("Strike dimension changed during dynamic Kr upscaling")
-        if int(float(row["RuntimeCartDimY"])) <= 1:
-            raise ValueError("Dynamic Kr used a strike-collapsed grid")
+        if row["GridMode"].strip().lower() != "full3d":
+            raise ValueError(
+                f"Dynamic Kr used a non-production grid mode: {row['GridMode']!r}"
+            )
+        if original_cart_dim_y == 1:
+            native_single_segment_count += 1
         swi = finite(row["IrreducibleWaterSaturation"], "Swi")
         sg_max = finite(row["PcMaxSg"], "PcMaxSg")
         if not 0.0 <= swi <= 1.0 or not 0.0 <= sg_max <= 1.0:
@@ -115,6 +124,7 @@ def validate_representative_curves(
         "summary_rows": len(summary),
         "curve_point_rows": len(points),
         "windows": sorted(windows),
+        "native_single_segment_count": native_single_segment_count,
     }
 
 

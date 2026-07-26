@@ -101,6 +101,7 @@ LOCAL_ROOT="${LOCAL_BASE}/predict_case_${JOB_TOKEN}"
 SCRATCH_CANONICAL_ROOT="$(readlink -f "${SCRATCH_ROOT}")"
 MATLAB_SHORT_ROOT="${MATLAB_SHORT_ROOT:-$(dirname "${SCRATCH_CANONICAL_ROOT}")/mt}"
 MATLAB_RUNTIME_ROOT="${MATLAB_SHORT_ROOT}/${JOB_TOKEN}"
+MATLAB_JOB_STORAGE="${MATLAB_RUNTIME_ROOT}/local_cluster_jobs"
 REPLAY_ROOT="${LOCAL_ROOT}/representative_replay"
 KR_ROOT="${LOCAL_ROOT}/kr"
 UPSCALING_ROOT="${LOCAL_ROOT}/upscaling"
@@ -111,7 +112,10 @@ mkdir -p \
     "${KR_ROOT}" \
     "${UPSCALING_ROOT}" \
     "${TMPDIR}" \
-    "${MATLAB_PREFDIR}"
+    "${MATLAB_PREFDIR}" \
+    "${MATLAB_JOB_STORAGE}"
+touch "${MATLAB_JOB_STORAGE}/.write_test"
+rm -f "${MATLAB_JOB_STORAGE}/.write_test"
 
 cleanup() {
     local status="$?"
@@ -130,6 +134,7 @@ echo "case_name=${case_name}"
 echo "hostname=$(hostname)"
 echo "matlab_tempdir=${TMPDIR}"
 echo "matlab_prefdir=${MATLAB_PREFDIR}"
+echo "matlab_job_storage=${MATLAB_JOB_STORAGE}"
 echo "started_at=$(date --iso-8601=seconds)"
 
 matlab -batch \
@@ -171,7 +176,7 @@ export KR_DYN_UPSCALING_ROOT="${UPSCALING_ROOT}"
 export MRST_ROOT UPSCALING_ZIP
 
 matlab -batch \
-    "run('${FROZEN_REPO}/examples/pc_upscaling_pilot/run_kr_upscaling_dyn_median_examples_full87.m');"
+    "cluster = parcluster('Processes'); cluster.JobStorageLocation = '${MATLAB_JOB_STORAGE}'; saveProfile(cluster); clear cluster; run('${FROZEN_REPO}/examples/pc_upscaling_pilot/run_kr_upscaling_dyn_median_examples_full87.m');"
 
 python3 \
     "${RUNTIME_REPO}/examples/pc_upscaling_pilot/engaging/production/finalize_case_kr.py" \

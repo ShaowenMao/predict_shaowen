@@ -11,6 +11,9 @@ import sys
 from pathlib import Path
 
 
+NOT_REPLAYED_OUTPUT_FILE = "NOTREPLAYED"
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--template-csv", required=True, type=Path)
@@ -36,6 +39,13 @@ def main() -> int:
         raise ValueError(f"Replay template has {len(template_rows)} rows, expected 522")
     if len(selection_rows) != 6 or len(replay_rows) != 6:
         raise ValueError("Representative selection and replay must each contain 6 rows")
+    if "OutputFile" not in template_fields:
+        raise ValueError("Replay template is missing OutputFile")
+
+    # Keep OutputFile textual even when all six replayed rows occur late in
+    # the CSV. MATLAB otherwise infers an all-empty leading sample as double.
+    for row in template_rows:
+        row["OutputFile"] = NOT_REPLAYED_OUTPUT_FILE
 
     required_output_fields = [
         "AttemptIndex",
@@ -73,11 +83,20 @@ def main() -> int:
             raise ValueError(
                 f"Representative replay exceeds tolerance: {replay['TaskId']}"
             )
+        replay_output_file = replay.get("OutputFile", "").strip()
+        if not replay_output_file:
+            raise ValueError(
+                f"Representative replay has no output file: {replay['TaskId']}"
+            )
+        if not Path(replay_output_file).is_file():
+            raise FileNotFoundError(
+                f"Representative replay output is missing: {replay_output_file}"
+            )
         target.update(
             {
                 "VerificationStatus": replay["VerificationStatus"],
                 "MaxAbsLog10Diff": replay["MaxAbsLog10Diff"],
-                "OutputFile": replay["OutputFile"],
+                "OutputFile": replay_output_file,
                 "AttemptIndex": replay["AttemptIndex"],
                 "ReplayMode": replay["ReplayMode"],
                 "SmearOverlapRule": replay["SmearOverlapRule"],
@@ -89,6 +108,15 @@ def main() -> int:
 
     if len(selected_case_rows) != 6:
         raise ValueError("Did not merge exactly six representative rows")
+    merged_output_files = [
+        row["OutputFile"]
+        for row in template_rows
+        if row["OutputFile"] != NOT_REPLAYED_OUTPUT_FILE
+    ]
+    if len(merged_output_files) != 6:
+        raise ValueError(
+            f"Merged {len(merged_output_files)} replay paths, expected 6"
+        )
     args.output_csv.parent.mkdir(parents=True, exist_ok=True)
     with args.output_csv.open("w", newline="", encoding="utf-8") as stream:
         writer = csv.DictWriter(stream, fieldnames=template_fields)
@@ -99,6 +127,7 @@ def main() -> int:
         "output_csv": str(args.output_csv),
         "row_count": len(template_rows),
         "representative_rows": sorted(selected_case_rows),
+        "not_replayed_output_file": NOT_REPLAYED_OUTPUT_FILE,
     }
     print(json.dumps(result, indent=2))
     return 0
