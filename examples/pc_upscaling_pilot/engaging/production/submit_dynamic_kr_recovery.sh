@@ -27,6 +27,9 @@ ORIGINAL_KR_JOB_ID="${ORIGINAL_KR_JOB_ID:-}"
 KR_MAX_CONCURRENT="${KR_MAX_CONCURRENT:-24}"
 KR_WALLTIME="${KR_WALLTIME:-12:00:00}"
 KR_MEMORY="${KR_MEMORY:-48G}"
+RECOVERY_TAG="${RECOVERY_TAG:-recovery}"
+ALLOW_CHAINED_RECOVERY="${ALLOW_CHAINED_RECOVERY:-0}"
+NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT:-/tmp/${USER}/predict_shaowen}"
 CASE_COUNT=1620
 CASES_PER_ARRAY_TASK=10
 KR_ARRAY_TASK_COUNT=162
@@ -35,6 +38,13 @@ CASE_WORK_ROOT="${RUN_ROOT}/case_work_manifest"
 CASE_INPUT_ROOT="${RUN_ROOT}/case_inputs"
 CASE_RESULT_ROOT="${RUN_ROOT}/case_results"
 LOG_ROOT="${SCRATCH_ROOT}/production_logs/${RUN_ID}"
+RECOVERY_LOG_ROOT="${LOG_ROOT}/kr_recovery_${RECOVERY_TAG}"
+FINAL_GATE_LOG_ROOT="${LOG_ROOT}/final_gate_recovery_${RECOVERY_TAG}"
+
+if [[ ! "${RECOVERY_TAG}" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]]; then
+    echo "RECOVERY_TAG contains unsupported characters: ${RECOVERY_TAG}" >&2
+    exit 2
+fi
 
 if [[ -z "${ORIGINAL_KR_JOB_ID}" && -f "${RUN_ROOT}/kr_array_job_id.txt" ]]; then
     ORIGINAL_KR_JOB_ID="$(<"${RUN_ROOT}/kr_array_job_id.txt")"
@@ -55,9 +65,18 @@ if [[ "${ACTION}" == "submit" && -f "${RUN_ROOT}/kr_recovery_job_id.txt" ]]; the
     previous_recovery_job_id="$(<"${RUN_ROOT}/kr_recovery_job_id.txt")"
     if [[ -n "${previous_recovery_job_id}" ]] && \
             [[ -n "$(squeue -h -j "${previous_recovery_job_id}" 2>/dev/null)" ]]; then
-        echo "Recovery job ${previous_recovery_job_id} is already active." >&2
-        exit 2
+        if [[ "${ALLOW_CHAINED_RECOVERY}" != "1" || \
+                "${ORIGINAL_KR_JOB_ID}" != "${previous_recovery_job_id}" ]]; then
+            echo "Recovery job ${previous_recovery_job_id} is already active." >&2
+            exit 2
+        fi
+        echo "Chaining recovery after active predecessor ${previous_recovery_job_id}."
     fi
+fi
+if [[ "${ACTION}" == "submit" && \
+        -f "${RUN_ROOT}/kr_recovery_${RECOVERY_TAG}_job_id.txt" ]]; then
+    echo "Recovery tag ${RECOVERY_TAG} has already been submitted." >&2
+    exit 2
 fi
 
 completed_cases="$(
@@ -72,6 +91,8 @@ Dynamic-Kr recovery plan
   recovery strategy: all ${KR_ARRAY_TASK_COUNT} geology chunks, marker-aware skips
   recovery concurrency: ${KR_MAX_CONCURRENT}
   recovery walltime: ${KR_WALLTIME}
+  recovery tag: ${RECOVERY_TAG}
+  node-local MATLAB root: ${NODE_LOCAL_TMP_ROOT}
   orchestration commit: ${ORCHESTRATION_COMMIT:-not-required-for-plan}
   physics commit: ${PHYSICS_COMMIT}
 EOF
@@ -80,7 +101,7 @@ if [[ "${ACTION}" == "plan" ]]; then
     exit 0
 fi
 
-mkdir -p "${LOG_ROOT}/kr_recovery" "${LOG_ROOT}/final_gate_recovery"
+mkdir -p "${RECOVERY_LOG_ROOT}" "${FINAL_GATE_LOG_ROOT}"
 
 recovery_submission="$(
     sbatch \
@@ -94,9 +115,9 @@ recovery_submission="$(
         --mem="${KR_MEMORY}" \
         --array="1-${KR_ARRAY_TASK_COUNT}%${KR_MAX_CONCURRENT}" \
         --dependency="afterany:${ORIGINAL_KR_JOB_ID}" \
-        --output="${LOG_ROOT}/kr_recovery/%x_%A_%a.out" \
-        --error="${LOG_ROOT}/kr_recovery/%x_%A_%a.err" \
-        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",FREEZE_ROOT="${FREEZE_ROOT}",CASE_WORK_ROOT="${CASE_WORK_ROOT}",CASE_INPUT_ROOT="${CASE_INPUT_ROOT}",CASE_RESULT_ROOT="${CASE_RESULT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",CASE_COUNT="${CASE_COUNT}",CASES_PER_ARRAY_TASK="${CASES_PER_ARRAY_TASK}" \
+        --output="${RECOVERY_LOG_ROOT}/%x_%A_%a.out" \
+        --error="${RECOVERY_LOG_ROOT}/%x_%A_%a.err" \
+        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",FREEZE_ROOT="${FREEZE_ROOT}",CASE_WORK_ROOT="${CASE_WORK_ROOT}",CASE_INPUT_ROOT="${CASE_INPUT_ROOT}",CASE_RESULT_ROOT="${CASE_RESULT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",CASE_COUNT="${CASE_COUNT}",CASES_PER_ARRAY_TASK="${CASES_PER_ARRAY_TASK}" \
         "${RUNTIME_REPO}/examples/pc_upscaling_pilot/engaging/production/run_case_dynamic_kr_chunk.sh"
 )"
 RECOVERY_JOB_ID="${recovery_submission%%;*}"
@@ -112,25 +133,29 @@ final_gate_submission="$(
         --cpus-per-task=1 \
         --mem="${FINAL_GATE_MEMORY:-8G}" \
         --dependency="afterany:${RECOVERY_JOB_ID}" \
-        --output="${LOG_ROOT}/final_gate_recovery/%x_%j.out" \
-        --error="${LOG_ROOT}/final_gate_recovery/%x_%j.err" \
+        --output="${FINAL_GATE_LOG_ROOT}/%x_%j.out" \
+        --error="${FINAL_GATE_LOG_ROOT}/%x_%j.err" \
         --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",RUN_ROOT="${RUN_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",MAX_SOURCE_LOG_PERMEABILITY_MISMATCH="${REPLAY_TOLERANCE_LOG10}" \
         "${SCRIPT_DIR}/run_case_completion_gate.sh"
 )"
 FINAL_GATE_JOB_ID="${final_gate_submission%%;*}"
 
+echo "${RECOVERY_JOB_ID}" > "${RUN_ROOT}/kr_recovery_${RECOVERY_TAG}_job_id.txt"
+echo "${FINAL_GATE_JOB_ID}" > "${RUN_ROOT}/final_qa_${RECOVERY_TAG}_job_id.txt"
 echo "${RECOVERY_JOB_ID}" > "${RUN_ROOT}/kr_recovery_job_id.txt"
 echo "${FINAL_GATE_JOB_ID}" > "${RUN_ROOT}/final_qa_job_id.txt"
 
 python3 - \
-    "${RUN_ROOT}/dynamic_kr_recovery_manifest.json" \
+    "${RUN_ROOT}/dynamic_kr_recovery_${RECOVERY_TAG}_manifest.json" \
     "${RUN_ID}" \
+    "${RECOVERY_TAG}" \
     "${ORCHESTRATION_COMMIT}" \
     "${ORIGINAL_KR_JOB_ID}" \
     "${RECOVERY_JOB_ID}" \
     "${FINAL_GATE_JOB_ID}" \
     "${completed_cases}" \
     "${KR_MAX_CONCURRENT}" \
+    "${NODE_LOCAL_TMP_ROOT}" \
     "${PHYSICS_COMMIT}" \
     "${METHOD_CONFIG_SHA256}" <<'PY'
 from datetime import datetime, timezone
@@ -140,12 +165,14 @@ import sys
 (
     output_path,
     run_id,
+    recovery_tag,
     orchestration_commit,
     original_job_id,
     recovery_job_id,
     final_gate_job_id,
     completed_cases,
     max_concurrent,
+    node_local_tmp_root,
     physics_commit,
     method_config_sha256,
 ) = sys.argv[1:]
@@ -155,6 +182,7 @@ manifest = {
     "status": "submitted",
     "submitted_at_utc": datetime.now(timezone.utc).isoformat(),
     "run_id": run_id,
+    "recovery_tag": recovery_tag,
     "orchestration_commit": orchestration_commit,
     "physics_commit": physics_commit,
     "method_config_sha256": method_config_sha256,
@@ -162,8 +190,9 @@ manifest = {
     "case_count": 1620,
     "completed_case_markers_at_submission": int(completed_cases),
     "max_concurrent": int(max_concurrent),
+    "node_local_tmp_root": node_local_tmp_root,
     "jobs": {
-        "original_dynamic_kr_array": original_job_id,
+        "predecessor_dynamic_kr_array": original_job_id,
         "recovery_dynamic_kr_array": recovery_job_id,
         "final_qa_gate": final_gate_job_id,
     },

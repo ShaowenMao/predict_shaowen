@@ -26,10 +26,13 @@ Durable, compact results are stored under:
 /orcd/data/juanes/001/shaowen/predict_shaowen/production_runs/<run_id>/
 ```
 
-Large temporary replay maps and isolated MATLAB preference files are written
-to flash scratch. They are deleted only after replay verification and compact
-Pc publication succeed. Node-local `/tmp` is not used because many concurrent
-replay jobs can exhaust its shared capacity.
+Large temporary replay maps remain on flash scratch and are deleted only after
+replay verification and compact Pc publication succeed. Dynamic-Kr scientific
+inputs and outputs likewise remain on scratch or durable project storage.
+Only the lightweight, high-frequency MATLAB `Processes` pool coordination,
+preference, and temporary files use node-local `/tmp`. This avoids shared-file
+system failures without placing replay maps or scientific results in
+node-local storage.
 
 ```text
 checkpoint_manifest/   one selection per geology-window checkpoint
@@ -170,6 +173,35 @@ Each dynamic-Kr job validates:
 - monotonic and bounded Kr curves;
 - complete 6x87 slice endpoint mapping;
 - both reservoir-ready Pc representations.
+
+Before a large recovery, validate node-local MATLAB pool storage with:
+
+```bash
+sbatch \
+  --account=mit_amf_advanced_cpu \
+  --qos=mit_amf_advanced_cpu \
+  --partition=mit_normal \
+  --time=00:10:00 \
+  --cpus-per-task=6 \
+  --mem=8G \
+  examples/pc_upscaling_pilot/engaging/production/smoke_test_node_local_parpool.sh
+```
+
+A recovery can be chained behind an active predecessor without canceling
+valid work:
+
+```bash
+ORIGINAL_KR_JOB_ID=<active_recovery_job_id> \
+RECOVERY_TAG=node_local_v2 \
+ALLOW_CHAINED_RECOVERY=1 \
+RUNTIME_REPO=/path/to/new/immutable/runtime_repo \
+ORCHESTRATION_COMMIT=<runtime-commit> \
+bash /path/to/new/immutable/runtime_repo/examples/pc_upscaling_pilot/engaging/production/submit_dynamic_kr_recovery.sh submit
+```
+
+The recovery array scans every geology chunk but skips every case with a valid
+completion marker. Unique recovery tags preserve job IDs, logs, and submission
+manifests for each attempt.
 
 ## Restart and Failure Policy
 
