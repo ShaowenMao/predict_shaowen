@@ -80,6 +80,8 @@ PY
 MISSING_COUNT="${#missing_indices[@]}"
 if (( MISSING_COUNT == 0 )); then
     echo "All checkpoint groups already have completion markers."
+    export RUNTIME_REPO FREEZE_ROOT SCRATCH_ROOT RUN_ID RUN_ROOT
+    bash "${SCRIPT_DIR}/submit_geology_stratigraphy_package.sh" "${ACTION}"
     exit 0
 fi
 
@@ -95,7 +97,7 @@ MISSING_ARRAY_SPEC="$(IFS=,; echo "${missing_indices[*]}")"
 ASSEMBLY_ARRAY_TASK_COUNT=27
 KR_ARRAY_TASK_COUNT=162
 TOTAL_SUBMITTED_JOB_ELEMENTS=$(( \
-    MISSING_COUNT + ASSEMBLY_ARRAY_TASK_COUNT + KR_ARRAY_TASK_COUNT + 2 \
+    MISSING_COUNT + ASSEMBLY_ARRAY_TASK_COUNT + KR_ARRAY_TASK_COUNT + 3 \
 ))
 if (( TOTAL_SUBMITTED_JOB_ELEMENTS > SLURM_MAX_SUBMITTED_JOBS )); then
     echo "Continuation needs ${TOTAL_SUBMITTED_JOB_ELEMENTS} job elements; limit is ${SLURM_MAX_SUBMITTED_JOBS}." >&2
@@ -124,6 +126,7 @@ Production continuation plan
   checkpoint temporary root: ${CHECKPOINT_TEMP_ROOT}
   downstream assembly tasks: ${ASSEMBLY_ARRAY_TASK_COUNT}
   downstream dynamic-Kr tasks: ${KR_ARRAY_TASK_COUNT}
+  downstream geology-stratigraphy package jobs: 1
   total submitted job elements: ${TOTAL_SUBMITTED_JOB_ELEMENTS}/${SLURM_MAX_SUBMITTED_JOBS}
 EOF
 
@@ -203,6 +206,11 @@ final_gate_submission="$(
 )"
 FINAL_GATE_JOB_ID="${final_gate_submission%%;*}"
 
+export DEPENDENCY_JOB_ID="${FINAL_GATE_JOB_ID}"
+bash "${SCRIPT_DIR}/submit_geology_stratigraphy_package.sh" submit
+STRATIGRAPHY_JOB_ID="$(<"${RUN_ROOT}/geology_stratigraphy_job_id.txt")"
+unset DEPENDENCY_JOB_ID
+
 python3 - \
     "${RUN_ROOT}/production_continuation_manifest.json" \
     "${RUN_ID}" \
@@ -215,7 +223,8 @@ python3 - \
     "${CHECKPOINT_GATE_JOB_ID}" \
     "${ASSEMBLY_JOB_ID}" \
     "${KR_JOB_ID}" \
-    "${FINAL_GATE_JOB_ID}" <<'PY'
+    "${FINAL_GATE_JOB_ID}" \
+    "${STRATIGRAPHY_JOB_ID}" <<'PY'
 from datetime import datetime, timezone
 import json
 import sys
@@ -233,6 +242,7 @@ import sys
     assembly_job_id,
     kr_job_id,
     final_gate_job_id,
+    stratigraphy_job_id,
 ) = sys.argv[1:]
 
 manifest = {
@@ -253,6 +263,7 @@ manifest = {
         "assembly_array": assembly_job_id,
         "dynamic_kr_array": kr_job_id,
         "final_qa_gate": final_gate_job_id,
+        "geology_stratigraphy_package": stratigraphy_job_id,
     },
 }
 with open(output_path, "w", encoding="utf-8") as stream:

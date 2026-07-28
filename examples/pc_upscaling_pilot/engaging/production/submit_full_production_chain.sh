@@ -50,7 +50,7 @@ done
 CHECKPOINT_ARRAY_TASK_COUNT=$(( (CHECKPOINT_GROUP_COUNT + CHECKPOINT_GROUPS_PER_ARRAY_TASK - 1) / CHECKPOINT_GROUPS_PER_ARRAY_TASK ))
 ASSEMBLY_ARRAY_TASK_COUNT=$(( (GEOLOGY_COUNT + ASSEMBLY_GEOLOGIES_PER_ARRAY_TASK - 1) / ASSEMBLY_GEOLOGIES_PER_ARRAY_TASK ))
 KR_ARRAY_TASK_COUNT=$(( (CASE_COUNT + KR_CASES_PER_ARRAY_TASK - 1) / KR_CASES_PER_ARRAY_TASK ))
-TOTAL_SUBMITTED_JOB_ELEMENTS=$(( CHECKPOINT_ARRAY_TASK_COUNT + ASSEMBLY_ARRAY_TASK_COUNT + KR_ARRAY_TASK_COUNT + 2 ))
+TOTAL_SUBMITTED_JOB_ELEMENTS=$(( CHECKPOINT_ARRAY_TASK_COUNT + ASSEMBLY_ARRAY_TASK_COUNT + KR_ARRAY_TASK_COUNT + 3 ))
 if (( TOTAL_SUBMITTED_JOB_ELEMENTS > SLURM_MAX_SUBMITTED_JOBS )); then
     echo "Planned ${TOTAL_SUBMITTED_JOB_ELEMENTS} submitted jobs exceed the scheduler limit ${SLURM_MAX_SUBMITTED_JOBS}." >&2
     exit 2
@@ -142,6 +142,7 @@ Production launch plan
   checkpoint: ${CHECKPOINT_ARRAY_TASK_COUNT} array tasks, ${CHECKPOINT_GROUPS_PER_ARRAY_TASK} groups/task, concurrency ${CHECKPOINT_MAX_CONCURRENT}
   assembly: ${ASSEMBLY_ARRAY_TASK_COUNT} array tasks, ${ASSEMBLY_GEOLOGIES_PER_ARRAY_TASK} geologies/task
   dynamic Kr: ${KR_ARRAY_TASK_COUNT} array tasks, ${KR_CASES_PER_ARRAY_TASK} cases/task, concurrency ${KR_MAX_CONCURRENT}
+  geology stratigraphy: 1 post-QA package job
   total submitted job elements: ${TOTAL_SUBMITTED_JOB_ELEMENTS}/${SLURM_MAX_SUBMITTED_JOBS}
 EOF
 
@@ -215,6 +216,11 @@ final_gate_submission="$(
 )"
 FINAL_GATE_JOB_ID="${final_gate_submission%%;*}"
 
+export DEPENDENCY_JOB_ID="${FINAL_GATE_JOB_ID}"
+bash "${SCRIPT_DIR}/submit_geology_stratigraphy_package.sh" submit
+STRATIGRAPHY_JOB_ID="$(<"${RUN_ROOT}/geology_stratigraphy_job_id.txt")"
+unset DEPENDENCY_JOB_ID
+
 python3 - \
     "${RUN_ROOT}/production_launch_manifest.json" \
     "${RUN_ID}" \
@@ -244,7 +250,8 @@ python3 - \
     "${CHECKPOINT_GATE_JOB_ID}" \
     "${ASSEMBLY_JOB_ID}" \
     "${KR_JOB_ID}" \
-    "${FINAL_GATE_JOB_ID}" <<'PY'
+    "${FINAL_GATE_JOB_ID}" \
+    "${STRATIGRAPHY_JOB_ID}" <<'PY'
 from datetime import datetime, timezone
 import json
 import sys
@@ -279,6 +286,7 @@ import sys
     assembly_job_id,
     kr_job_id,
     final_gate_job_id,
+    stratigraphy_job_id,
 ) = sys.argv[1:]
 
 manifest = {
@@ -324,6 +332,7 @@ manifest = {
         "assembly_array": assembly_job_id,
         "dynamic_kr_array": kr_job_id,
         "final_qa_gate": final_gate_job_id,
+        "geology_stratigraphy_package": stratigraphy_job_id,
     },
 }
 with open(output_path, "w", encoding="utf-8") as stream:
