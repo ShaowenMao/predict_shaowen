@@ -1,0 +1,119 @@
+% Visual styles for the three-column workflow figure.
+\definecolor{workflowPanel}{HTML}{F0F0F0}
+\definecolor{workflowText}{HTML}{111111}
+\definecolor{workflowMuted}{HTML}{4B4B4B}
+\definecolor{workflowGrid}{HTML}{B7B7B7}
+\definecolor{workflowSand}{HTML}{EE945B}
+\definecolor{workflowClay}{HTML}{432B1E}
+\definecolor{workflowBlue}{HTML}{1769AA}
+\definecolor{workflowFault}{HTML}{A7ADB4}
+\definecolor{workflowCyan}{HTML}{35A6B4}
+\definecolor{workflowOrange}{HTML}{E09200}
+\definecolor{workflowYellow}{HTML}{F1C72D}
+\definecolor{workflowOverburden}{HTML}{C6B06E}
+\definecolor{workflowTopSeal}{HTML}{5F382D}
+\definecolor{workflowStorageReservoir}{HTML}{D59B47}
+\definecolor{workflowUnderburden}{HTML}{A8B3BF}
+
+% PNAS research articles use 9 pt body text. Keep all figure-authored text at
+% that same final-size scale; hierarchy comes from weight and placement.
+\newcommand{\workflowtextsize}{\fontsize{9}{10.4}\selectfont}
+
+\tikzset{
+  workflow panel title/.style={
+    inner sep=0pt,
+    text=workflowText,
+    font=\fontsize{10.5}{12}\selectfont,
+    align=center,
+  },
+  workflow column title/.style={
+    inner sep=0pt,
+    text=workflowText,
+    font=\workflowtextsize\bfseries,
+    align=center,
+  },
+  workflow left title/.style={
+    inner sep=0pt,
+    text=workflowText,
+    font=\workflowtextsize,
+    align=center,
+  },
+  workflow heading/.style={
+    anchor=west,
+    inner sep=0pt,
+    text=workflowText,
+    font=\workflowtextsize\bfseries,
+  },
+  workflow left heading/.style={
+    anchor=west,
+    inner sep=0pt,
+    text=workflowText,
+    font=\workflowtextsize,
+  },
+  workflow body/.style={
+    anchor=north west,
+    inner sep=0pt,
+    text=workflowText,
+    align=left,
+    font=\workflowtextsize,
+  },
+  workflow small/.style={
+    anchor=north west,
+    inner sep=0pt,
+    text=workflowMuted,
+    align=left,
+    font=\workflowtextsize,
+  },
+  workflow figure label/.style={
+    inner sep=0pt,
+    text=workflowText,
+    font=\workflowtextsize,
+    align=center,
+  },
+  workflow schematic label/.style={
+    inner sep=0pt,
+    text=workflowText,
+    font=\fontsize{8}{9.2}\selectfont,
+    align=center,
+  },
+  workflow legend label/.style={
+    anchor=west,
+    inner sep=0pt,
+    text=workflowText,
+    font=\workflowtextsize,
+    align=left,
+  },
+  workflow asset/.style={inner sep=0pt},
+}
+
+\newcommand{\workflowlegendbox}[4]{%
+  \fill[#3] (#1,#2) rectangle ++(1.7,1.7);%
+  \draw[workflowText,line width=0.25pt] (#1,#2) rectangle ++(1.7,1.7);%
+  \node[workflow legend label] at (#1+2.5,#2+0.85) {#4};%
+}
+
+\newcommand{\workflowasset}[5]{%
+  \node[workflow asset] at (#1,#2) {%
+    \includegraphics[width=#3,height=#4,keepaspectratio]{#5}%
+  };%
+}
+
+\newcommand{\workflowbullet}[4]{%
+  \fill[workflowText] (#1,#2) rectangle ++(1.05,1.05);%
+  \node[workflow heading,text width=#3] at (#1+2.3,#2+0.55) {#4};%
+}
+
+\newcommand{\workflowleftbullet}[4]{%
+  \fill[workflowText] (#1,#2) rectangle ++(1.05,1.05);%
+  \node[workflow left heading,text width=#3] at (#1+2.3,#2+0.55) {#4};%
+}
+
+\newcommand{\workflowsubbullet}[4]{%
+  \fill[workflowText] (#1,#2) circle[radius=0.42mm];%
+  \node[workflow body,text width=#3] at (#1+1.8,#2+0.35) {#4};%
+}
+
+\newcommand{\workflowopenbullet}[4]{%
+  \draw[workflowText,line width=0.35pt] (#1,#2) circle[radius=0.55mm];%
+  \node[workflow body,text width=#3] at (#1+1.8,#2+0.35) {#4};%
+}

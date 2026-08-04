@@ -1,0 +1,128 @@
+{
+  "generated_utc": "2026-08-04T06:43:42.526595+00:00",
+  "generator": "D:\\Github\\predict_shaowen\\paper\\figures\\workflow\\render_panel3_migration_cross_sections.py",
+  "scientific_sources_modified": false,
+  "reference_algorithm": "D:\\Github\\JutulDarcy.jl_shaowen\\scripts\\visualization\\gom_rs_publication\\render_gom_rs_cross_section.py",
+  "layout": {
+    "rows": [
+      "Case 6",
+      "Case 7"
+    ],
+    "columns": [
+      "Sg",
+      "Rs"
+    ],
+    "complete_cross_section": true,
+    "local_annotations": false,
+    "shared_colorbar_ticks": {
+      "Sg": [
+        0.0,
+        0.6
+      ],
+      "Rs": [
+        0.0,
+        18.0
+      ]
+    },
+    "colorbar_titles_centered": true
+  },
+  "rendering": {
+    "slice_x_m": 22500.0,
+    "smooth_length_m": 12.5,
+    "display_cutoff": 0.015,
+    "sg_limits": [
+      0.0,
+      0.6
+    ],
+    "rs_limits": [
+      0.0,
+      18.0
+    ],
+    "view_y_limits_m": [
+      9775.0,
+      15290.5
+    ],
+    "view_z_limits_m": [
+      -12.5,
+      3002.6
+    ]
+  },
+  "diagnostics": {
+    "case_6_Sg": {
+      "scalar": "Sg",
+      "section_cells": 24886,
+      "clay_loops": 12,
+      "fault_loops": 1,
+      "geological_components": 31,
+      "displayed_components": 13,
+      "displayed_regular_grid_points": 3727,
+      "raw_min": 0.0,
+      "raw_max": 0.6121533934218673
+    },
+    "case_6_Rs": {
+      "scalar": "Rs",
+      "section_cells": 24886,
+      "clay_loops": 12,
+      "fault_loops": 1,
+      "geological_components": 31,
+      "displayed_components": 28,
+      "displayed_regular_grid_points": 14108,
+      "raw_min": 0.0,
+      "raw_max": 17.804027486912403
+    },
+    "case_7_Sg": {
+      "scalar": "Sg",
+      "section_cells": 24886,
+      "clay_loops": 12,
+      "fault_loops": 1,
+      "geological_components": 31,
+      "displayed_components": 4,
+      "displayed_regular_grid_points": 3654,
+      "raw_min": 0.0,
+      "raw_max": 0.6057609308426033
+    },
+    "case_7_Rs": {
+      "scalar": "Rs",
+      "section_cells": 24886,
+      "clay_loops": 12,
+      "fault_loops": 1,
+      "geological_components": 31,
+      "displayed_components": 6,
+      "displayed_regular_grid_points": 11107,
+      "raw_min": 0.0,
+      "raw_max": 17.805771311039884
+    }
+  },
+  "inputs": {
+    "case_6": {
+      "path": "D:\\codex_gom\\step62_effective_pc_global_plateau\\case6_s03_c012_case08_geology_v2\\gom_step62_effective_pc_global_plateau_s03_c012_case08_geology_v2_0210.vtu",
+      "sha256": "bcf620b27e2dfe508c292feef9327138ae2461dfe47753eb4e616bdac8cdee60"
+    },
+    "case_7": {
+      "path": "D:\\codex_gom\\step62_effective_pc_global_plateau\\case7_s04_c024_case03_geology_v2\\gom_step62_effective_pc_global_plateau_s04_c024_case03_geology_v2_0210.vtu",
+      "sha256": "bceb05eccdbdd19c6f3d06ba690c72ce299c98f0d159db9ec1e4f7e0fc4a64ab"
+    },
+    "reference_renderer": {
+      "path": "D:\\Github\\JutulDarcy.jl_shaowen\\scripts\\visualization\\gom_rs_publication\\render_gom_rs_cross_section.py",
+      "sha256": "3e82bb373db51b1a03fe7fcf360ae3c7f77bf62049096875fb437be539a1095b"
+    },
+    "rs_preset": {
+      "path": "D:\\Github\\JutulDarcy.jl_shaowen\\scripts\\visualization\\gom_rs_publication\\csp11_icefire_white_zero_paraview.json",
+      "sha256": "cd7e85a73e0662f165458db140261d518a767e5b9fe47ed377b812d459519bf8"
+    },
+    "sg_preset": {
+      "path": "D:\\Github\\JutulDarcy.jl_shaowen\\scripts\\visualization\\gom_saturation_publication\\inverted_black_body_radiation_paraview.json",
+      "sha256": "5600b0d242adb07fef9f74396abaf13758b9e29065c3e317b843791176afbfed"
+    }
+  },
+  "outputs": {
+    "png": {
+      "path": "D:\\Github\\predict_shaowen\\paper\\figures\\workflow\\assets\\derived\\panel3_migration_cross_sections_transparent.png",
+      "sha256": "205549fe72e823bf7aa2be6ab62bf4d8d84bb5af3c41d813fb7e717eba15e90c"
+    },
+    "pdf": {
+      "path": "D:\\Github\\predict_shaowen\\paper\\figures\\workflow\\assets\\derived\\panel3_migration_cross_sections_transparent.pdf",
+      "sha256": "7b7102273ace974ae8332b3358ccf7d8ddce32f7947f89bd4b0752c13ce89ef8"
+    }
+  }
+}

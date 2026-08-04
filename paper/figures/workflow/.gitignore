@@ -1,0 +1,49 @@
+build/
+build_last.log
+__pycache__/
+*.py[cod]
+
+# Final manuscript/review renders are reproducible build products.
+workflow_overview.pdf
+workflow_overview_preview.png
+workflow_overview.aux
+workflow_overview.fdb_latexmk
+workflow_overview.fls
+workflow_overview.log
+workflow_overview.synctex.gz
+
+# Exploratory layout and crop checks retained locally only.
+workflow_bbox.html
+workflow_overview_curved_fault_preview.pdf
+assets/derived/*crop_test*
+assets/derived/*compact*
+assets/derived/panel3_migration_cross_sections.pdf
+assets/derived/panel3_migration_cross_sections.png
+assets/derived/panel3_migration_cross_sections_provenance.json
+assets/derived/reservoir_active_inactive_3d.png
+assets/derived/reservoir_full_annotated.png
+
+# Renderer review products not embedded by the TikZ composition.
+assets/panel1_w4_upscaled_pc_curve.*
+assets/panel1_w4_upscaled_kr_curves.*
+assets/pc_kr_curves.png
+
+# Superseded source alternatives that are not used by the final composition.
+assets/containment_evolution.pdf
+assets/fault_architectures.pdf
+assets/field_structure.png
+assets/full_fault_kzz.pdf
+assets/full_fault_phi.pdf
+assets/joint_clusters.pdf
+assets/migration_metrics.pdf
+assets/reservoir_plumes.pdf
+assets/sampling_pools.pdf
+assets/stratigraphy.pdf
+assets/raw/fault_architecture_03.png
+assets/derived/fault_architecture_03.png
+assets/derived/full_fault_kzz_map.pdf
+assets/derived/full_fault_phi_map.pdf
+assets/derived/panel2_colorbar_*.pdf
+assets/derived/panel3_migration_cross_sections_transparent.png
+assets/derived/panel3_uq_containment.png
+assets/derived/panel3_uq_migration.png
