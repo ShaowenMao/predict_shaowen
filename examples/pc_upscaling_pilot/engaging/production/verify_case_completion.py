@@ -172,37 +172,6 @@ def validate_reservoir_qa(
     return {"source_log_permeability_mismatch": source_mismatch}
 
 
-def validate_branch_qa(path: Path, geology_id: str, case_id: int) -> None:
-    rows = read_rows(path)
-    if len(rows) != 1:
-        raise ValueError(f"{path}: expected one branch QA row, found {len(rows)}")
-    row = rows[0]
-    if row["GeologyId"] != geology_id:
-        raise ValueError(f"{path}: geology ID does not match {geology_id}")
-    expected = {
-        "Level3CaseId": case_id,
-        "WindowCount": 6,
-        "SliceCount": 87,
-        "FaultCellCount": 522,
-        "Passed": 1,
-    }
-    for field, expected_value in expected.items():
-        actual = int(float(row[field]))
-        if actual != expected_value:
-            raise ValueError(
-                f"{path}: {field}={actual}; expected {expected_value}"
-            )
-    for field in (
-        "MaxEndpointMismatch",
-        "MaxPcMonotonicDrop",
-        "MaxKrgMonotonicDrop",
-        "MaxKrwMonotonicRise",
-        "MaxNormalizedKrShapeMismatch",
-    ):
-        if abs(finite(row, field)) > 1.0e-8:
-            raise ValueError(f"{path}: {field} exceeds 1e-8")
-
-
 def main() -> int:
     args = parse_args()
     work_rows = read_rows(args.case_work_csv.resolve())
@@ -280,7 +249,7 @@ def main() -> int:
                 "pc_assignment_count": 522,
                 "strike_collapse_used": False,
                 "amgcl_required": True,
-                "pc_representations": ["full_slice", "pe_branch_medoid"],
+                "pc_representations": ["full_slice"],
             }
             for field, expected in expected_result.items():
                 if result_marker.get(field) != expected:
@@ -315,13 +284,6 @@ def main() -> int:
             source_mismatches.append(
                 reservoir_report["source_log_permeability_mismatch"]
             )
-            branch_qa_path = find_inventory_path(
-                result_marker_path,
-                result_marker,
-                "kr/reservoir_ready_pe_branch_medoid/tables/pe_branch_qa_*.csv",
-            )
-            validate_branch_qa(branch_qa_path, geology_id, case_id)
-
             summary_path = find_inventory_path(
                 result_marker_path,
                 result_marker,

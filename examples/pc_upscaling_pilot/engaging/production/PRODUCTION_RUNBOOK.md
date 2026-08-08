@@ -14,9 +14,12 @@ Pc upscaling, and robust dynamic Kr upscaling for the 162-geology,
 - Pc uses invasion percolation with native endpoints and effective Swi.
 - Kr uses one effective-Swi medoid realization per case-window.
 - Dynamic Kr requires AMGCL; no silent linear-solver fallback is allowed.
-- Reservoir exports retain both `full_slice` and `pe_branch_medoid` Pc options.
+- Reservoir exports use the rigorous `full_slice` Pc representation only.
 
 The semantic preflight refuses to run when any of these conditions is false.
+The full-slice-only export has its own method-configuration hash and must use
+a new freeze/manifest; it must not be mixed into an already frozen run that
+published both Pc representations.
 
 ## Storage Layout
 

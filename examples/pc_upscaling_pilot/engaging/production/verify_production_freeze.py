@@ -136,10 +136,9 @@ def verify_method_config(config_path: Path) -> dict:
     representations = config.get("reservoir_export", {}).get(
         "pc_representations", []
     )
-    if set(representations) != {"full_slice", "pe_branch_medoid"}:
+    if representations != ["full_slice"]:
         raise ValueError(
-            "Reservoir export must retain both full_slice and "
-            "pe_branch_medoid Pc representations"
+            "Reservoir export must use only the full_slice Pc representation"
         )
     return config
 

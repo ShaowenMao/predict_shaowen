@@ -199,10 +199,7 @@ def main() -> int:
         kr_root / "tables", "kr_representative_selection_*_swi_medoid.csv"
     )
     full_mat = find_single(kr_root / "reservoir_ready", "*.mat")
-    reduced_mat = find_single(
-        kr_root / "reservoir_ready_pe_branch_medoid", "*.mat"
-    )
-    if full_mat.stat().st_size < 1024 or reduced_mat.stat().st_size < 1024:
+    if full_mat.stat().st_size < 1024:
         raise ValueError("Reservoir-ready MAT output is unexpectedly small")
     selection = read_rows(selection_path)
     if len(selection) != 6:
@@ -240,7 +237,7 @@ def main() -> int:
             "pc_assignment_count": 522,
             "strike_collapse_used": False,
             "amgcl_required": True,
-            "pc_representations": ["full_slice", "pe_branch_medoid"],
+            "pc_representations": ["full_slice"],
             "kr_validation": kr_report,
             "slice_validation": slice_report,
             "files": files,

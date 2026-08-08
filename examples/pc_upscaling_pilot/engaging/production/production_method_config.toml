@@ -32,7 +32,7 @@ preserve_full_3d_grid = true
 allow_strike_collapse = false
 
 [reservoir_export]
-pc_representations = ["full_slice", "pe_branch_medoid"]
+pc_representations = ["full_slice"]
 include_permeability_md = true
 include_permeability_m2 = true
 include_porosity = true

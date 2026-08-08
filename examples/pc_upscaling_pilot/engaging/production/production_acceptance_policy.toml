@@ -1,9 +1,9 @@
 schema_version = 1
-policy_name = "collapsed_cell_union_full_production_v1"
+policy_name = "collapsed_cell_union_full_production_v2_full_slice"
 
 [science]
 physics_commit = "68351e35f3679317b35532a9ca0533674e0aafb5"
-method_config_sha256 = "21266acc83f38d374cdc966d8243834e92b786b75ab1f90dd0a99f4244717a8f"
+method_config_sha256 = "b4c4583d432a13a6d9a1e66540567d44cf37e1058000023bad65452b6f1a9776"
 smear_overlap_rule = "cell_union_psmear"
 collapse_adjacent_lithology = true
 strike_collapse_allowed = false
@@ -17,7 +17,7 @@ require_checkpoint_sha256 = true
 [pc]
 method = "invasion_percolation"
 assignment_count_per_case = 522
-required_representations = ["full_slice", "pe_branch_medoid"]
+required_representations = ["full_slice"]
 
 [kr]
 method = "dynamic"
