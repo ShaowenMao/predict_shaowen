@@ -44,20 +44,20 @@
 - Production run `independent_full_fault_v1_phase1_20260809_v1` resumes 34
   validated checkpoint groups and schedules the remaining 938 groups without
   recomputing completed work.
-- The initial atomic 9-node replay/Pc job `20010410` is superseded before
-  execution by one-node array `20012444`. The replacement has nine independent
-  array tasks, 12 one-core lanes and 216 GiB per task, and a 36-hour wall time.
-  Slurm can start each node independently while preserving the qualified
-  18 GiB shared-memory budget per lane.
-- Production array `20012444` uses `--exclusive=user`, preventing multiple
-  array tasks owned by this user from sharing a physical node and invalidating
-  the conservative node-local `/tmp` allowance. Nonexclusive scheduling test
-  `20012006` is canceled after exposing node packing and before publishing any
-  checkpoint completion markers.
-- Validation gate `20010419`, geology assembly array `20010420`, dynamic-Kr
-  array `20010421`, and final QA gate `20010422` form a dependency chain. Gate
-  `20010419` is explicitly rewired to `afterany:20012444_*`; no downstream
-  stage can start unless its required upstream validation passes.
+- High-memory node array `20012444` and its pending downstream chain are
+  superseded by standard checkpoint-chunk array `20028083`. The replacement
+  restores the proven production architecture: 195 restartable tasks, five
+  checkpoint groups per task, one CPU and 18 GiB per task, up to 96 concurrent
+  tasks, shared flash scratch, and no exclusive-node request.
+- Slurm `--exclusive=user` does not isolate jobs owned by the same user; it
+  excludes other users and unnecessarily reduces eligible nodes. Optional
+  node-local schedulers now require true whole-node exclusivity and are
+  documented as diagnostic paths rather than the production default.
+- Validation gate `20028084`, geology assembly array `20028085`, dynamic-Kr
+  array `20028086`, and final QA gate `20028087` form the replacement dependency
+  chain. The transition preserves all 34 validated checkpoint outputs and the
+  immutable workflow, PREDICT-physics, method-config, sampling, and seed
+  identities.
 - Submission metadata, immutable commit identifiers, method hashes, lane
   manifests, and completion markers are stored beneath the permanent run root
   on `/orcd/data/juanes/001/shaowen`.

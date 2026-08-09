@@ -152,6 +152,12 @@ This is the default production architecture. It matches the successful
 1,620-case campaign and keeps scheduling independent from the scientific
 worker and output contract.
 
+For independent-full-fault Phase 1, checkpoint array `20028083` applies this
+architecture to 972 groups: 195 tasks, five groups per task, one CPU and
+18 GiB per task, a 24-hour wall time, and a 96-task concurrency cap. It
+supersedes the high-memory node array without changing completed outputs or
+scientific provenance.
+
 # Optional node-bundled checkpoint diagnostics
 
 Large checkpoint replay/Pc campaigns can use
