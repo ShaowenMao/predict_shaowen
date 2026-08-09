@@ -15,6 +15,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-root", required=True, type=Path)
     parser.add_argument("--lane-manifest", required=True, type=Path)
     parser.add_argument("--output-json", required=True, type=Path)
+    parser.add_argument(
+        "--minimum-lane-id",
+        type=int,
+        help="Validate only lanes at or above this ID.",
+    )
+    parser.add_argument(
+        "--maximum-lane-id",
+        type=int,
+        help="Validate only lanes at or below this ID.",
+    )
     return parser.parse_args()
 
 
@@ -27,10 +37,30 @@ def read_json(path: Path) -> dict[str, object]:
 
 def main() -> int:
     args = parse_args()
+    if (args.minimum_lane_id is None) != (args.maximum_lane_id is None):
+        raise SystemExit(
+            "--minimum-lane-id and --maximum-lane-id must be supplied together"
+        )
+    if (
+        args.minimum_lane_id is not None
+        and args.minimum_lane_id > args.maximum_lane_id
+    ):
+        raise SystemExit("The minimum lane ID cannot exceed the maximum lane ID")
+
     run_root = args.run_root.resolve()
     identity = read_json(run_root / "phase_run_identity.json")
     with args.lane_manifest.open(newline="", encoding="utf-8-sig") as stream:
         lane_rows = list(csv.DictReader(stream))
+    if args.minimum_lane_id is not None:
+        lane_rows = [
+            row
+            for row in lane_rows
+            if args.minimum_lane_id
+            <= int(row["lane_id"])
+            <= args.maximum_lane_id
+        ]
+    if not lane_rows:
+        raise SystemExit("No lanes were selected for completion verification")
     with (
         run_root / "checkpoint_manifest" / "checkpoint_groups.csv"
     ).open(newline="", encoding="utf-8-sig") as stream:
@@ -97,6 +127,8 @@ def main() -> int:
         "checked_at_utc": datetime.now(timezone.utc).isoformat(),
         "run_root": str(run_root),
         "lane_manifest": str(args.lane_manifest.resolve()),
+        "minimum_lane_id": min(int(row["lane_id"]) for row in lane_rows),
+        "maximum_lane_id": max(int(row["lane_id"]) for row in lane_rows),
         "selected_group_count": len(lane_rows),
         "completed_group_count": len(lane_rows) - len(failures),
         "failed_group_count": len(failures),

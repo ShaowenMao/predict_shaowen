@@ -172,6 +172,66 @@ class CheckpointNodeBundleTests(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertFalse(json.loads(report_path.read_text())["passed"])
 
+    def test_completion_verifier_can_validate_one_lane_block(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "run"
+            root.mkdir()
+            rows = self.make_run(root)
+            output = Path(temporary) / "lanes"
+            subprocess.run(
+                [
+                    "python",
+                    str(BUILDER_PATH),
+                    "--run-root",
+                    str(root),
+                    "--output-root",
+                    str(output),
+                    "--lane-count",
+                    "2",
+                    "--selection",
+                    "all",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            with (output / "checkpoint_lanes.csv").open(
+                newline="", encoding="utf-8-sig"
+            ) as stream:
+                lane_rows = list(csv.DictReader(stream))
+            lane_one_ids = {
+                row["group_id"] for row in lane_rows if row["lane_id"] == "1"
+            }
+            for row in rows:
+                if row["group_id"] in lane_one_ids:
+                    self.write_done(root, row)
+
+            report_path = output / "lane_1_completion.json"
+            result = subprocess.run(
+                [
+                    "python",
+                    str(VERIFIER_PATH),
+                    "--run-root",
+                    str(root),
+                    "--lane-manifest",
+                    str(output / "checkpoint_lanes.csv"),
+                    "--minimum-lane-id",
+                    "1",
+                    "--maximum-lane-id",
+                    "1",
+                    "--output-json",
+                    str(report_path),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(report_path.read_text())
+            self.assertTrue(report["passed"])
+            self.assertEqual(report["minimum_lane_id"], 1)
+            self.assertEqual(report["maximum_lane_id"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

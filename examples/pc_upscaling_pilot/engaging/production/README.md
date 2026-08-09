@@ -176,6 +176,24 @@ The scientific workflow checkout and PREDICT physics checkout are verified
 against `phase_run_identity.json`; scheduler provenance is recorded separately
 in `checkpoint_bundle_submission.json`.
 
+## One-node array alternative
+
+`submit_checkpoint_node_array.sh` uses the same deterministic lane manifest and
+scientific worker but submits one node per Slurm array task. Each node runs 12
+one-core lanes with the same 216 GiB shared-memory request. This layout lets
+individual nodes backfill and start independently, reducing the scheduling
+penalty of requiring a multi-node allocation to start atomically. Array-task
+completion is validated over its disjoint global lane-ID range, and the final
+checkpoint gate still validates every checkpoint group before case assembly.
+
+For a safe scheduling comparison with a pending node-bundle job, pass its job
+ID as `FALLBACK_JOB_ID`. The array launcher holds that fallback before it
+submits the array, preventing concurrent writes to the same checkpoint output.
+If the array completes, cancel the held fallback to release an existing
+`afterany` validation dependency. If the array is abandoned, cancel every
+array task before releasing the fallback. Submission provenance and this
+handoff protocol are recorded in `checkpoint_node_array_submission.json`.
+
 For a complete production chain, submit the full checkpoint bundle first and
 pass its numeric Slurm job ID to `submit_independent_full_fault_phase.sh` as
 `EXTERNAL_CHECKPOINT_JOB_ID`. The phase launcher does not create a duplicate
