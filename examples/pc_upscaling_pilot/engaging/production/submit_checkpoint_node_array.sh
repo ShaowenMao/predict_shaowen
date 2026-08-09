@@ -143,7 +143,7 @@ if [[ -n "${FALLBACK_JOB_ID}" ]]; then
     scontrol hold "${FALLBACK_JOB_ID}"
     fallback_held=1
     held_reason="$(squeue -h -j "${FALLBACK_JOB_ID}" -o '%R')"
-    [[ "${held_reason}" == "JobHeldUser" ]] || {
+    [[ "${held_reason}" == "JobHeldUser" || "${held_reason}" == "(JobHeldUser)" ]] || {
         echo "Fallback job ${FALLBACK_JOB_ID} was not safely held: ${held_reason}" >&2
         exit 2
     }
