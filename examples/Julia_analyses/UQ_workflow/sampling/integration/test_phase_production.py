@@ -23,6 +23,9 @@ CHECKPOINT_WORKER = (
     / "production"
     / "run_checkpoint_replay_pc.sh"
 )
+CHECKPOINT_SUBMITTER = CHECKPOINT_WORKER.with_name(
+    "submit_checkpoint_replay_pc.sh"
+)
 KR_WORKER = CHECKPOINT_WORKER.with_name("run_case_dynamic_kr.sh")
 FINALIZE_CASE_PATH = CHECKPOINT_WORKER.with_name("finalize_case_kr.py")
 VERIFY_CASE_PATH = CHECKPOINT_WORKER.with_name("verify_case_completion.py")
@@ -237,6 +240,21 @@ class PhaseProductionStatusTests(unittest.TestCase):
             launcher,
         )
         self.assertIn("checkpoint_submission_elements=0", launcher)
+
+    def test_standard_checkpoint_array_uses_proven_resource_contract(self) -> None:
+        launcher = PHASE_LAUNCHER.read_text(encoding="utf-8")
+        submitter = CHECKPOINT_SUBMITTER.read_text(encoding="utf-8")
+
+        self.assertIn('CHECKPOINT_MEMORY="${CHECKPOINT_MEMORY:-18G}"', launcher)
+        self.assertIn("--cpus-per-task=1", launcher)
+        self.assertIn(
+            '--array="${CHECKPOINT_ARRAY_SPEC}%${CHECKPOINT_MAX_CONCURRENT}"',
+            launcher,
+        )
+        self.assertNotIn("--exclusive", launcher)
+        self.assertIn('--mem="${CHECKPOINT_MEMORY:-18G}"', submitter)
+        self.assertIn('PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT:-', submitter)
+        self.assertIn('METHOD_CONFIG="${METHOD_CONFIG:-', submitter)
 
     def test_missing_work_is_mapped_to_restartable_chunks(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

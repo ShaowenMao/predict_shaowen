@@ -31,7 +31,11 @@ MEMORY_GIB_PER_WORKER="${MEMORY_GIB_PER_WORKER:-18}"
 NODE_LOCAL_GIB_PER_WORKER="${NODE_LOCAL_GIB_PER_WORKER:-20}"
 REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-1.0e-3}"
 FALLBACK_JOB_ID="${FALLBACK_JOB_ID:-}"
-NODE_EXCLUSIVE_MODE="${NODE_EXCLUSIVE_MODE:-user}"
+NODE_EXCLUSIVE_MODE="${NODE_EXCLUSIVE_MODE:-node}"
+if [[ "${NODE_EXCLUSIVE_MODE}" != "node" && "${NODE_EXCLUSIVE_MODE}" != "user" ]]; then
+    echo "NODE_EXCLUSIVE_MODE must be node or user." >&2
+    exit 2
+fi
 
 module load deprecated-modules gcc/12.2.0-x86_64 python/3.10.8-x86_64
 
@@ -162,6 +166,14 @@ PY
 LANE_COUNT="${actual_lane_count}"
 NODE_TASK_COUNT=$(( (LANE_COUNT + WORKERS_PER_NODE - 1) / WORKERS_PER_NODE ))
 
+exclusive_args=()
+if [[ "${NODE_EXCLUSIVE_MODE}" == "node" ]]; then
+    # Node-local storage accounting is only deterministic on a dedicated node.
+    exclusive_args+=(--exclusive)
+else
+    exclusive_args+=(--exclusive=user)
+fi
+
 submission="$(
     sbatch \
         --parsable \
@@ -175,7 +187,7 @@ submission="$(
         --ntasks-per-node="${WORKERS_PER_NODE}" \
         --cpus-per-task=1 \
         --mem="${NODE_MEMORY}" \
-        --exclusive="${NODE_EXCLUSIVE_MODE}" \
+        "${exclusive_args[@]}" \
         --array="1-${NODE_TASK_COUNT}%${NODE_TASK_COUNT}" \
         --output="${LOG_ROOT}/%x_%A_%a.out" \
         --error="${LOG_ROOT}/%x_%A_%a.err" \

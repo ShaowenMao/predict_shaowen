@@ -19,6 +19,7 @@ PRODUCTION = (
 )
 BUILDER_PATH = PRODUCTION / "build_checkpoint_lane_manifest.py"
 VERIFIER_PATH = PRODUCTION / "verify_checkpoint_lane_completion.py"
+NODE_ARRAY_PATH = PRODUCTION / "submit_checkpoint_node_array.sh"
 
 
 def load_module(name: str, path: Path):
@@ -42,6 +43,12 @@ def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
 
 
 class CheckpointNodeBundleTests(unittest.TestCase):
+    def test_node_local_array_requires_true_node_exclusivity_by_default(self) -> None:
+        launcher = NODE_ARRAY_PATH.read_text(encoding="utf-8")
+        self.assertIn('NODE_EXCLUSIVE_MODE="${NODE_EXCLUSIVE_MODE:-node}"', launcher)
+        self.assertIn('exclusive_args+=(--exclusive)', launcher)
+        self.assertIn('exclusive_args+=(--exclusive=user)', launcher)
+
     def make_run(self, root: Path) -> list[dict[str, object]]:
         identity = {
             "physics_commit": "a" * 40,

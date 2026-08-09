@@ -138,7 +138,21 @@ Kr completion markers, requires AMGCL, and writes a separate resubmission
 manifest containing each Slurm job ID, frozen commit, freeze root, and stage
 script hash.
 
-# Node-bundled checkpoint execution
+# Standard checkpoint production execution
+
+Production replay/Pc campaigns use the restartable checkpoint-chunk array in
+`submit_checkpoint_replay_pc.sh`, or the equivalent checkpoint stage in
+`submit_independent_full_fault_phase.sh`. Each Slurm task uses one CPU and an
+18 GiB memory request, processes five checkpoint groups serially by default,
+and skips groups that already have a valid completion marker. Up to 96 tasks
+may run concurrently. Temporary replay and Pc data use the project flash
+scratch tree, so these tasks do not require exclusive nodes.
+
+This is the default production architecture. It matches the successful
+1,620-case campaign and keeps scheduling independent from the scientific
+worker and output contract.
+
+# Optional node-bundled checkpoint diagnostics
 
 Large checkpoint replay/Pc campaigns can use
 `submit_checkpoint_node_bundle.sh` instead of one high-memory Slurm allocation
@@ -153,17 +167,14 @@ share a node allocation and node-local `/tmp` storage. A bundle-level preflight
 rejects nodes without the configured local-space allowance. Completion remains
 restartable at checkpoint-group granularity.
 
-Recommended rollout:
+Diagnostic rollout:
 
 1. Run `plan pilot`, then `submit pilot` with one node and 12 lanes. The pilot
    selects the 12 largest unfinished groups as a memory and storage stress test.
 2. Validate `checkpoint_bundle_completion.json`, Slurm `MaxRSS`, and node-local
    storage use.
-3. Run `plan full`, then `submit full`. The default full allocation uses six
-   nodes with 12 one-core lanes per node. Each lane contributes an 18 GiB
-   shared-memory budget, so the default request is 216 GiB per node. This
-   value follows the largest-group pilot; dynamic-Kr jobs retain their
-   separately qualified 48 GiB request.
+3. Use a full node-bundled campaign only when there is a demonstrated reason
+   to prefer node-local storage over the standard checkpoint-chunk array.
 
 The production memory basis is Engaging job `20001840`, which runs the 12
 largest unfinished checkpoint groups concurrently and completes all groups in
@@ -176,7 +187,7 @@ The scientific workflow checkout and PREDICT physics checkout are verified
 against `phase_run_identity.json`; scheduler provenance is recorded separately
 in `checkpoint_bundle_submission.json`.
 
-## One-node array alternative
+## Optional one-node array diagnostic
 
 `submit_checkpoint_node_array.sh` uses the same deterministic lane manifest and
 scientific worker but submits one node per Slurm array task. Each node runs 12
@@ -185,9 +196,12 @@ individual nodes backfill and start independently, reducing the scheduling
 penalty of requiring a multi-node allocation to start atomically. Array-task
 completion is validated over its disjoint global lane-ID range, and the final
 checkpoint gate still validates every checkpoint group before case assembly.
-The default `--exclusive=user` policy prevents separate array tasks owned by
-the same user from sharing one physical node, preserving the node-local `/tmp`
-allowance without reserving the node against jobs owned by other users.
+The default uses true whole-node `--exclusive` allocation because deterministic
+node-local `/tmp` accounting requires a dedicated node. Slurm
+`--exclusive=user` is not sufficient: it excludes other users but can still
+co-locate jobs from the same user. Because whole-node requests can wait much
+longer in the queue, this path is diagnostic rather than the production
+default.
 
 For a safe scheduling comparison with a pending node-bundle job, pass its job
 ID as `FALLBACK_JOB_ID`. The array launcher holds that fallback before it
