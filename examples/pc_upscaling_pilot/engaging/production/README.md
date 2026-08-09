@@ -165,3 +165,9 @@ Recommended rollout:
 The scientific workflow checkout and PREDICT physics checkout are verified
 against `phase_run_identity.json`; scheduler provenance is recorded separately
 in `checkpoint_bundle_submission.json`.
+
+For a complete production chain, submit the full checkpoint bundle first and
+pass its numeric Slurm job ID to `submit_independent_full_fault_phase.sh` as
+`EXTERNAL_CHECKPOINT_JOB_ID`. The phase launcher does not create a duplicate
+checkpoint array; it attaches the standard validation gate and unchanged
+assembly, dynamic-Kr, and final-QA stages to the external bundle.

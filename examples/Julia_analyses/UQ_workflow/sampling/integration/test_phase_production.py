@@ -228,6 +228,16 @@ class PhaseProductionStatusTests(unittest.TestCase):
             kr_worker,
         )
 
+    def test_phase_launcher_accepts_external_checkpoint_bundle(self) -> None:
+        launcher = PHASE_LAUNCHER.read_text(encoding="utf-8")
+        self.assertIn('EXTERNAL_CHECKPOINT_JOB_ID="${EXTERNAL_CHECKPOINT_JOB_ID:-}"', launcher)
+        self.assertIn('CHECKPOINT_JOB_ID="${EXTERNAL_CHECKPOINT_JOB_ID}"', launcher)
+        self.assertIn(
+            '--dependency="afterany:${CHECKPOINT_JOB_ID}"',
+            launcher,
+        )
+        self.assertIn("checkpoint_submission_elements=0", launcher)
+
     def test_missing_work_is_mapped_to_restartable_chunks(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -57,6 +57,11 @@ ASSEMBLY_MEMORY="${ASSEMBLY_MEMORY:-16G}"
 KR_MEMORY="${KR_MEMORY:-48G}"
 REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-1.0e-3}"
 SLURM_MAX_SUBMITTED_JOBS="${SLURM_MAX_SUBMITTED_JOBS:-400}"
+EXTERNAL_CHECKPOINT_JOB_ID="${EXTERNAL_CHECKPOINT_JOB_ID:-}"
+if [[ -n "${EXTERNAL_CHECKPOINT_JOB_ID}" && ! "${EXTERNAL_CHECKPOINT_JOB_ID}" =~ ^[0-9]+$ ]]; then
+    echo "EXTERNAL_CHECKPOINT_JOB_ID must be a numeric Slurm job ID." >&2
+    exit 2
+fi
 
 if [[ "${PHASE}" == "phase1" ]]; then
     EXPECTED_GEOLOGIES=162
@@ -249,6 +254,7 @@ Independent full-fault ${PHASE} production plan
   assembly array: ${ASSEMBLY_MISSING_ARRAY_TASKS} pending tasks, ${GEOLOGIES_PER_ARRAY_TASK} geologies/task
   Kr array: ${KR_MISSING_ARRAY_TASKS} pending tasks, ${CASES_PER_ARRAY_TASK} cases/task
   checkpoint concurrency: ${CHECKPOINT_MAX_CONCURRENT} one-CPU array tasks
+  external checkpoint bundle: ${EXTERNAL_CHECKPOINT_JOB_ID:-none}
   Kr concurrency: ${KR_MAX_CONCURRENT} six-CPU array tasks
 EOF
 
@@ -259,7 +265,13 @@ if [[ "${ACTION}" == "submit" && -f "${RUN_ROOT}/phase_submission_latest.json" ]
     echo "This run was already submitted; use the continue action." >&2
     exit 2
 fi
-active_jobs="$(squeue -u "${USER}" -h -o "%j|%T" | grep -F "${RUN_ID}" || true)"
+active_jobs="$(
+    squeue -u "${USER}" -h -o "%A|%j|%T" \
+        | awk -F'|' -v run_id="${RUN_ID}" -v external_id="${EXTERNAL_CHECKPOINT_JOB_ID}" '
+            index($2, run_id) > 0 && (external_id == "" || $1 != external_id) { print }
+        ' \
+        || true
+)"
 if [[ -n "${active_jobs}" ]]; then
     echo "Active jobs already exist for ${RUN_ID}:" >&2
     echo "${active_jobs}" >&2
@@ -272,8 +284,12 @@ fi
 if [[ "${KR_MISSING}" -gt 0 ]]; then
     gate_count=$((gate_count + 1))
 fi
+checkpoint_submission_elements="${CHECKPOINT_MISSING_ARRAY_TASKS}"
+if [[ -n "${EXTERNAL_CHECKPOINT_JOB_ID}" ]]; then
+    checkpoint_submission_elements=0
+fi
 submitted_elements=$((
-    CHECKPOINT_MISSING_ARRAY_TASKS
+    checkpoint_submission_elements
     + ASSEMBLY_MISSING_ARRAY_TASKS
     + KR_MISSING_ARRAY_TASKS
     + gate_count
@@ -300,8 +316,17 @@ KR_JOB_ID=""
 FINAL_GATE_JOB_ID=""
 
 if [[ "${CHECKPOINT_MISSING}" -gt 0 ]]; then
-    submission="$(
-        sbatch \
+    if [[ -n "${EXTERNAL_CHECKPOINT_JOB_ID}" ]]; then
+        external_state="$(squeue -j "${EXTERNAL_CHECKPOINT_JOB_ID}" -h -o '%T')"
+        if [[ "${external_state}" != "PENDING" && "${external_state}" != "RUNNING" ]]; then
+            echo "External checkpoint job ${EXTERNAL_CHECKPOINT_JOB_ID} is not pending or running." >&2
+            exit 2
+        fi
+        CHECKPOINT_JOB_ID="${EXTERNAL_CHECKPOINT_JOB_ID}"
+        echo "Using external checkpoint node-bundle job ${CHECKPOINT_JOB_ID} (${external_state})."
+    else
+        submission="$(
+            sbatch \
             --parsable \
             --account="${SLURM_ACCOUNT}" \
             --qos="${SLURM_QOS}" \
@@ -315,8 +340,9 @@ if [[ "${CHECKPOINT_MISSING}" -gt 0 ]]; then
             --error="${LOG_ROOT}/checkpoint_pc/%x_%A_%a.err" \
             --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT}",FREEZE_ROOT="${FREEZE_ROOT}",PREDICT_ROOT="${PREDICT_ROOT}",METHOD_CONFIG="${METHOD_CONFIG}",CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT}",COMPACT_OUTPUT_ROOT="${CHECKPOINT_OUTPUT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",GROUP_COUNT="${CHECKPOINT_TOTAL}",GROUPS_PER_ARRAY_TASK="${GROUPS_PER_ARRAY_TASK}" \
             "${PRODUCTION_DIR}/run_checkpoint_replay_pc_chunk.sh"
-    )"
-    CHECKPOINT_JOB_ID="${submission%%;*}"
+        )"
+        CHECKPOINT_JOB_ID="${submission%%;*}"
+    fi
     gate_submission="$(
         sbatch \
             --parsable \
