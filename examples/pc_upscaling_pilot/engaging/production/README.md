@@ -185,6 +185,9 @@ individual nodes backfill and start independently, reducing the scheduling
 penalty of requiring a multi-node allocation to start atomically. Array-task
 completion is validated over its disjoint global lane-ID range, and the final
 checkpoint gate still validates every checkpoint group before case assembly.
+The default `--exclusive=user` policy prevents separate array tasks owned by
+the same user from sharing one physical node, preserving the node-local `/tmp`
+allowance without reserving the node against jobs owned by other users.
 
 For a safe scheduling comparison with a pending node-bundle job, pass its job
 ID as `FALLBACK_JOB_ID`. The array launcher holds that fallback before it

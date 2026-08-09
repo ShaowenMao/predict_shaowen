@@ -31,6 +31,7 @@ MEMORY_GIB_PER_WORKER="${MEMORY_GIB_PER_WORKER:-18}"
 NODE_LOCAL_GIB_PER_WORKER="${NODE_LOCAL_GIB_PER_WORKER:-20}"
 REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-1.0e-3}"
 FALLBACK_JOB_ID="${FALLBACK_JOB_ID:-}"
+NODE_EXCLUSIVE_MODE="${NODE_EXCLUSIVE_MODE:-user}"
 
 module load deprecated-modules gcc/12.2.0-x86_64 python/3.10.8-x86_64
 
@@ -114,6 +115,7 @@ One-node checkpoint array plan
   memory budget per worker: ${MEMORY_GIB_PER_WORKER} GiB
   memory per array task: ${NODE_MEMORY}
   walltime: ${WALLTIME}
+  node exclusivity: ${NODE_EXCLUSIVE_MODE}
   fallback job to hold: ${FALLBACK_JOB_ID:-none}
   scheduler commit: ${scheduler_commit}
   scientific workflow commit: ${runtime_commit}
@@ -173,6 +175,7 @@ submission="$(
         --ntasks-per-node="${WORKERS_PER_NODE}" \
         --cpus-per-task=1 \
         --mem="${NODE_MEMORY}" \
+        --exclusive="${NODE_EXCLUSIVE_MODE}" \
         --array="1-${NODE_TASK_COUNT}%${NODE_TASK_COUNT}" \
         --output="${LOG_ROOT}/%x_%A_%a.out" \
         --error="${LOG_ROOT}/%x_%A_%a.err" \
@@ -187,7 +190,7 @@ python3 - \
     "${ARRAY_ID}" "${MODE}" "${JOB_ID}" "${FALLBACK_JOB_ID}" \
     "${scheduler_commit}" "${runtime_commit}" "${physics_commit}" \
     "${NODE_TASK_COUNT}" "${WORKERS_PER_NODE}" "${MEMORY_GIB_PER_WORKER}" \
-    "${NODE_MEMORY}" "${WALLTIME}" <<'PY'
+    "${NODE_MEMORY}" "${WALLTIME}" "${NODE_EXCLUSIVE_MODE}" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
@@ -195,7 +198,7 @@ from datetime import datetime, timezone
 (
     path, array_id, mode, job_id, fallback_job_id, scheduler_commit,
     runtime_commit, physics_commit, node_tasks, workers,
-    memory_per_worker, memory, walltime,
+    memory_per_worker, memory, walltime, node_exclusive_mode,
 ) = sys.argv[1:]
 record = {
     "schema_version": "checkpoint_node_array_submission_v1",
@@ -212,6 +215,7 @@ record = {
     "memory_gib_per_worker": int(memory_per_worker),
     "memory_per_node_task": memory,
     "walltime": walltime,
+    "node_exclusive_mode": node_exclusive_mode,
     "fallback_protocol": (
         "After the array completes, cancel the held fallback to release its "
         "afterany validation gate. If the array is abandoned, cancel it before "
