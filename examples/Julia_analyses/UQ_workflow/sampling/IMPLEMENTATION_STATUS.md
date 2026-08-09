@@ -39,6 +39,22 @@
   shared-memory budget per replay/Pc lane. This budget does not replace the
   separately qualified 48 GiB dynamic-Kr allocation.
 
+## Phase 1 production launch
+
+- Production run `independent_full_fault_v1_phase1_20260809_v1` resumes 34
+  validated checkpoint groups and schedules the remaining 938 groups without
+  recomputing completed work.
+- Replay/Pc job `20010410` uses 9 nodes, 108 one-core lanes, 216 GiB per node,
+  and a 36-hour wall time. This is the largest allocation below the Engaging
+  advanced-QoS per-user memory cap of 2 TiB while preserving the qualified
+  18 GiB shared-memory budget per lane.
+- Validation gate `20010419`, geology assembly array `20010420`, dynamic-Kr
+  array `20010421`, and final QA gate `20010422` form a dependency chain. No
+  downstream stage can start unless its required upstream validation passes.
+- Submission metadata, immutable commit identifiers, method hashes, lane
+  manifests, and completion markers are stored beneath the permanent run root
+  on `/orcd/data/juanes/001/shaowen`.
+
 ## Intentionally deferred
 
 - Phase 2 geology classification requires Phase 1 reservoir QoIs and scientific
