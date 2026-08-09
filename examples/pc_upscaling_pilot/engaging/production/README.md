@@ -160,7 +160,17 @@ Recommended rollout:
 2. Validate `checkpoint_bundle_completion.json`, Slurm `MaxRSS`, and node-local
    storage use.
 3. Run `plan full`, then `submit full`. The default full allocation uses six
-   nodes with 12 one-core lanes per node and 256 GiB per node.
+   nodes with 12 one-core lanes per node. Each lane contributes an 18 GiB
+   shared-memory budget, so the default request is 216 GiB per node. This
+   value follows the largest-group pilot; dynamic-Kr jobs retain their
+   separately qualified 48 GiB request.
+
+The production memory basis is Engaging job `20001840`, which runs the 12
+largest unfinished checkpoint groups concurrently and completes all groups in
+2 h 54 min 47 s. Slurm reports a maximum lane RSS of about 16.3 GiB. Because
+memory is requested once per node, the 216 GiB allocation is shared flexibly
+across the 12 lanes rather than imposing an independent 18 GiB hard limit on
+each MATLAB process.
 
 The scientific workflow checkout and PREDICT physics checkout are verified
 against `phase_run_identity.json`; scheduler provenance is recorded separately

@@ -27,7 +27,7 @@ RUN_ID="${RUN_ID:-$(basename "${RUN_ROOT}")}"
 SLURM_ACCOUNT="${SLURM_ACCOUNT:-mit_amf_advanced_cpu}"
 SLURM_QOS="${SLURM_QOS:-mit_amf_advanced_cpu}"
 SLURM_PARTITION="${SLURM_PARTITION:-mit_normal}"
-NODE_MEMORY="${NODE_MEMORY:-256G}"
+MEMORY_GIB_PER_WORKER="${MEMORY_GIB_PER_WORKER:-18}"
 NODE_LOCAL_GIB_PER_WORKER="${NODE_LOCAL_GIB_PER_WORKER:-20}"
 REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-1.0e-3}"
 
@@ -47,6 +47,7 @@ else
     WALLTIME="${WALLTIME:-24:00:00}"
 fi
 LANE_COUNT=$((NODE_COUNT * WORKERS_PER_NODE))
+NODE_MEMORY="${NODE_MEMORY:-$((WORKERS_PER_NODE * MEMORY_GIB_PER_WORKER))G}"
 
 identity_path="${RUN_ROOT}/phase_run_identity.json"
 [[ -f "${identity_path}" ]] || { echo "Missing run identity: ${identity_path}" >&2; exit 2; }
@@ -121,6 +122,7 @@ Node-bundled checkpoint plan
   nodes: ${NODE_COUNT}
   workers per node: ${WORKERS_PER_NODE}
   one CPU per worker: yes
+  memory budget per worker: ${MEMORY_GIB_PER_WORKER} GiB
   memory per node: ${NODE_MEMORY}
   node-local allowance per worker: ${NODE_LOCAL_GIB_PER_WORKER} GiB
   walltime: ${WALLTIME}
@@ -165,14 +167,14 @@ python3 - \
     "${BUNDLE_STATUS_ROOT}/checkpoint_bundle_submission.json" \
     "${BUNDLE_ID}" "${MODE}" "${JOB_ID}" "${scheduler_commit}" \
     "${runtime_commit}" "${physics_commit}" "${NODE_COUNT}" \
-    "${WORKERS_PER_NODE}" "${NODE_MEMORY}" "${WALLTIME}" <<'PY'
+    "${WORKERS_PER_NODE}" "${MEMORY_GIB_PER_WORKER}" "${NODE_MEMORY}" "${WALLTIME}" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
 
 (
     path, bundle_id, mode, job_id, scheduler_commit, runtime_commit,
-    physics_commit, nodes, workers, memory, walltime,
+    physics_commit, nodes, workers, memory_per_worker, memory, walltime,
 ) = sys.argv[1:]
 record = {
     "schema_version": "checkpoint_node_bundle_submission_v1",
@@ -185,6 +187,7 @@ record = {
     "physics_commit": physics_commit,
     "node_count": int(nodes),
     "workers_per_node": int(workers),
+    "memory_gib_per_worker": int(memory_per_worker),
     "memory_per_node": memory,
     "walltime": walltime,
 }

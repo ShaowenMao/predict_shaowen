@@ -32,6 +32,12 @@
   assignments, and final MAT export in 31 min 59 s using six CPUs and 48 GB.
 - Strict post-finalization verification reports zero errors and zero source
   log-permeability mismatches in `acceptance_verification_v2.json`.
+- Engaging checkpoint-bundle pilot `20001840` completes the 12 largest
+  unfinished replay/Pc checkpoint groups with 12 one-core lanes in 2 h 54 min
+  47 s. All 12 completion markers pass identity and hash validation. The
+  largest observed lane RSS is approximately 16.3 GiB, supporting an 18 GiB
+  shared-memory budget per replay/Pc lane. This budget does not replace the
+  separately qualified 48 GiB dynamic-Kr allocation.
 
 ## Intentionally deferred
 
