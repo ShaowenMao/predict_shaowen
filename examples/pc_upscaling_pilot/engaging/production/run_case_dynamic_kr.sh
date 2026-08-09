@@ -11,7 +11,7 @@ fi
 
 RUNTIME_REPO="${RUNTIME_REPO:-/home/shaowen/orcd/pool/predict_shaowen}"
 FREEZE_ROOT="${FREEZE_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen/production_freezes/collapsed_cell_union_20260722_v7}"
-FROZEN_REPO="${FROZEN_REPO:-${FREEZE_ROOT}/code/source}"
+PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT:-${FROZEN_REPO:-${FREEZE_ROOT}/code/source}}"
 CASE_WORK_ROOT="${CASE_WORK_ROOT:?CASE_WORK_ROOT is required}"
 CASE_INPUT_ROOT="${CASE_INPUT_ROOT:?CASE_INPUT_ROOT is required}"
 CASE_RESULT_ROOT="${CASE_RESULT_ROOT:?CASE_RESULT_ROOT is required}"
@@ -73,8 +73,44 @@ INPUT_DIR="${CASE_INPUT_ROOT}/${case_relative_path}/inputs"
 OUTPUT_DIR="${CASE_RESULT_ROOT}/${case_relative_path}"
 DONE_MARKER="${OUTPUT_DIR}/case.done.json"
 if [[ -f "${DONE_MARKER}" ]]; then
-    echo "Dynamic Kr case already complete: ${geology_id} case ${case_two_digit}"
-    exit 0
+    if python3 - "${DONE_MARKER}" "${geology_id}" "${case_id}" \
+        "${PHYSICS_COMMIT}" "${METHOD_CONFIG_SHA256}" <<'PY'
+import json
+import sys
+
+path, geology_id, case_id, physics_commit, method_hash = sys.argv[1:]
+marker = json.load(open(path, encoding="utf-8"))
+expected = {
+    "status": "complete",
+    "geology_id": geology_id,
+    "case_id": int(case_id),
+    "physics_commit": physics_commit,
+    "method_config_sha256": method_hash,
+    "dynamic_kr_representative_count": 6,
+    "pc_assignment_count": 522,
+    "strike_collapse_used": False,
+    "amgcl_required": True,
+    "pc_representations": ["full_slice"],
+}
+if not all(marker.get(key) == value for key, value in expected.items()):
+    raise SystemExit(1)
+reservoir = marker.get("reservoir_ready_validation")
+if not isinstance(reservoir, dict):
+    raise SystemExit(1)
+if reservoir.get("assignment_metadata_explicit") is not True:
+    raise SystemExit(1)
+if reservoir.get("configuration_sha256") != method_hash:
+    raise SystemExit(1)
+if reservoir.get("coordinate_transform_contract") != (
+    "fault_local_to_reservoir_grid_signed_yz_v1"
+):
+    raise SystemExit(1)
+PY
+    then
+        echo "Dynamic Kr case already complete: ${geology_id} case ${case_two_digit}"
+        exit 0
+    fi
+    echo "Existing case marker is stale; rebuilding ${geology_id} case ${case_two_digit}." >&2
 fi
 
 shopt -s nullglob
@@ -138,10 +174,12 @@ echo "node_local_tmp_root=${NODE_LOCAL_TMP_ROOT}"
 echo "matlab_tempdir=${TMPDIR}"
 echo "matlab_prefdir=${MATLAB_PREFDIR}"
 echo "matlab_job_storage=${MATLAB_JOB_STORAGE}"
+echo "runtime_repo=${RUNTIME_REPO}"
+echo "predict_code_root=${PREDICT_CODE_ROOT}"
 echo "started_at=$(date --iso-8601=seconds)"
 
 matlab -batch \
-    "addpath('${RUNTIME_REPO}/examples/pc_upscaling_pilot'); prepare_production_replay_batch('${representative_selection[0]}', '${REPLAY_ROOT}', '${PREDICT_ROOT}', '${FROZEN_REPO}', '${MRST_ROOT}', ${REPLAY_TOLERANCE_LOG10});"
+    "addpath('${RUNTIME_REPO}/examples/pc_upscaling_pilot'); prepare_production_replay_batch('${representative_selection[0]}', '${REPLAY_ROOT}', '${PREDICT_ROOT}', '${PREDICT_CODE_ROOT}', '${MRST_ROOT}', ${REPLAY_TOLERANCE_LOG10});"
 
 merged_replay="${REPLAY_ROOT}/tables/replay_summary_full_case.csv"
 python3 \
@@ -163,6 +201,7 @@ export KR_DYN_PRECOMPUTED_PC_SUMMARY_CSV="${pc_summary[0]}"
 export KR_DYN_PRECOMPUTED_PC_CURVE_CSV="${pc_fixed[0]}"
 export KR_DYN_PRECOMPUTED_PC_NATIVE_CURVE_CSV="${pc_native[0]}"
 export KR_DYN_PERMEABILITY_INPUT="${PERMEABILITY_INPUT}"
+export KR_DYN_PRODUCTION_METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}"
 export KR_DYN_RESERVOIR_PC_REPRESENTATION="full_slice"
 export KR_DYN_EXPORT_RESERVOIR_READY="1"
 export KR_DYN_ALLOW_PARTIAL_REPLAY="0"
@@ -179,7 +218,7 @@ export KR_DYN_UPSCALING_ROOT="${UPSCALING_ROOT}"
 export MRST_ROOT UPSCALING_ZIP
 
 matlab -batch \
-    "cluster = parcluster('Processes'); cluster.JobStorageLocation = '${MATLAB_JOB_STORAGE}'; saveProfile(cluster); clear cluster; run('${FROZEN_REPO}/examples/pc_upscaling_pilot/run_kr_upscaling_dyn_median_examples_full87.m');"
+    "cluster = parcluster('Processes'); cluster.JobStorageLocation = '${MATLAB_JOB_STORAGE}'; saveProfile(cluster); clear cluster; run('${RUNTIME_REPO}/examples/pc_upscaling_pilot/run_kr_upscaling_dyn_median_examples_full87.m');"
 
 python3 \
     "${RUNTIME_REPO}/examples/pc_upscaling_pilot/engaging/production/finalize_case_kr.py" \

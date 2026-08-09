@@ -123,14 +123,9 @@ def main() -> int:
             stream.close()
 
     expected_case_rows = 87 * 6
-    expected_geology_rows = expected_case_rows * 10
     for geology_id, count in row_counts.items():
-        expected = (
-            expected_geology_rows
-            if case_filter is None
-            else expected_case_rows
-            * sum(1 for key in case_metadata if key[0] == geology_id)
-        )
+        geology_case_count = sum(1 for key in case_metadata if key[0] == geology_id)
+        expected = expected_case_rows * geology_case_count
         if count != expected:
             raise ValueError(
                 f"{geology_id} has {count} assignment rows; expected {expected}"

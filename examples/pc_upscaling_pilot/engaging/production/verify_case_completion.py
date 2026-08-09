@@ -47,6 +47,19 @@ def finite(row: dict[str, str], field: str) -> float:
     return value
 
 
+def parse_bool(value: str, label: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized in {"1", "true"}:
+        return True
+    if normalized in {"0", "false"}:
+        return False
+    raise ValueError(f"{label} is not a Boolean value: {value!r}")
+
+
+def is_sha256(value: str) -> bool:
+    return len(value) == 64 and all(character in "0123456789abcdefABCDEF" for character in value)
+
+
 def quantile(values: list[float], probability: float) -> float | None:
     if not values:
         return None
@@ -122,7 +135,9 @@ def validate_reservoir_qa(
     geology_id: str,
     case_id: int,
     max_source_mismatch: float,
-) -> dict[str, float]:
+    expected_physics_commit: str,
+    expected_method_hash: str,
+) -> dict[str, float | str]:
     rows = read_rows(path)
     if len(rows) != 1:
         raise ValueError(f"{path}: expected one QA row, found {len(rows)}")
@@ -169,7 +184,71 @@ def validate_reservoir_qa(
         raise ValueError(f"{path}: upscaled porosity reaches or exceeds one")
     if finite(row, "MinPermeabilityMD") <= 0.0:
         raise ValueError(f"{path}: non-positive permeability")
-    return {"source_log_permeability_mismatch": source_mismatch}
+    assignment_metadata_explicit = parse_bool(
+        row.get("AssignmentMetadataExplicit", ""), "AssignmentMetadataExplicit"
+    )
+    expected_text = {
+        "SchemaVersion": "1.7",
+        "ConfigurationHash": expected_method_hash,
+        "CoordinateTransformContract": "fault_local_to_reservoir_grid_signed_yz_v1",
+    }
+    if assignment_metadata_explicit:
+        expected_text["PredictCodeCommit"] = expected_physics_commit
+    for field, expected in expected_text.items():
+        if row.get(field, "") != expected:
+            raise ValueError(
+                f"{path}: {field}={row.get(field)!r}; expected {expected!r}"
+            )
+    if assignment_metadata_explicit:
+        for field in ("SamplingManifestHash", "ReplayManifestHash", "ConfigurationHash"):
+            if not is_sha256(row.get(field, "")):
+                raise ValueError(f"{path}: {field} is not a valid SHA-256")
+    return {
+        "source_log_permeability_mismatch": source_mismatch,
+        "schema_version": row["SchemaVersion"],
+        "sampling_manifest_sha256": row.get("SamplingManifestHash", "").lower(),
+        "replay_manifest_sha256": row.get("ReplayManifestHash", "").lower(),
+        "configuration_sha256": row["ConfigurationHash"].lower(),
+        "coordinate_transform_contract": row["CoordinateTransformContract"],
+        "assignment_metadata_explicit": assignment_metadata_explicit,
+    }
+
+
+def validate_reservoir_marker_metadata(
+    reservoir_marker: object,
+    reservoir_report: dict[str, float | str],
+    marker_path: Path,
+) -> None:
+    """Require complete marker provenance only for revised-design cases."""
+    if not reservoir_report["assignment_metadata_explicit"]:
+        if isinstance(reservoir_marker, dict) and reservoir_marker.get(
+            "assignment_metadata_explicit"
+        ) is True:
+            raise ValueError(
+                f"{marker_path}: legacy QA conflicts with revised-design marker metadata"
+            )
+        return
+
+    if not isinstance(reservoir_marker, dict):
+        raise ValueError(
+            f"{marker_path}: revised case lacks reservoir-ready validation metadata"
+        )
+    expected = {
+        "schema_version": reservoir_report["schema_version"],
+        "sampling_manifest_sha256": reservoir_report["sampling_manifest_sha256"],
+        "replay_manifest_sha256": reservoir_report["replay_manifest_sha256"],
+        "configuration_sha256": reservoir_report["configuration_sha256"],
+        "coordinate_transform_contract": reservoir_report[
+            "coordinate_transform_contract"
+        ],
+        "assignment_metadata_explicit": True,
+    }
+    for field, expected_value in expected.items():
+        if reservoir_marker.get(field) != expected_value:
+            raise ValueError(
+                f"{marker_path}: reservoir-ready {field}="
+                f"{reservoir_marker.get(field)!r}; expected {expected_value!r}"
+            )
 
 
 def main() -> int:
@@ -263,7 +342,6 @@ def main() -> int:
                 "endpoint_count"
             ) != 522:
                 errors.append(f"{result_marker_path}: invalid slice endpoint coverage")
-
             validate_inventory(
                 result_marker_path,
                 result_marker,
@@ -280,9 +358,16 @@ def main() -> int:
                 geology_id,
                 case_id,
                 args.max_source_log_permeability_mismatch,
+                args.expected_physics_commit,
+                args.expected_method_hash,
             )
             source_mismatches.append(
                 reservoir_report["source_log_permeability_mismatch"]
+            )
+            validate_reservoir_marker_metadata(
+                result_marker.get("reservoir_ready_validation"),
+                reservoir_report,
+                result_marker_path,
             )
             summary_path = find_inventory_path(
                 result_marker_path,

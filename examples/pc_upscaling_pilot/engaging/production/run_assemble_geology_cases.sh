@@ -58,8 +58,28 @@ fi
 
 done_marker="${CASE_INPUT_ROOT}/cases/${geology_id}/geology_case_inputs.done.json"
 if [[ -f "${done_marker}" ]]; then
-    echo "Geology case inputs already complete: ${geology_id}"
-    exit 0
+    if python3 - "${done_marker}" "${geology_id}" "${assignment_count}" \
+        "${assignment_sha256}" <<'PY'
+import json
+import sys
+
+path, geology_id, assignment_count, assignment_sha256 = sys.argv[1:]
+marker = json.load(open(path, encoding="utf-8"))
+expected = {
+    "status": "complete",
+    "geology_id": geology_id,
+    "assignment_count": int(assignment_count),
+    "assignment_sha256": assignment_sha256,
+}
+for key, value in expected.items():
+    if marker.get(key) != value:
+        raise SystemExit(1)
+PY
+    then
+        echo "Geology case inputs already complete: ${geology_id}"
+        exit 0
+    fi
+    echo "Existing geology marker is stale; rebuilding ${geology_id}." >&2
 fi
 
 python3 \

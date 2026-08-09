@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Assemble ten field-case Pc inputs from checkpoint-level compact products."""
+"""Assemble field-case Pc inputs from checkpoint-level compact products.
+
+The assembler accepts both the legacy Level-3 sampling table and the revised
+``independent_full_fault_v1`` adapter table. Revised case-role and provenance
+columns are copied into every assembled product so downstream MAT files can
+exclude benchmarks and stress tests from probabilistic calculations without
+inferring their role from a numeric case alias.
+"""
 
 from __future__ import annotations
 
@@ -19,6 +26,60 @@ WINDOWS = [f"famp{i}" for i in range(1, 7)]
 EXPECTED_ROWS_PER_CASE = 87 * len(WINDOWS)
 
 
+def sampling_identity(assignment: dict[str, str]) -> dict[str, object]:
+    """Return versioned sampling identity fields when they are available.
+
+    Legacy inputs do not contain these columns, so empty defaults preserve the
+    existing interface. Revised inputs always populate every field and are
+    validated before the replay/Pc freeze is built.
+    """
+
+    def integer(name: str) -> object:
+        value = assignment.get(name, "").strip()
+        return int(value) if value else ""
+
+    return {
+        "SamplingCaseId": assignment.get("sampling_case_id", ""),
+        "SamplingPhase": assignment.get("phase", ""),
+        "SamplingCaseType": assignment.get("case_type", ""),
+        "SamplingReplicateId": integer("replicate_id"),
+        "UseForProbabilisticUq": assignment.get(
+            "use_for_probabilistic_uq", ""
+        ),
+        "IsBenchmark": assignment.get("is_benchmark", ""),
+        "IsStressTest": assignment.get("is_stress_test", ""),
+        "SamplingDesignVersion": assignment.get("design_version", ""),
+        "SamplingAdapterSchemaVersion": assignment.get(
+            "adapter_schema_version", ""
+        ),
+        "SamplingCodeCommit": assignment.get("sampling_code_commit", ""),
+        "SamplingMethodConfigHash": assignment.get(
+            "sampling_method_config_hash", ""
+        ),
+        "PredictCodeCommit": assignment.get("predict_code_commit", ""),
+        "PredictMethodConfigHash": assignment.get(
+            "predict_method_config_hash", ""
+        ),
+        "CheckpointSha256": assignment.get("checkpoint_sha256", ""),
+        "CheckpointRelativePath": assignment.get(
+            "checkpoint_relative_path", ""
+        ),
+        "PredictRealizationId": integer("predict_realization_id"),
+        "SamplingSeed": integer("draw_seed"),
+    }
+
+
+def unique_case_value(
+    assignments: list[dict[str, str]], name: str, default: str = ""
+) -> str:
+    """Return one case-wide value and reject mixed provenance."""
+
+    values = {row.get(name, default) for row in assignments}
+    if len(values) != 1:
+        raise ValueError(f"Case contains inconsistent {name}: {sorted(values)}")
+    return values.pop()
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--geology-id", required=True)
@@ -30,7 +91,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--case-ids",
         default="1,2,3,4,5,6,7,8,9,10",
-        help="Comma-separated Level-3 case IDs.",
+        help="Comma-separated positive sampling-case numeric aliases.",
     )
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
@@ -46,8 +107,8 @@ def sha256_file(path: Path, chunk_size: int = 8 * 1024 * 1024) -> str:
 
 def parse_case_ids(text: str) -> list[int]:
     values = sorted({int(value.strip()) for value in text.split(",") if value.strip()})
-    if not values or any(value < 1 or value > 10 for value in values):
-        raise ValueError("Case IDs must be a nonempty subset of 1:10")
+    if not values or any(value < 1 for value in values):
+        raise ValueError("Case IDs must be a nonempty set of positive integers")
     return values
 
 
@@ -229,6 +290,7 @@ def override_identity(
             "SamplingPool": assignment["sampling_pool"],
             "SelectedSampleIndex": int(assignment["selected_sample_index"]),
             "ReplaySeed": int(assignment["exact_replay_seed"]),
+            **sampling_identity(assignment),
         }
     )
     return result
@@ -271,6 +333,7 @@ def replay_template_row(
         "VerificationStatus": "not_replayed_not_required",
         "MaxAbsLog10Diff": "",
         "OutputFile": "",
+        **sampling_identity(assignment),
     }
 
 
@@ -392,6 +455,32 @@ def assemble_case(
         "geology_id": geology_id,
         "case_id": case_id,
         "case_name": assignments[0]["case_name"],
+        "sampling_case_id": unique_case_value(
+            assignments, "sampling_case_id"
+        ),
+        "phase": unique_case_value(assignments, "phase"),
+        "case_type": unique_case_value(assignments, "case_type"),
+        "replicate_id": unique_case_value(assignments, "replicate_id"),
+        "use_for_probabilistic_uq": unique_case_value(
+            assignments, "use_for_probabilistic_uq"
+        ),
+        "is_benchmark": unique_case_value(assignments, "is_benchmark"),
+        "is_stress_test": unique_case_value(assignments, "is_stress_test"),
+        "sampling_design_version": unique_case_value(
+            assignments, "design_version"
+        ),
+        "sampling_code_commit": unique_case_value(
+            assignments, "sampling_code_commit"
+        ),
+        "sampling_method_config_hash": unique_case_value(
+            assignments, "sampling_method_config_hash"
+        ),
+        "predict_code_commit": unique_case_value(
+            assignments, "predict_code_commit"
+        ),
+        "predict_method_config_hash": unique_case_value(
+            assignments, "predict_method_config_hash"
+        ),
         "assignment_count": len(assignments),
         "slice_count": 87,
         "window_count": 6,
@@ -413,14 +502,18 @@ def main() -> int:
     case_ids = parse_case_ids(args.case_ids)
     checkpoint_root = args.checkpoint_output_root.resolve()
     output_root = args.output_root.resolve()
+    assignment_input_path: Path | None = None
 
     if args.geology_assignment_csv:
         if args.sampling_csv or args.assignment_to_task_csv:
             raise ValueError(
                 "Use --geology-assignment-csv or the two full-table inputs, not both"
             )
+        assignment_input_path = require_file(
+            args.geology_assignment_csv.resolve()
+        )
         cases = load_combined_geology_assignments(
-            require_file(args.geology_assignment_csv.resolve()),
+            assignment_input_path,
             args.geology_id,
             set(case_ids),
         )
@@ -459,6 +552,14 @@ def main() -> int:
         "geology_id": args.geology_id,
         "case_count": len(manifests),
         "case_ids": case_ids,
+        "assignment_count": sum(
+            item["assignment_count"] for item in manifests
+        ),
+        "assignment_sha256": (
+            sha256_file(assignment_input_path)
+            if assignment_input_path is not None
+            else ""
+        ),
         "representative_replay_count": sum(
             item["representative_replay_count"] for item in manifests
         ),

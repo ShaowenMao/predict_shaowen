@@ -1,0 +1,55 @@
+[design]
+version = "independent_full_fault_v1"
+
+[paths]
+repo_root = "../../../../.."
+geology_catalog = "D:/codex_gom/UQ_workflow/three_level_sampling_162_collapsed_cell_union/catalog/level1_geology_catalog.csv"
+library_catalog = "D:/codex_gom/UQ_workflow/three_level_sampling_162_collapsed_cell_union/catalog/predict_window_library_catalog.csv"
+level2_root = "D:/codex_gom/UQ_workflow/three_level_sampling_162_collapsed_cell_union/level2"
+predict_data_root = "D:/Github/predict_shaowen/examples/thickness_scenario_data_collapsed_cell_union"
+predict_hash_inventory = "D:/codex_gom/UQ_workflow/production_freeze_collapsed_cell_union_20260722_v7/inventory/predict_files_sha256.csv"
+output_root = "D:/codex_gom/UQ_workflow/independent_full_fault_v1"
+
+[geometry]
+windows = ["famp1", "famp2", "famp3", "famp4", "famp5", "famp6"]
+n_slices = 87
+n_predict = 2000
+
+[phase1]
+n_independent = 12
+include_representative = true
+include_low_stress = true
+include_high_stress = true
+
+[phase2]
+n_selected_geologies = 12
+n_additional_independent = 40
+
+[sampling]
+base_seed = 1729
+seed_method_version = "sha256_identity_u63_counter_u64_rejection_v1"
+with_replacement = true
+cross_window = "conditionally_independent"
+along_strike = "conditionally_independent"
+
+[medoid]
+metric = "euclidean_log10k_3d"
+recompute = true
+require_stored_match = true
+
+[low_high]
+target_count = 400
+
+[provenance]
+predict_code_commit = "68351e35f3679317b35532a9ca0533674e0aafb5"
+predict_method_config_hash = "21266acc83f38d374cdc966d8243834e92b786b75ab1f90dd0a99f4244717a8f"
+require_clean_code = true
+
+[qc]
+bootstrap_count = 100
+confidence_level = 0.95
+independence_acceptance_confidence_level = 0.99
+energy_max_points = 400
+
+[optional_arrangement_test]
+enabled = false

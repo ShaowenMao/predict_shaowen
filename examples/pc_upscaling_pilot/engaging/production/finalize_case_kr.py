@@ -58,6 +58,125 @@ def finite(value: str, label: str) -> float:
     return result
 
 
+def parse_bool(value: str, label: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized in {"1", "true"}:
+        return True
+    if normalized in {"0", "false"}:
+        return False
+    raise ValueError(f"{label} is not a Boolean value: {value!r}")
+
+
+def is_sha256(value: str) -> bool:
+    return len(value) == 64 and all(character in "0123456789abcdefABCDEF" for character in value)
+
+
+def current_done_marker_matches(marker: object, expected: dict[str, object]) -> bool:
+    """Return true only for a complete marker using the current QA contract."""
+    if not isinstance(marker, dict):
+        return False
+    if not all(marker.get(key) == value for key, value in expected.items()):
+        return False
+    reservoir_validation = marker.get("reservoir_ready_validation")
+    return (
+        isinstance(reservoir_validation, dict)
+        and isinstance(
+            reservoir_validation.get("assignment_metadata_explicit"), bool
+        )
+    )
+
+
+def validate_reservoir_export_qa(
+    path: Path,
+    geology_id: str,
+    case_id: int,
+    physics_commit: str,
+    method_config_sha256: str,
+) -> dict:
+    rows = read_rows(path)
+    if len(rows) != 1:
+        raise ValueError(f"Reservoir-ready QA has {len(rows)} rows, expected one")
+    row = rows[0]
+    assignment_metadata_explicit = parse_bool(
+        row.get("AssignmentMetadataExplicit", ""), "AssignmentMetadataExplicit"
+    )
+    expected = {
+        "GeologyId": geology_id,
+        "Level3CaseId": str(case_id),
+        "SchemaVersion": "1.7",
+        "ConfigurationHash": method_config_sha256,
+        "CoordinateTransformContract": "fault_local_to_reservoir_grid_signed_yz_v1",
+    }
+    if assignment_metadata_explicit:
+        expected["PredictCodeCommit"] = physics_commit
+    for field, value in expected.items():
+        actual = row.get(field, "")
+        if field == "Level3CaseId":
+            if int(float(actual)) != case_id:
+                raise ValueError(f"Reservoir-ready QA {field} mismatch: {actual!r}")
+        elif actual != value:
+            raise ValueError(
+                f"Reservoir-ready QA {field} mismatch: {actual!r} != {value!r}"
+            )
+    if not assignment_metadata_explicit:
+        return {
+            "schema_version": row["SchemaVersion"],
+            "sampling_case_id": "",
+            "phase": "legacy",
+            "case_type": "legacy_level3_case",
+            "replicate_id": 0,
+            "sampling_manifest_sha256": "",
+            "replay_manifest_sha256": "",
+            "configuration_sha256": row.get("ConfigurationHash", "").lower(),
+            "coordinate_transform_contract": row["CoordinateTransformContract"],
+            "assignment_metadata_explicit": False,
+        }
+    for field in ("SamplingManifestHash", "ReplayManifestHash", "ConfigurationHash"):
+        if not is_sha256(row.get(field, "")):
+            raise ValueError(f"Reservoir-ready QA lacks a valid {field}")
+    case_type = row.get("CaseType", "")
+    roles = (
+        parse_bool(row.get("UseForProbabilisticUq", ""), "UseForProbabilisticUq"),
+        parse_bool(row.get("IsBenchmark", ""), "IsBenchmark"),
+        parse_bool(row.get("IsStressTest", ""), "IsStressTest"),
+    )
+    expected_roles = {
+        "independent_full": (True, False, False),
+        "representative_medoid": (False, True, False),
+        "low_state_stress": (False, False, True),
+        "high_state_stress": (False, False, True),
+    }
+    if case_type not in expected_roles or roles != expected_roles[case_type]:
+        raise ValueError(
+            f"Reservoir-ready QA has an invalid case role: {case_type!r}, {roles!r}"
+        )
+    sampling_case_id = row.get("SamplingCaseId", "").strip()
+    phase = row.get("Phase", "").strip()
+    replicate_id = int(float(row.get("ReplicateId", "nan")))
+    if not sampling_case_id or phase not in {"phase1", "phase2"}:
+        raise ValueError("Reservoir-ready QA has incomplete case identity metadata")
+    if case_type == "independent_full":
+        valid_replicates = range(1, 13) if phase == "phase1" else range(13, 53)
+        if replicate_id not in valid_replicates:
+            raise ValueError(
+                f"Invalid {phase} independent replicate ID: {replicate_id}"
+            )
+    elif phase != "phase1" or replicate_id != 0:
+        raise ValueError("Deterministic benchmark/stress cases must be Phase 1 replicate 0")
+    return {
+        "schema_version": row["SchemaVersion"],
+        "sampling_case_id": sampling_case_id,
+        "phase": phase,
+        "case_type": case_type,
+        "replicate_id": replicate_id,
+        "sampling_manifest_sha256": row["SamplingManifestHash"].lower(),
+        "replay_manifest_sha256": row["ReplayManifestHash"].lower(),
+        "configuration_sha256": row["ConfigurationHash"].lower(),
+        "coordinate_transform_contract": row["CoordinateTransformContract"],
+        "assignment_metadata_explicit": True,
+    }
+
+
 def validate_representative_curves(
     summary_path: Path,
     points_path: Path,
@@ -175,7 +294,7 @@ def main() -> int:
             "physics_commit": args.physics_commit,
             "method_config_sha256": args.method_config_sha256,
         }
-        if all(marker.get(key) == value for key, value in expected.items()):
+        if current_done_marker_matches(marker, expected):
             print(f"Case already complete: {args.geology_id} case {args.case_id:02d}")
             return 0
         raise ValueError(f"Existing done marker does not match: {done_path}")
@@ -199,6 +318,9 @@ def main() -> int:
         kr_root / "tables", "kr_representative_selection_*_swi_medoid.csv"
     )
     full_mat = find_single(kr_root / "reservoir_ready", "*.mat")
+    reservoir_qa_path = find_single(
+        kr_root / "reservoir_ready", "reservoir_ready_qa_summary.csv"
+    )
     if full_mat.stat().st_size < 1024:
         raise ValueError("Reservoir-ready MAT output is unexpectedly small")
     selection = read_rows(selection_path)
@@ -209,6 +331,13 @@ def main() -> int:
         summary_path, points_path, args.geology_id, args.case_id
     )
     slice_report = validate_slice_curves(slice_path)
+    reservoir_ready_report = validate_reservoir_export_qa(
+        reservoir_qa_path,
+        args.geology_id,
+        args.case_id,
+        args.physics_commit,
+        args.method_config_sha256,
+    )
 
     output_dir.parent.mkdir(parents=True, exist_ok=True)
     partial_dir = Path(
@@ -240,6 +369,7 @@ def main() -> int:
             "pc_representations": ["full_slice"],
             "kr_validation": kr_report,
             "slice_validation": slice_report,
+            "reservoir_ready_validation": reservoir_ready_report,
             "files": files,
         }
         (partial_dir / "case.done.json").write_text(

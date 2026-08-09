@@ -11,7 +11,7 @@ fi
 
 RUNTIME_REPO="${RUNTIME_REPO:-/home/shaowen/orcd/pool/predict_shaowen}"
 FREEZE_ROOT="${FREEZE_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen/production_freezes/collapsed_cell_union_20260722_v7}"
-FROZEN_REPO="${FROZEN_REPO:-${FREEZE_ROOT}/code/source}"
+PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT:-${FROZEN_REPO:-${FREEZE_ROOT}/code/source}}"
 CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT:?CHECKPOINT_MANIFEST_ROOT is required}"
 COMPACT_OUTPUT_ROOT="${COMPACT_OUTPUT_ROOT:?COMPACT_OUTPUT_ROOT is required}"
 SCRATCH_ROOT="${SCRATCH_ROOT:-/home/shaowen/orcd/scratch/predict_shaowen}"
@@ -149,10 +149,12 @@ echo "local_root=${LOCAL_ROOT}"
 echo "matlab_tempdir=${TMPDIR}"
 echo "matlab_prefdir=${MATLAB_PREFDIR}"
 echo "output_dir=${OUTPUT_DIR}"
+echo "runtime_repo=${RUNTIME_REPO}"
+echo "predict_code_root=${PREDICT_CODE_ROOT}"
 echo "started_at=$(date --iso-8601=seconds)"
 
 matlab -batch \
-    "addpath('${RUNTIME_REPO}/examples/pc_upscaling_pilot'); prepare_production_replay_batch('${SELECTION_CSV}', '${REPLAY_ROOT}', '${PREDICT_ROOT}', '${FROZEN_REPO}', '${MRST_ROOT}', ${REPLAY_TOLERANCE_LOG10});"
+    "addpath('${RUNTIME_REPO}/examples/pc_upscaling_pilot'); prepare_production_replay_batch('${SELECTION_CSV}', '${REPLAY_ROOT}', '${PREDICT_ROOT}', '${PREDICT_CODE_ROOT}', '${MRST_ROOT}', ${REPLAY_TOLERANCE_LOG10});"
 
 export PC_IP_GEOLOGY_ID="${geology_id}"
 export PC_IP_CASE_IDS="1"
@@ -166,7 +168,7 @@ export PC_IP_UPSCALING_ROOT="${UPSCALING_ROOT}"
 export MRST_ROOT UPSCALING_ZIP
 
 matlab -batch \
-    "run('${FROZEN_REPO}/examples/pc_upscaling_pilot/run_pc_upscaling_ip_median_examples_full87.m');"
+    "run('${RUNTIME_REPO}/examples/pc_upscaling_pilot/run_pc_upscaling_ip_median_examples_full87.m');"
 
 python3 \
     "${RUNTIME_REPO}/examples/pc_upscaling_pilot/engaging/production/finalize_checkpoint_pc.py" \
