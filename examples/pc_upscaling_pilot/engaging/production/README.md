@@ -137,3 +137,31 @@ The resume script requires both upstream completion markers, skips existing
 Kr completion markers, requires AMGCL, and writes a separate resubmission
 manifest containing each Slurm job ID, frozen commit, freeze root, and stage
 script hash.
+
+# Node-bundled checkpoint execution
+
+Large checkpoint replay/Pc campaigns can use
+`submit_checkpoint_node_bundle.sh` instead of one high-memory Slurm allocation
+per checkpoint group. The node-bundled path changes only scheduling: it calls
+the same immutable `run_checkpoint_replay_pc.sh` scientific worker and writes
+the same validated checkpoint outputs.
+
+The scheduler first builds a deterministic lane manifest from checkpoint groups
+that lack a current completion marker. Groups are greedily balanced by replay
+task count. Each lane runs serially on one CPU, while several independent lanes
+share a node allocation and node-local `/tmp` storage. A bundle-level preflight
+rejects nodes without the configured local-space allowance. Completion remains
+restartable at checkpoint-group granularity.
+
+Recommended rollout:
+
+1. Run `plan pilot`, then `submit pilot` with one node and 12 lanes. The pilot
+   selects the 12 largest unfinished groups as a memory and storage stress test.
+2. Validate `checkpoint_bundle_completion.json`, Slurm `MaxRSS`, and node-local
+   storage use.
+3. Run `plan full`, then `submit full`. The default full allocation uses six
+   nodes with 12 one-core lanes per node and 256 GiB per node.
+
+The scientific workflow checkout and PREDICT physics checkout are verified
+against `phase_run_identity.json`; scheduler provenance is recorded separately
+in `checkpoint_bundle_submission.json`.
