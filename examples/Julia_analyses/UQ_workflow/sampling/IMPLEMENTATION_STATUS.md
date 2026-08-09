@@ -44,13 +44,20 @@
 - Production run `independent_full_fault_v1_phase1_20260809_v1` resumes 34
   validated checkpoint groups and schedules the remaining 938 groups without
   recomputing completed work.
-- Replay/Pc job `20010410` uses 9 nodes, 108 one-core lanes, 216 GiB per node,
-  and a 36-hour wall time. This is the largest allocation below the Engaging
-  advanced-QoS per-user memory cap of 2 TiB while preserving the qualified
+- The initial atomic 9-node replay/Pc job `20010410` is superseded before
+  execution by one-node array `20012444`. The replacement has nine independent
+  array tasks, 12 one-core lanes and 216 GiB per task, and a 36-hour wall time.
+  Slurm can start each node independently while preserving the qualified
   18 GiB shared-memory budget per lane.
+- Production array `20012444` uses `--exclusive=user`, preventing multiple
+  array tasks owned by this user from sharing a physical node and invalidating
+  the conservative node-local `/tmp` allowance. Nonexclusive scheduling test
+  `20012006` is canceled after exposing node packing and before publishing any
+  checkpoint completion markers.
 - Validation gate `20010419`, geology assembly array `20010420`, dynamic-Kr
-  array `20010421`, and final QA gate `20010422` form a dependency chain. No
-  downstream stage can start unless its required upstream validation passes.
+  array `20010421`, and final QA gate `20010422` form a dependency chain. Gate
+  `20010419` is explicitly rewired to `afterany:20012444_*`; no downstream
+  stage can start unless its required upstream validation passes.
 - Submission metadata, immutable commit identifiers, method hashes, lane
   manifests, and completion markers are stored beneath the permanent run root
   on `/orcd/data/juanes/001/shaowen`.
@@ -61,7 +68,3 @@
   thresholds, so the selector is implemented but no 12-geology list is frozen.
 - The optional clustered/fragmented along-strike permutation experiment is not
   part of the primary production design and remains disabled.
-- The full 162-geology production manifest is generated only from a clean,
-  committed isolated branch. The scientific implementation and one-geology
-  end-to-end acceptance are complete; production freezing is intentionally
-  deferred until this version is reviewed and committed.
