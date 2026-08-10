@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 from pathlib import Path
 
 
@@ -16,6 +17,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoint-chunk-size", type=int, default=1)
     parser.add_argument("--assembly-chunk-size", type=int, default=1)
     parser.add_argument("--kr-chunk-size", type=int, default=1)
+    parser.add_argument(
+        "--max-replay-tolerance-log10",
+        type=float,
+        default=0.005,
+        help=(
+            "Maximum accepted replay numerical-equivalence tolerance. "
+            "Markers produced with a stricter tolerance remain valid."
+        ),
+    )
     parser.add_argument(
         "--shell",
         action="store_true",
@@ -39,6 +49,51 @@ def valid_marker(path: Path, expected: dict[str, object]) -> bool:
     except (OSError, json.JSONDecodeError):
         return False
     return all(marker.get(key) == value for key, value in expected.items())
+
+
+def valid_checkpoint_marker(
+    path: Path,
+    expected: dict[str, object],
+    maximum_tolerance: float,
+) -> bool:
+    """Validate checkpoint identity and maximum-tolerance semantics.
+
+    Legacy completion markers without numerical fields remain eligible because
+    their immutable checkpoint, physics, and configuration identities are still
+    checked. When numerical fields are present, both must satisfy the documented
+    maximum policy; a stricter recorded tolerance is intentionally accepted.
+    """
+
+    if not path.is_file():
+        return False
+    try:
+        marker = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    if not all(marker.get(key) == value for key, value in expected.items()):
+        return False
+
+    recorded = marker.get("replay_tolerance_log10")
+    difference = marker.get("max_replay_abs_log10_difference")
+    if recorded is None and difference is None:
+        return True
+    if recorded is None or difference is None:
+        return False
+    try:
+        recorded_value = float(recorded)
+        difference_value = float(difference)
+    except (TypeError, ValueError):
+        return False
+    return (
+        math.isfinite(maximum_tolerance)
+        and maximum_tolerance > 0
+        and math.isfinite(recorded_value)
+        and recorded_value > 0
+        and recorded_value <= maximum_tolerance + 1.0e-12
+        and math.isfinite(difference_value)
+        and difference_value >= 0
+        and difference_value <= recorded_value + 1.0e-12
+    )
 
 
 def read_run_identity(run_root: Path) -> dict[str, object]:
@@ -109,7 +164,10 @@ def add_chunk_status(stage: dict[str, object], chunk_size: int) -> None:
     stage["array_spec"] = compress_indices(missing_chunks)
 
 
-def checkpoint_status(run_root: Path) -> dict[str, object]:
+def checkpoint_status(
+    run_root: Path,
+    maximum_tolerance: float = 0.005,
+) -> dict[str, object]:
     rows = read_rows(run_root / "checkpoint_manifest" / "checkpoint_groups.csv")
     identity = read_run_identity(run_root)
     missing: list[int] = []
@@ -132,7 +190,7 @@ def checkpoint_status(run_root: Path) -> dict[str, object]:
             expected["method_config_sha256"] = identity.get(
                 "production_method_config_sha256"
             )
-        if not valid_marker(marker, expected):
+        if not valid_checkpoint_marker(marker, expected, maximum_tolerance):
             missing.append(index)
     return {
         "total": len(rows),
@@ -222,7 +280,10 @@ def main() -> int:
     report = {
         "schema_version": "independent_full_fault_phase_status_v1",
         "run_root": str(run_root),
-        "checkpoint": checkpoint_status(run_root),
+        "checkpoint": checkpoint_status(
+            run_root,
+            args.max_replay_tolerance_log10,
+        ),
         "assembly": assembly_status(run_root),
         "dynamic_kr": case_status(run_root),
     }

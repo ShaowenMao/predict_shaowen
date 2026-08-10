@@ -189,6 +189,48 @@ class PhaseProductionStatusTests(unittest.TestCase):
             f'method_config_sha256 = "{expected_hash}"', acceptance_policy
         )
 
+    def test_phase_status_accepts_stricter_numerical_markers(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            marker_root = root / "checkpoint_pc"
+            write_csv(
+                root / "checkpoint_manifest" / "checkpoint_groups.csv",
+                ["group_index", "group_id"],
+                [[1, "strict"], [2, "validated"], [3, "too_loose"]],
+            )
+            for group_id, tolerance, difference in (
+                ("strict", 0.001, 0.0009),
+                ("validated", 0.005, 0.0049),
+                ("too_loose", 0.006, 0.0040),
+            ):
+                write_marker(
+                    marker_root / group_id / "checkpoint.done.json",
+                    {
+                        "status": "complete",
+                        "group_id": group_id,
+                        "replay_tolerance_log10": tolerance,
+                        "max_replay_abs_log10_difference": difference,
+                    },
+                )
+
+            status = STATUS.checkpoint_status(root, maximum_tolerance=0.005)
+            self.assertEqual(status["complete"], 2)
+            self.assertEqual(status["missing_indices"], [3])
+
+    def test_phase_launcher_separates_sampling_and_orchestration_commits(self) -> None:
+        launcher = PHASE_LAUNCHER.read_text(encoding="utf-8")
+        self.assertIn(
+            'ORCHESTRATION_COMMIT="${ORCHESTRATION_COMMIT:-${SAMPLING_COMMIT}}"',
+            launcher,
+        )
+        self.assertIn(
+            'if [[ "${runtime_commit}" != "${ORCHESTRATION_COMMIT}" ]]',
+            launcher,
+        )
+        self.assertIn('"sampling_code_commit": sampling_commit', launcher)
+        self.assertIn('"orchestration_code_commit": orchestration_commit', launcher)
+        self.assertIn('"retry_scope": "missing_or_invalid_markers_only"', launcher)
+
     def test_finalizer_rejects_stale_done_marker_contract(self) -> None:
         expected = {
             "status": "complete",
@@ -338,7 +380,9 @@ class PhaseProductionStatusTests(unittest.TestCase):
         self.assertIn('PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT:?', launcher)
         self.assertIn('git -C "${RUNTIME_REPO}" rev-parse HEAD', launcher)
         self.assertIn('git -C "${PREDICT_CODE_ROOT}" rev-parse HEAD', launcher)
-        self.assertIn('"${runtime_commit}" != "${SAMPLING_COMMIT}"', launcher)
+        self.assertIn(
+            '"${runtime_commit}" != "${ORCHESTRATION_COMMIT}"', launcher
+        )
         self.assertIn('"${physics_commit}" != "${PHYSICS_COMMIT}"', launcher)
 
         for worker in (checkpoint_worker, kr_worker):

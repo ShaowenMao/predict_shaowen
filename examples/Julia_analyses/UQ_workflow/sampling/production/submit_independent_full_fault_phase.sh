@@ -16,6 +16,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUNTIME_REPO="${RUNTIME_REPO:-/home/shaowen/orcd/pool/predict_shaowen}"
+ORCHESTRATION_COMMIT="${ORCHESTRATION_COMMIT:-}"
 PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT:?PREDICT_CODE_ROOT must be a clean checkout of the recorded PREDICT physics commit}"
 HANDOFF_ROOT="${HANDOFF_ROOT:?HANDOFF_ROOT is required}"
 PREDICT_ROOT="${PREDICT_ROOT:?PREDICT_ROOT is required}"
@@ -133,8 +134,9 @@ PY
 )
 
 runtime_commit="$(git -C "${RUNTIME_REPO}" rev-parse HEAD)"
-if [[ "${runtime_commit}" != "${SAMPLING_COMMIT}" ]]; then
-    echo "Workflow commit mismatch at ${RUNTIME_REPO}: ${runtime_commit} != ${SAMPLING_COMMIT}" >&2
+ORCHESTRATION_COMMIT="${ORCHESTRATION_COMMIT:-${SAMPLING_COMMIT}}"
+if [[ "${runtime_commit}" != "${ORCHESTRATION_COMMIT}" ]]; then
+    echo "Orchestration commit mismatch at ${RUNTIME_REPO}: ${runtime_commit} != ${ORCHESTRATION_COMMIT}" >&2
     exit 2
 fi
 if [[ -n "$(git -C "${RUNTIME_REPO}" status --porcelain)" ]]; then
@@ -152,6 +154,12 @@ if [[ -n "$(git -C "${PREDICT_CODE_ROOT}" status --porcelain)" ]]; then
     exit 2
 fi
 
+actual_method_config_sha256="$(sha256sum "${METHOD_CONFIG}" | awk '{print $1}')"
+if [[ "${actual_method_config_sha256}" != "${METHOD_CONFIG_SHA256}" ]]; then
+    echo "Method configuration hash mismatch: ${actual_method_config_sha256} != ${METHOD_CONFIG_SHA256}" >&2
+    exit 2
+fi
+
 python3 - \
     "${RUN_ROOT}/phase_run_identity.json" \
     "${PHASE}" \
@@ -161,6 +169,7 @@ python3 - \
     "${SAMPLING_COMMIT}" \
     "${PHYSICS_COMMIT}" \
     "${RUNTIME_REPO}" \
+    "${ORCHESTRATION_COMMIT}" \
     "${PREDICT_CODE_ROOT}" \
     "${METHOD_CONFIG_SHA256}" \
     "${EXPECTED_GEOLOGIES}" \
@@ -180,6 +189,7 @@ from pathlib import Path
     sampling_commit,
     physics_commit,
     runtime_repo,
+    orchestration_commit,
     predict_code_root,
     method_hash,
     geology_count,
@@ -187,16 +197,13 @@ from pathlib import Path
     assignment_count,
 ) = sys.argv[1:]
 path = Path(path_text)
-identity = {
-    "schema_version": "independent_full_fault_phase_run_identity_v1",
+immutable_identity = {
     "phase": phase,
     "run_id": run_id,
     "handoff_root": handoff_root,
     "handoff_metadata_sha256": handoff_sha256,
     "sampling_code_commit": sampling_commit,
     "physics_commit": physics_commit,
-    "runtime_repo": runtime_repo,
-    "predict_code_root": predict_code_root,
     "production_method_config_sha256": method_hash,
     "expected_geology_count": int(geology_count),
     "expected_case_count": int(case_count),
@@ -204,10 +211,24 @@ identity = {
 }
 if path.is_file():
     existing = json.loads(path.read_text(encoding="utf-8"))
-    comparable = {key: value for key, value in existing.items() if key != "created_at_utc"}
-    if comparable != identity:
-        raise SystemExit("Run root belongs to a different immutable handoff or configuration")
+    mismatches = {
+        key: {"existing": existing.get(key), "requested": value}
+        for key, value in immutable_identity.items()
+        if existing.get(key) != value
+    }
+    if mismatches:
+        raise SystemExit(
+            "Run root belongs to a different immutable handoff or configuration: "
+            + json.dumps(mismatches, sort_keys=True)
+        )
 else:
+    identity = {
+        "schema_version": "independent_full_fault_phase_run_identity_v2",
+        **immutable_identity,
+        "initial_runtime_repo": runtime_repo,
+        "initial_orchestration_commit": orchestration_commit,
+        "initial_predict_code_root": predict_code_root,
+    }
     identity["created_at_utc"] = datetime.now(timezone.utc).isoformat()
     path.write_text(json.dumps(identity, indent=2) + "\n", encoding="utf-8")
 PY
@@ -231,6 +252,7 @@ status_args=(
     --checkpoint-chunk-size "${GROUPS_PER_ARRAY_TASK}"
     --assembly-chunk-size "${GEOLOGIES_PER_ARRAY_TASK}"
     --kr-chunk-size "${CASES_PER_ARRAY_TASK}"
+    --max-replay-tolerance-log10 "${REPLAY_TOLERANCE_LOG10}"
 )
 eval "$(python3 "${STATUS_TOOL}" "${status_args[@]}" --shell)"
 python3 "${STATUS_TOOL}" \
@@ -246,7 +268,8 @@ cat <<EOF
 Independent full-fault ${PHASE} production plan
   run_id: ${RUN_ID}
   handoff: ${HANDOFF_ROOT}
-  workflow commit: ${SAMPLING_COMMIT}
+  frozen sampling commit: ${SAMPLING_COMMIT}
+  orchestration commit: ${ORCHESTRATION_COMMIT}
   PREDICT physics commit: ${PHYSICS_COMMIT}
   workflow checkout: ${RUNTIME_REPO}
   PREDICT physics checkout: ${PREDICT_CODE_ROOT}
@@ -460,7 +483,19 @@ python3 - \
     "${CHECKPOINT_GATE_JOB_ID}" \
     "${ASSEMBLY_JOB_ID}" \
     "${KR_JOB_ID}" \
-    "${FINAL_GATE_JOB_ID}" <<'PY'
+    "${FINAL_GATE_JOB_ID}" \
+    "${HANDOFF_ROOT}" \
+    "${HANDOFF_SHA256}" \
+    "${SAMPLING_COMMIT}" \
+    "${ORCHESTRATION_COMMIT}" \
+    "${RUNTIME_REPO}" \
+    "${PHYSICS_COMMIT}" \
+    "${PREDICT_CODE_ROOT}" \
+    "${PREDICT_ROOT}" \
+    "${METHOD_CONFIG_SHA256}" \
+    "${REPLAY_TOLERANCE_LOG10}" \
+    "${CHECKPOINT_COMPLETE}" \
+    "${CHECKPOINT_MISSING}" <<'PY'
 from datetime import datetime, timezone
 import json
 import sys
@@ -475,13 +510,44 @@ import sys
     assembly_job,
     kr_job,
     final_gate,
+    handoff_root,
+    handoff_sha256,
+    sampling_commit,
+    orchestration_commit,
+    runtime_repo,
+    physics_commit,
+    predict_code_root,
+    predict_root,
+    method_config_sha256,
+    replay_tolerance,
+    checkpoint_complete,
+    checkpoint_missing,
 ) = sys.argv[1:]
 record = {
-    "schema_version": "independent_full_fault_phase_submission_v1",
+    "schema_version": "independent_full_fault_phase_submission_v2",
     "submitted_at_utc": datetime.now(timezone.utc).isoformat(),
     "action": action,
     "phase": phase,
     "run_id": run_id,
+    "retry_scope": "missing_or_invalid_markers_only",
+    "successful_checkpoint_markers_reused": int(checkpoint_complete),
+    "checkpoint_markers_missing_before_submission": int(checkpoint_missing),
+    "numerical_equivalence": {
+        "metric": "maximum_absolute_log10_permeability_difference",
+        "maximum_tolerance": float(replay_tolerance),
+        "semantics": "maximum_allowed; stricter successful markers remain valid",
+    },
+    "provenance": {
+        "handoff_root": handoff_root,
+        "handoff_metadata_sha256": handoff_sha256,
+        "sampling_code_commit": sampling_commit,
+        "orchestration_code_commit": orchestration_commit,
+        "runtime_repo": runtime_repo,
+        "physics_commit": physics_commit,
+        "predict_code_root": predict_code_root,
+        "predict_data_root": predict_root,
+        "production_method_config_sha256": method_config_sha256,
+    },
     "jobs": {
         "checkpoint_array": checkpoint_job or None,
         "checkpoint_gate": checkpoint_gate or None,

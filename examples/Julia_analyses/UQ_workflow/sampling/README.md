@@ -115,6 +115,8 @@ call the legacy similarity-group case generator.
 export HANDOFF_ROOT=/orcd/data/juanes/001/shaowen/predict_shaowen/handoffs/independent_full_fault_v1_phase1
 export PREDICT_ROOT=/orcd/data/juanes/001/shaowen/predict_shaowen/inputs/thickness_scenario_data_collapsed_cell_union
 export PREDICT_CODE_ROOT=/orcd/data/juanes/001/shaowen/predict_shaowen/code/predict_physics_68351e3
+export RUNTIME_REPO=/orcd/data/juanes/001/shaowen/predict_shaowen/orchestration/<immutable_runtime>/runtime_repo
+export ORCHESTRATION_COMMIT=<exact_runtime_commit>
 export RUN_ID=independent_full_fault_v1_phase1_YYYYMMDD_v1
 
 bash examples/Julia_analyses/UQ_workflow/sampling/production/submit_independent_full_fault_phase.sh plan phase1
@@ -129,17 +131,26 @@ bash examples/Julia_analyses/UQ_workflow/sampling/production/submit_independent_
 ```
 
 `RUNTIME_REPO` and `PREDICT_CODE_ROOT` are deliberately separate contracts.
-The runtime repository must be a clean checkout of the sampling-workflow commit
-recorded by the handoff. `PREDICT_CODE_ROOT` must be a clean checkout of the
-historical PREDICT physics commit recorded by the source libraries. The launcher
-checks both commits before planning or submitting work. Exact replay resolves
-PREDICT functions from the physics checkout; Pc/Kr drivers and production
-orchestration resolve from the runtime checkout.
+The runtime repository must be a clean checkout of `ORCHESTRATION_COMMIT`;
+when that variable is omitted, it defaults to the frozen sampling-workflow
+commit for backward compatibility. `PREDICT_CODE_ROOT` must be a clean checkout
+of the historical PREDICT physics commit recorded by the source libraries. The
+launcher also verifies the frozen method-configuration hash before planning or
+submitting work. Exact replay resolves PREDICT functions from the physics
+checkout; Pc/Kr drivers and production orchestration resolve from the runtime
+checkout. A continuation may therefore use a validated orchestration fix without
+changing the immutable sampling, physics, handoff, or method identities.
 
 The status tool treats an item as complete only when its validated done marker
 is present. For revised cases, the marker must also contain the current nested
 assignment-provenance block and matching hashes; stale markers are rejected.
 Completed cases inside a resubmitted chunk are skipped.
+
+The validated replay numerical-equivalence tolerance is a maximum absolute
+log10-permeability difference of `0.005`. Completion markers generated with a
+stricter tolerance, including `0.001`, remain valid. Only missing or invalid
+markers are retried; seed, realization index, checkpoint/code/configuration
+hashes, and the discrete material-architecture map remain exact contracts.
 
 ```bash
 python3 examples/Julia_analyses/UQ_workflow/sampling/production/phase_production_status.py \
