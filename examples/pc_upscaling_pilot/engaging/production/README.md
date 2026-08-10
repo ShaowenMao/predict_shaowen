@@ -145,18 +145,21 @@ Production replay/Pc campaigns use the restartable checkpoint-chunk array in
 `submit_independent_full_fault_phase.sh`. Each Slurm task uses one CPU and an
 18 GiB memory request, processes five checkpoint groups serially by default,
 and skips groups that already have a valid completion marker. Up to 96 tasks
-may run concurrently. Temporary replay and Pc data use the project flash
-scratch tree, so these tasks do not require exclusive nodes.
+may run concurrently. Temporary replay, Pc, and MATLAB runtime data use each
+allocated node's local `/tmp`; shared flash scratch is reserved for Slurm logs.
+The tasks do not require exclusive nodes.
 
 This is the default production architecture. It matches the successful
 1,620-case campaign and keeps scheduling independent from the scientific
 worker and output contract.
 
-For independent-full-fault Phase 1, checkpoint array `20028083` applies this
-architecture to 972 groups: 195 tasks, five groups per task, one CPU and
-18 GiB per task, a 24-hour wall time, and a 96-task concurrency cap. It
-supersedes the high-memory node array without changing completed outputs or
-scientific provenance.
+The independent-full-fault Phase 1 architecture covers 972 groups with 195
+tasks, five groups per task, one CPU and 18 GiB per task, a 24-hour wall time,
+and a 96-task concurrency cap. A production incident showed that the legacy
+shared-scratch temporary default exceeds the flash quota at this concurrency.
+The node-local default is therefore part of the scheduler contract and is
+covered by regression tests; it does not change completed outputs or scientific
+provenance.
 
 # Optional node-bundled checkpoint diagnostics
 

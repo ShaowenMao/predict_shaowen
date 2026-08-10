@@ -29,13 +29,13 @@ Durable, compact results are stored under:
 /orcd/data/juanes/001/shaowen/predict_shaowen/production_runs/<run_id>/
 ```
 
-Large temporary replay maps remain on flash scratch and are deleted only after
-replay verification and compact Pc publication succeed. Dynamic-Kr scientific
-inputs and outputs likewise remain on scratch or durable project storage.
-Only the lightweight, high-frequency MATLAB `Processes` pool coordination,
-preference, and temporary files use node-local `/tmp`. This avoids shared-file
-system failures without placing replay maps or scientific results in
-node-local storage.
+Large temporary replay maps, Pc work files, dynamic-Kr work files, and MATLAB
+runtime files use node-local `/tmp` and are deleted only after validation and
+durable publication succeed. Immutable inputs and compact/final scientific
+outputs remain on durable project storage. Flash scratch is used for Slurm
+logs, not large transient scientific work. This prevents a many-task campaign
+from exhausting the user's shared flash quota while leaving the scientific
+method and restart markers unchanged.
 
 ```text
 checkpoint_manifest/   one selection per geology-window checkpoint

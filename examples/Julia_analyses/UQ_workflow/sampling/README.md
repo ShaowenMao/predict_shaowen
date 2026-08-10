@@ -149,6 +149,10 @@ python3 examples/Julia_analyses/UQ_workflow/sampling/production/phase_production
 Phase 1 defaults batch five checkpoint groups, nine geology assemblies, and 16
 Kr cases per Slurm array element. The scientific work units remain separate;
 batching only keeps the queued-element count below the Engaging account limit.
+Large checkpoint and Kr intermediates default to node-local `/tmp`; shared
+flash scratch holds only scheduler logs, while validated outputs are published
+to durable project storage. This storage placement is operational only and
+does not alter replay, Pc, Kr, sampling, or validation calculations.
 Each Kr case uses six MATLAB process workers, and AMGCL remains required for
 the 3D solve. The robust 1D setup explicitly disables CPR during solver
 construction before installing its configured backslash or AMGCL solver. This

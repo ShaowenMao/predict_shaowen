@@ -252,9 +252,45 @@ class PhaseProductionStatusTests(unittest.TestCase):
             launcher,
         )
         self.assertNotIn("--exclusive", launcher)
+        self.assertIn(
+            'CHECKPOINT_TEMP_ROOT="${CHECKPOINT_TEMP_ROOT:-${NODE_LOCAL_TMP_ROOT}/checkpoint}"',
+            launcher,
+        )
+        self.assertIn(
+            'CASE_TEMP_ROOT="${CASE_TEMP_ROOT:-${NODE_LOCAL_TMP_ROOT}/case}"',
+            launcher,
+        )
+        self.assertIn('CHECKPOINT_TEMP_ROOT="${CHECKPOINT_TEMP_ROOT}"', launcher)
+        self.assertIn('CASE_TEMP_ROOT="${CASE_TEMP_ROOT}"', launcher)
         self.assertIn('--mem="${CHECKPOINT_MEMORY:-18G}"', submitter)
         self.assertIn('PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT:-', submitter)
         self.assertIn('METHOD_CONFIG="${METHOD_CONFIG:-', submitter)
+
+    def test_large_transient_work_defaults_to_node_local_storage(self) -> None:
+        checkpoint_worker = CHECKPOINT_WORKER.read_text(encoding="utf-8")
+        kr_worker = KR_WORKER.read_text(encoding="utf-8")
+
+        for worker in (checkpoint_worker, kr_worker):
+            self.assertIn(
+                'NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT:-/tmp/${USER}/predict_shaowen}"',
+                worker,
+            )
+        self.assertIn(
+            'CHECKPOINT_TEMP_ROOT="${CHECKPOINT_TEMP_ROOT:-${NODE_LOCAL_TMP_ROOT}/checkpoint}"',
+            checkpoint_worker,
+        )
+        self.assertIn(
+            'CASE_TEMP_ROOT="${CASE_TEMP_ROOT:-${NODE_LOCAL_TMP_ROOT}/case}"',
+            kr_worker,
+        )
+        self.assertNotIn(
+            'CHECKPOINT_TEMP_ROOT="${CHECKPOINT_TEMP_ROOT:-${SCRATCH_ROOT}/tmp}"',
+            checkpoint_worker,
+        )
+        self.assertNotIn(
+            'CASE_TEMP_ROOT="${CASE_TEMP_ROOT:-${SCRATCH_ROOT}/tmp}"',
+            kr_worker,
+        )
 
     def test_missing_work_is_mapped_to_restartable_chunks(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

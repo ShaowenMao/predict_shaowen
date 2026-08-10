@@ -131,13 +131,12 @@ replay_template=("${INPUT_DIR}"/replay_summary_template_*.csv)
     echo "Expected one replay template in ${INPUT_DIR}." >&2; exit 2; }
 
 JOB_TOKEN="${SLURM_JOB_ID:-manual}_${WORK_INDEX}"
-CASE_TEMP_ROOT="${CASE_TEMP_ROOT:-${SCRATCH_ROOT}/tmp}"
+NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT:-/tmp/${USER}/predict_shaowen}"
+CASE_TEMP_ROOT="${CASE_TEMP_ROOT:-${NODE_LOCAL_TMP_ROOT}/case}"
 LOCAL_BASE="${CASE_TEMP_ROOT}"
 LOCAL_ROOT="${LOCAL_BASE}/predict_case_${JOB_TOKEN}"
-# MATLAB's Processes profile writes coordination MAT files frequently. Keep
-# those transient files on node-local storage to avoid shared-scratch I/O
-# failures; scientific inputs and finalized outputs remain on durable paths.
-NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT:-/tmp/${USER}/predict_shaowen}"
+# Replay, Kr, and MATLAB coordination files are transient. Keep all of them
+# node-local; scientific inputs and finalized outputs remain on durable paths.
 MATLAB_RUNTIME_ROOT="${NODE_LOCAL_TMP_ROOT}/matlab_${JOB_TOKEN}"
 MATLAB_JOB_STORAGE="${MATLAB_RUNTIME_ROOT}/local_cluster_jobs"
 REPLAY_ROOT="${LOCAL_ROOT}/representative_replay"
