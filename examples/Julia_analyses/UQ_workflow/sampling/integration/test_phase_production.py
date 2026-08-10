@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import importlib.util
 import json
 import tempfile
@@ -29,6 +30,15 @@ CHECKPOINT_SUBMITTER = CHECKPOINT_WORKER.with_name(
 KR_WORKER = CHECKPOINT_WORKER.with_name("run_case_dynamic_kr.sh")
 FINALIZE_CASE_PATH = CHECKPOINT_WORKER.with_name("finalize_case_kr.py")
 VERIFY_CASE_PATH = CHECKPOINT_WORKER.with_name("verify_case_completion.py")
+FINALIZE_CHECKPOINT_PATH = CHECKPOINT_WORKER.with_name(
+    "finalize_checkpoint_pc.py"
+)
+VERIFY_CHECKPOINT_PATH = CHECKPOINT_WORKER.with_name(
+    "verify_checkpoint_completion.py"
+)
+CONTINUATION_SUBMITTER = CHECKPOINT_WORKER.with_name(
+    "submit_full_production_continuation.sh"
+)
 
 
 def load_status_module():
@@ -52,6 +62,12 @@ def load_module(name: str, path: Path):
 STATUS = load_status_module()
 FINALIZE_CASE = load_module("finalize_case_kr", FINALIZE_CASE_PATH)
 VERIFY_CASE = load_module("verify_case_completion", VERIFY_CASE_PATH)
+FINALIZE_CHECKPOINT = load_module(
+    "finalize_checkpoint_pc", FINALIZE_CHECKPOINT_PATH
+)
+VERIFY_CHECKPOINT = load_module(
+    "verify_checkpoint_completion", VERIFY_CHECKPOINT_PATH
+)
 
 
 def write_csv(path: Path, header: list[str], rows: list[list[object]]) -> None:
@@ -68,6 +84,111 @@ def write_marker(path: Path, payload: dict[str, object]) -> None:
 
 
 class PhaseProductionStatusTests(unittest.TestCase):
+    def test_validated_replay_tolerance_is_a_maximum_policy(self) -> None:
+        errors: list[str] = []
+        VERIFY_CHECKPOINT.validate_replay_tolerance(
+            "strict_existing", 0.001, 0.0009, 0.005, errors
+        )
+        VERIFY_CHECKPOINT.validate_replay_tolerance(
+            "validated_retry", 0.005, 0.0049, 0.005, errors
+        )
+        self.assertEqual(errors, [])
+
+        errors = []
+        VERIFY_CHECKPOINT.validate_replay_tolerance(
+            "too_loose", 0.006, 0.004, 0.005, errors
+        )
+        VERIFY_CHECKPOINT.validate_replay_tolerance(
+            "too_different", 0.005, 0.0051, 0.005, errors
+        )
+        self.assertEqual(len(errors), 2)
+
+    def test_replay_identity_requires_exact_seed_index_and_architecture(self) -> None:
+        selection = {
+            "task_id": "rpc_test",
+            "task_key_sha256": "1" * 64,
+            "selected_sample_index": "17",
+            "exact_replay_seed": "10042",
+            "source_seed_base": "10000",
+        }
+        architecture_hash = "a" * 64
+        replay = {
+            "TaskId": "rpc_test",
+            "TaskKeySha256": "1" * 64,
+            "SourceRow": "1",
+            "SelectedSampleIndex": "17",
+            "ReplaySeed": "10042",
+            "SourceAcceptedSeed": "10042",
+            "AttemptIndex": "43",
+            "SourceAcceptedAttemptIndex": "43",
+            "ReplayMode": "direct_seed_from_selection_table",
+            "DiscreteArchitectureStatus": "matched",
+            "DiscreteArchitectureSha256": architecture_hash,
+        }
+        self.assertEqual(
+            FINALIZE_CHECKPOINT.validate_replay_identity(selection, replay, 1),
+            architecture_hash,
+        )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            marker_path = root / "checkpoint.done.json"
+            write_csv(root / "selection.csv", list(selection), [list(selection.values())])
+            write_csv(root / "replay_verification_by_task.csv", list(replay), [list(replay.values())])
+            manifest_text = f"rpc_test,{architecture_hash}"
+            marker = {
+                "replay_identity_contract": (
+                    "exact_checkpoint_row_seed_attempt_and_material_map_sha256_v1"
+                ),
+                "discrete_architecture_count": 1,
+                "discrete_architecture_manifest_sha256": hashlib.sha256(
+                    manifest_text.encode("ascii")
+                ).hexdigest(),
+            }
+            errors: list[str] = []
+            VERIFY_CHECKPOINT.validate_exact_replay_identity(
+                marker_path, marker, errors
+            )
+            self.assertEqual(errors, [])
+
+            replay["ReplaySeed"] = "10043"
+            write_csv(root / "replay_verification_by_task.csv", list(replay), [list(replay.values())])
+            errors = []
+            VERIFY_CHECKPOINT.validate_exact_replay_identity(
+                marker_path, marker, errors
+            )
+            self.assertEqual(len(errors), 1)
+            self.assertIn("seed mismatch", errors[0])
+
+    def test_production_defaults_use_validated_tolerance(self) -> None:
+        launcher = PHASE_LAUNCHER.read_text(encoding="utf-8")
+        checkpoint_worker = CHECKPOINT_WORKER.read_text(encoding="utf-8")
+        checkpoint_gate = CHECKPOINT_WORKER.with_name(
+            "run_checkpoint_completion_gate.sh"
+        ).read_text(encoding="utf-8")
+        qualification_submitter = CHECKPOINT_WORKER.with_name(
+            "submit_qualification_batch.sh"
+        ).read_text(encoding="utf-8")
+        for source in (
+            launcher,
+            checkpoint_worker,
+            checkpoint_gate,
+            qualification_submitter,
+        ):
+            self.assertIn("0.005", source)
+
+        method_config = CHECKPOINT_WORKER.with_name(
+            "production_method_config.toml"
+        )
+        normalized_config = method_config.read_bytes().replace(b"\r\n", b"\n")
+        expected_hash = hashlib.sha256(normalized_config).hexdigest()
+        acceptance_policy = CHECKPOINT_WORKER.with_name(
+            "production_acceptance_policy.toml"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            f'method_config_sha256 = "{expected_hash}"', acceptance_policy
+        )
+
     def test_finalizer_rejects_stale_done_marker_contract(self) -> None:
         expected = {
             "status": "complete",
@@ -212,6 +333,7 @@ class PhaseProductionStatusTests(unittest.TestCase):
         launcher = PHASE_LAUNCHER.read_text(encoding="utf-8")
         checkpoint_worker = CHECKPOINT_WORKER.read_text(encoding="utf-8")
         kr_worker = KR_WORKER.read_text(encoding="utf-8")
+        continuation = CONTINUATION_SUBMITTER.read_text(encoding="utf-8")
 
         self.assertIn('PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT:?', launcher)
         self.assertIn('git -C "${RUNTIME_REPO}" rev-parse HEAD', launcher)
@@ -230,6 +352,28 @@ class PhaseProductionStatusTests(unittest.TestCase):
             "run('${RUNTIME_REPO}/examples/pc_upscaling_pilot/run_kr_upscaling_dyn_median_examples_full87.m')",
             kr_worker,
         )
+        self.assertIn('git -C "${RUNTIME_REPO}" rev-parse HEAD', continuation)
+        self.assertIn(
+            'git -C "${PREDICT_CODE_ROOT}" rev-parse HEAD', continuation
+        )
+        self.assertIn('sha256sum "${METHOD_CONFIG}"', continuation)
+        self.assertIn('PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT:-', continuation)
+        self.assertIn('METHOD_CONFIG="${METHOD_CONFIG:-', continuation)
+        self.assertIn(
+            '"replay_tolerance_semantics": "maximum_allowed_numerical_difference"',
+            continuation,
+        )
+        self.assertIn(
+            '"completed_checkpoint_policy": "preserve_valid_existing_markers"',
+            continuation,
+        )
+        for marker_field in (
+            '"checkpoint_sha256": row["checkpoint_sha256"]',
+            '"physics_commit": physics_commit',
+            '"method_config_sha256": method_config_sha256',
+            '"task_count": int(row["task_count"])',
+        ):
+            self.assertIn(marker_field, continuation)
 
     def test_phase_launcher_accepts_external_checkpoint_bundle(self) -> None:
         launcher = PHASE_LAUNCHER.read_text(encoding="utf-8")

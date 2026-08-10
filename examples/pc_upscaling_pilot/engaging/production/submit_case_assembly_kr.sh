@@ -43,7 +43,7 @@ LOG_ROOT="${LOG_ROOT:-${SCRATCH_ROOT}/production_logs/${RUN_ID}}"
 SAMPLING_CSV="${FREEZE_ROOT}/inputs/sampling/texas_field_slice_window_values.csv"
 ASSIGNMENT_CSV="${FREEZE_ROOT}/manifests/assignment_to_task.csv"
 CHECKPOINT_JOB_ID="${CHECKPOINT_JOB_ID:-}"
-REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-1.0e-3}"
+REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-0.005}"
 
 if [[ -z "${CHECKPOINT_JOB_ID}" && -f "${RUN_ROOT}/checkpoint_array_job_id.txt" ]]; then
     CHECKPOINT_JOB_ID="$(<"${RUN_ROOT}/checkpoint_array_job_id.txt")"

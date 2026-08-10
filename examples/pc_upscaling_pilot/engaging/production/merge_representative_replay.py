@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--representative-selection-csv", required=True, type=Path)
     parser.add_argument("--representative-replay-summary-csv", required=True, type=Path)
     parser.add_argument("--output-csv", required=True, type=Path)
-    parser.add_argument("--tolerance-log10", type=float, default=1.0e-3)
+    parser.add_argument("--tolerance-log10", type=float, default=0.005)
     return parser.parse_args()
 
 

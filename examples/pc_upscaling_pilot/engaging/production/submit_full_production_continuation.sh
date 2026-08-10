@@ -13,6 +13,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUNTIME_REPO="${RUNTIME_REPO:-/home/shaowen/orcd/pool/predict_shaowen}"
 ORCHESTRATION_COMMIT="${ORCHESTRATION_COMMIT:-}"
 FREEZE_ROOT="${FREEZE_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen/production_freezes/collapsed_cell_union_20260722_v7}"
+PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT:-${FREEZE_ROOT}/code/source}"
+METHOD_CONFIG="${METHOD_CONFIG:-${FREEZE_ROOT}/config/production_method_config.toml}"
 PROJECT_DATA_ROOT="${PROJECT_DATA_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen}"
 SCRATCH_ROOT="${SCRATCH_ROOT:-/home/shaowen/orcd/scratch/predict_shaowen}"
 RUN_ID="${RUN_ID:-production_all1620_20260724_v1}"
@@ -49,18 +51,61 @@ if [[ "${ACTION}" == "submit" && -z "${ORCHESTRATION_COMMIT}" ]]; then
     echo "ORCHESTRATION_COMMIT is required for submission provenance." >&2
     exit 2
 fi
+if [[ "${ACTION}" == "submit" ]]; then
+    [[ -d "${RUNTIME_REPO}/.git" ]] || {
+        echo "Runtime repository is not a Git worktree: ${RUNTIME_REPO}" >&2
+        exit 2
+    }
+    [[ -d "${PREDICT_CODE_ROOT}/.git" ]] || {
+        echo "Frozen PREDICT source is not a Git worktree: ${PREDICT_CODE_ROOT}" >&2
+        exit 2
+    }
+    [[ -f "${METHOD_CONFIG}" ]] || {
+        echo "Missing frozen method configuration: ${METHOD_CONFIG}" >&2
+        exit 2
+    }
+    actual_runtime_commit="$(git -C "${RUNTIME_REPO}" rev-parse HEAD)"
+    [[ "${actual_runtime_commit}" == "${ORCHESTRATION_COMMIT}" ]] || {
+        echo "Runtime commit mismatch: ${actual_runtime_commit} != ${ORCHESTRATION_COMMIT}" >&2
+        exit 2
+    }
+    [[ -z "$(git -C "${RUNTIME_REPO}" status --porcelain)" ]] || {
+        echo "Runtime repository has uncommitted changes: ${RUNTIME_REPO}" >&2
+        exit 2
+    }
+    actual_physics_commit="$(git -C "${PREDICT_CODE_ROOT}" rev-parse HEAD)"
+    [[ "${actual_physics_commit}" == "${PHYSICS_COMMIT}" ]] || {
+        echo "PREDICT physics commit mismatch: ${actual_physics_commit} != ${PHYSICS_COMMIT}" >&2
+        exit 2
+    }
+    [[ -z "$(git -C "${PREDICT_CODE_ROOT}" status --porcelain)" ]] || {
+        echo "Frozen PREDICT repository has uncommitted changes: ${PREDICT_CODE_ROOT}" >&2
+        exit 2
+    }
+    actual_method_hash="$(sha256sum "${METHOD_CONFIG}" | awk '{print $1}')"
+    [[ "${actual_method_hash}" == "${METHOD_CONFIG_SHA256}" ]] || {
+        echo "Method-config SHA mismatch: ${actual_method_hash} != ${METHOD_CONFIG_SHA256}" >&2
+        exit 2
+    }
+fi
 
 module load deprecated-modules gcc/12.2.0-x86_64 python/3.10.8-x86_64
 
 mapfile -t missing_indices < <(
-    python3 - "${GROUPS_CSV}" "${CHECKPOINT_OUTPUT_ROOT}" <<'PY'
+    python3 - "${GROUPS_CSV}" "${CHECKPOINT_OUTPUT_ROOT}" \
+        "${PHYSICS_COMMIT}" "${METHOD_CONFIG_SHA256}" \
+        "${REPLAY_TOLERANCE_LOG10}" <<'PY'
 import csv
 import json
+import math
 import sys
 from pathlib import Path
 
 groups_csv = Path(sys.argv[1])
 output_root = Path(sys.argv[2])
+physics_commit = sys.argv[3]
+method_config_sha256 = sys.argv[4]
+maximum_tolerance = float(sys.argv[5])
 with groups_csv.open(newline="", encoding="utf-8-sig") as stream:
     rows = list(csv.DictReader(stream))
 
@@ -74,7 +119,35 @@ for row in rows:
     except (OSError, json.JSONDecodeError):
         print(row["group_index"])
         continue
-    if data.get("status") != "complete" or data.get("group_id") != row["group_id"]:
+    expected = {
+        "status": "complete",
+        "group_id": row["group_id"],
+        "checkpoint_sha256": row["checkpoint_sha256"],
+        "physics_commit": physics_commit,
+        "method_config_sha256": method_config_sha256,
+        "task_count": int(row["task_count"]),
+    }
+    if any(data.get(key) != value for key, value in expected.items()):
+        print(row["group_index"])
+        continue
+    try:
+        recorded_tolerance = float(
+            data.get("replay_tolerance_log10", math.nan)
+        )
+        maximum_difference = float(
+            data.get("max_replay_abs_log10_difference", math.nan)
+        )
+    except (TypeError, ValueError):
+        print(row["group_index"])
+        continue
+    if (
+        not math.isfinite(recorded_tolerance)
+        or recorded_tolerance <= 0.0
+        or recorded_tolerance > maximum_tolerance + 1.0e-12
+        or not math.isfinite(maximum_difference)
+        or maximum_difference < 0.0
+        or maximum_difference > recorded_tolerance + 1.0e-12
+    ):
         print(row["group_index"])
 PY
 )
@@ -125,6 +198,10 @@ Production continuation plan
   checkpoint walltime: ${CHECKPOINT_WALLTIME}
   checkpoint concurrency: ${CHECKPOINT_MAX_CONCURRENT}
   checkpoint temporary root: ${CHECKPOINT_TEMP_ROOT}
+  orchestration commit: ${ORCHESTRATION_COMMIT:-not checked in plan mode}
+  PREDICT physics commit: ${PHYSICS_COMMIT}
+  method config SHA-256: ${METHOD_CONFIG_SHA256}
+  replay tolerance ceiling: ${REPLAY_TOLERANCE_LOG10}
   downstream assembly tasks: ${ASSEMBLY_ARRAY_TASK_COUNT}
   downstream dynamic-Kr tasks: ${KR_ARRAY_TASK_COUNT}
   downstream geology-stratigraphy package jobs: 1
@@ -153,7 +230,7 @@ checkpoint_submission="$(
         --array="${MISSING_ARRAY_SPEC}%${CHECKPOINT_MAX_CONCURRENT}" \
         --output="${LOG_ROOT}/checkpoint_pc_continuation/%x_%A_%a.out" \
         --error="${LOG_ROOT}/checkpoint_pc_continuation/%x_%A_%a.err" \
-        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",FREEZE_ROOT="${FREEZE_ROOT}",CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT}",COMPACT_OUTPUT_ROOT="${CHECKPOINT_OUTPUT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT}",CHECKPOINT_TEMP_ROOT="${CHECKPOINT_TEMP_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",GROUP_COUNT="${GROUP_COUNT}",GROUPS_PER_ARRAY_TASK=1 \
+        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT}",FREEZE_ROOT="${FREEZE_ROOT}",METHOD_CONFIG="${METHOD_CONFIG}",CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT}",COMPACT_OUTPUT_ROOT="${CHECKPOINT_OUTPUT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT}",CHECKPOINT_TEMP_ROOT="${CHECKPOINT_TEMP_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",GROUP_COUNT="${GROUP_COUNT}",GROUPS_PER_ARRAY_TASK=1 \
         "${WORKER}"
 )"
 CHECKPOINT_ARRAY_JOB_ID="${checkpoint_submission%%;*}"
@@ -215,6 +292,10 @@ python3 - \
     "${RUN_ROOT}/production_continuation_manifest.json" \
     "${RUN_ID}" \
     "${ORCHESTRATION_COMMIT}" \
+    "${PHYSICS_COMMIT}" \
+    "${METHOD_CONFIG}" \
+    "${METHOD_CONFIG_SHA256}" \
+    "${REPLAY_TOLERANCE_LOG10}" \
     "${MISSING_ARRAY_SPEC}" \
     "${MISSING_COUNT}" \
     "${CHECKPOINT_TEMP_ROOT}" \
@@ -233,6 +314,10 @@ import sys
     output_path,
     run_id,
     orchestration_commit,
+    physics_commit,
+    method_config,
+    method_config_sha256,
+    replay_tolerance_log10,
     missing_indices,
     missing_count,
     checkpoint_temp_root,
@@ -251,6 +336,12 @@ manifest = {
     "submitted_at_utc": datetime.now(timezone.utc).isoformat(),
     "run_id": run_id,
     "orchestration_commit": orchestration_commit,
+    "physics_commit": physics_commit,
+    "method_config": method_config,
+    "method_config_sha256": method_config_sha256,
+    "replay_tolerance_log10": float(replay_tolerance_log10),
+    "replay_tolerance_semantics": "maximum_allowed_numerical_difference",
+    "completed_checkpoint_policy": "preserve_valid_existing_markers",
     "missing_checkpoint_count": int(missing_count),
     "missing_checkpoint_indices": [
         int(value) for value in missing_indices.split(",")

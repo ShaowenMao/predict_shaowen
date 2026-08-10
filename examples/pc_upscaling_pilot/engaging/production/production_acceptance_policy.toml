@@ -3,16 +3,19 @@ policy_name = "collapsed_cell_union_full_production_v2_full_slice"
 
 [science]
 physics_commit = "68351e35f3679317b35532a9ca0533674e0aafb5"
-method_config_sha256 = "b4c4583d432a13a6d9a1e66540567d44cf37e1058000023bad65452b6f1a9776"
+method_config_sha256 = "e2e67bda2c9b7d1e3d9111467a5c6bfd562d94089acfa9840be57755f5b23faf"
 smear_overlap_rule = "cell_union_psmear"
 collapse_adjacent_lithology = true
 strike_collapse_allowed = false
 
 [replay]
 tolerance_log10 = 0.005
+tolerance_is_maximum = true
 require_exact_seed = true
 require_selected_sample_index = true
+require_exact_attempt_index = true
 require_checkpoint_sha256 = true
+require_discrete_architecture_sha256 = true
 
 [pc]
 method = "invasion_percolation"

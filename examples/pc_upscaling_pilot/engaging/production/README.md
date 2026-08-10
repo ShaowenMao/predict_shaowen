@@ -110,12 +110,13 @@ and records every Slurm dependency in `submission_manifest.csv`. To continue
 an interrupted batch without deleting valid replay, Pc, or Kr checkpoints,
 resubmit with the same `BATCH_ID` and `RESUME=1`.
 
-The qualification default for exact-replay verification is `1e-3` in
-`log10(k)`, equivalent to about 0.23% relative permeability. This tolerance
+The qualification default for replay numerical equivalence is `0.005` in
+`log10(k)`, equivalent to about 1.16% relative permeability. This tolerance
 admits small cross-platform differences in the effective-permeability linear
 solve while remaining far too tight to accept a different stochastic
-realization. Override it with `REPLAY_TOLERANCE_LOG10` only when the reason is
-documented in the batch provenance.
+realization. The stochastic identity checks remain exact. Override it with
+`REPLAY_TOLERANCE_LOG10` only when the reason is documented in the batch
+provenance.
 
 Summarize jobs and stage completion markers with:
 
@@ -152,6 +153,16 @@ The tasks do not require exclusive nodes.
 This is the default production architecture. It matches the successful
 1,620-case campaign and keeps scheduling independent from the scientific
 worker and output contract.
+
+Production replay uses `0.005` log10 units as the validated maximum
+permeability numerical-equivalence difference across MATLAB/MRST platforms.
+This tolerance applies only to the continuous effective-permeability solve.
+The selected library row, checkpoint-recorded accepted seed and attempt,
+checkpoint SHA-256, PREDICT physics commit, and method-configuration SHA-256
+must still match exactly. Newly replayed groups also record a canonical
+SHA-256 of the reconstructed integer material-unit map. Completion gates
+accept older successful markers produced with a stricter tolerance, so a
+continuation submits only missing or invalid groups.
 
 The independent-full-fault Phase 1 architecture covers 972 groups with 195
 tasks, five groups per task, one CPU and 18 GiB per task, a 24-hour wall time,

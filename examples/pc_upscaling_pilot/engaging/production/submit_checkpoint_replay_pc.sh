@@ -22,7 +22,7 @@ METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256:-21266acc83f38d374cdc966d8243834e92
 PROJECT_DATA_ROOT="${PROJECT_DATA_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen}"
 SCRATCH_ROOT="${SCRATCH_ROOT:-/home/shaowen/orcd/scratch/predict_shaowen}"
 SLURM_QOS="${SLURM_QOS:-mit_amf_advanced_cpu}"
-REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-1.0e-3}"
+REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-0.005}"
 
 if [[ "${MODE}" == "qualification60" ]]; then
     RUN_ID="${RUN_ID:-production_qualification60_20260723_v1}"

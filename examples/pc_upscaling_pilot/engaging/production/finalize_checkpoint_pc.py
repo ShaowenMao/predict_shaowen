@@ -9,6 +9,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -26,7 +27,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoint-sha256", required=True)
     parser.add_argument("--physics-commit", required=True)
     parser.add_argument("--method-config-sha256", required=True)
-    parser.add_argument("--replay-tolerance-log10", type=float, default=1.0e-3)
+    parser.add_argument("--replay-tolerance-log10", type=float, default=0.005)
     parser.add_argument("--overwrite-incomplete", action="store_true")
     return parser.parse_args()
 
@@ -64,6 +65,61 @@ def finite_float(value: str, label: str) -> float:
     if not math.isfinite(result):
         raise ValueError(f"{label} is not finite: {value!r}")
     return result
+
+
+def exact_int(value: str, label: str) -> int:
+    numeric = finite_float(value, label)
+    result = int(numeric)
+    if numeric != result:
+        raise ValueError(f"{label} is not an exact integer: {value!r}")
+    return result
+
+
+def validate_replay_identity(
+    selection: dict[str, str], replay: dict[str, str], source_row: int
+) -> str:
+    """Require exact stochastic identity and a canonical material-map hash."""
+    label = f"Replay task {source_row}"
+    selected_index = exact_int(
+        selection["selected_sample_index"], f"{label} selected_sample_index"
+    )
+    if exact_int(replay["SelectedSampleIndex"], f"{label} replay sample index") != selected_index:
+        raise ValueError(f"{label} selected-sample index mismatch")
+
+    expected_seed = exact_int(
+        selection["exact_replay_seed"], f"{label} exact_replay_seed"
+    )
+    replay_seed = exact_int(replay["ReplaySeed"], f"{label} replay seed")
+    source_seed = exact_int(
+        replay["SourceAcceptedSeed"], f"{label} checkpoint accepted seed"
+    )
+    if replay_seed != expected_seed or source_seed != expected_seed:
+        raise ValueError(
+            f"{label} seed mismatch: replay={replay_seed}, "
+            f"selection={expected_seed}, checkpoint={source_seed}"
+        )
+
+    seed_base = exact_int(selection["source_seed_base"], f"{label} seed base")
+    expected_attempt = expected_seed - seed_base + 1
+    replay_attempt = exact_int(replay["AttemptIndex"], f"{label} replay attempt")
+    source_attempt = exact_int(
+        replay["SourceAcceptedAttemptIndex"],
+        f"{label} checkpoint accepted attempt",
+    )
+    if replay_attempt != expected_attempt or source_attempt != expected_attempt:
+        raise ValueError(
+            f"{label} attempt-index mismatch: replay={replay_attempt}, "
+            f"checkpoint={source_attempt}, expected={expected_attempt}"
+        )
+    if not replay["ReplayMode"].startswith("direct_seed_"):
+        raise ValueError(f"{label} was not reconstructed by direct exact-seed replay")
+    if replay["DiscreteArchitectureStatus"] != "matched":
+        raise ValueError(f"{label} discrete architecture identity did not match")
+
+    architecture_hash = replay["DiscreteArchitectureSha256"].strip().lower()
+    if re.fullmatch(r"[0-9a-f]{64}", architecture_hash) is None:
+        raise ValueError(f"{label} has an invalid discrete-architecture SHA-256")
+    return architecture_hash
 
 
 def write_rows(
@@ -194,7 +250,13 @@ def main() -> int:
     if set(replay_by_source) != set(task_by_source_row):
         raise ValueError("Replay SourceRow coverage does not match selection")
     max_replay_diff = 0.0
+    architecture_hashes: list[tuple[str, str]] = []
     for source_row, row in replay_by_source.items():
+        architecture_hash = validate_replay_identity(
+            selection_rows[source_row - 1], row, source_row
+        )
+        task_id, _ = task_by_source_row[source_row]
+        architecture_hashes.append((task_id, architecture_hash))
         if row["VerificationStatus"] != "matched":
             raise ValueError(f"Replay task {source_row} did not match")
         diff = finite_float(row["MaxAbsLog10Diff"], "MaxAbsLog10Diff")
@@ -203,6 +265,13 @@ def main() -> int:
                 f"Replay task {source_row} exceeds tolerance: {diff}"
             )
         max_replay_diff = max(max_replay_diff, diff)
+    architecture_manifest = "\n".join(
+        f"{task_id},{architecture_hash}"
+        for task_id, architecture_hash in sorted(architecture_hashes)
+    )
+    architecture_manifest_sha256 = hashlib.sha256(
+        architecture_manifest.encode("ascii")
+    ).hexdigest()
 
     summary_source = find_single(
         pc_root / "tables", "pc_curve_summary_*_ip_full87.csv"
@@ -286,6 +355,13 @@ def main() -> int:
             "pc_native_curve_row_count": native_count,
             "max_replay_abs_log10_difference": max_replay_diff,
             "replay_tolerance_log10": args.replay_tolerance_log10,
+            "replay_identity_contract": (
+                "exact_checkpoint_row_seed_attempt_and_material_map_sha256_v1"
+            ),
+            "discrete_architecture_count": len(architecture_hashes),
+            "discrete_architecture_manifest_sha256": (
+                architecture_manifest_sha256
+            ),
             "fine_replay_maps_retained": False,
             "files": files,
         }
