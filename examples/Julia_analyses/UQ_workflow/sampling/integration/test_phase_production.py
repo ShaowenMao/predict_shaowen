@@ -358,7 +358,9 @@ class PhaseProductionStatusTests(unittest.TestCase):
         )
         self.assertIn('sha256sum "${METHOD_CONFIG}"', continuation)
         self.assertIn('PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT:-', continuation)
+        self.assertIn('PREDICT_ROOT="${PREDICT_ROOT:-', continuation)
         self.assertIn('METHOD_CONFIG="${METHOD_CONFIG:-', continuation)
+        self.assertIn('PREDICT_ROOT="${PREDICT_ROOT}"', continuation)
         self.assertIn(
             '"replay_tolerance_semantics": "maximum_allowed_numerical_difference"',
             continuation,

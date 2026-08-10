@@ -14,6 +14,7 @@ RUNTIME_REPO="${RUNTIME_REPO:-/home/shaowen/orcd/pool/predict_shaowen}"
 ORCHESTRATION_COMMIT="${ORCHESTRATION_COMMIT:-}"
 FREEZE_ROOT="${FREEZE_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen/production_freezes/collapsed_cell_union_20260722_v7}"
 PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT:-${FREEZE_ROOT}/code/source}"
+PREDICT_ROOT="${PREDICT_ROOT:-${FREEZE_ROOT}/inputs/predict}"
 METHOD_CONFIG="${METHOD_CONFIG:-${FREEZE_ROOT}/config/production_method_config.toml}"
 PROJECT_DATA_ROOT="${PROJECT_DATA_ROOT:-/orcd/data/juanes/001/shaowen/predict_shaowen}"
 SCRATCH_ROOT="${SCRATCH_ROOT:-/home/shaowen/orcd/scratch/predict_shaowen}"
@@ -58,6 +59,10 @@ if [[ "${ACTION}" == "submit" ]]; then
     }
     [[ -d "${PREDICT_CODE_ROOT}/.git" ]] || {
         echo "Frozen PREDICT source is not a Git worktree: ${PREDICT_CODE_ROOT}" >&2
+        exit 2
+    }
+    [[ -d "${PREDICT_ROOT}/data" ]] || {
+        echo "Frozen PREDICT data root is missing data/: ${PREDICT_ROOT}" >&2
         exit 2
     }
     [[ -f "${METHOD_CONFIG}" ]] || {
@@ -200,6 +205,7 @@ Production continuation plan
   checkpoint temporary root: ${CHECKPOINT_TEMP_ROOT}
   orchestration commit: ${ORCHESTRATION_COMMIT:-not checked in plan mode}
   PREDICT physics commit: ${PHYSICS_COMMIT}
+  frozen PREDICT data: ${PREDICT_ROOT}
   method config SHA-256: ${METHOD_CONFIG_SHA256}
   replay tolerance ceiling: ${REPLAY_TOLERANCE_LOG10}
   downstream assembly tasks: ${ASSEMBLY_ARRAY_TASK_COUNT}
@@ -230,7 +236,7 @@ checkpoint_submission="$(
         --array="${MISSING_ARRAY_SPEC}%${CHECKPOINT_MAX_CONCURRENT}" \
         --output="${LOG_ROOT}/checkpoint_pc_continuation/%x_%A_%a.out" \
         --error="${LOG_ROOT}/checkpoint_pc_continuation/%x_%A_%a.err" \
-        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT}",FREEZE_ROOT="${FREEZE_ROOT}",METHOD_CONFIG="${METHOD_CONFIG}",CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT}",COMPACT_OUTPUT_ROOT="${CHECKPOINT_OUTPUT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT}",CHECKPOINT_TEMP_ROOT="${CHECKPOINT_TEMP_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",GROUP_COUNT="${GROUP_COUNT}",GROUPS_PER_ARRAY_TASK=1 \
+        --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT}",PREDICT_ROOT="${PREDICT_ROOT}",FREEZE_ROOT="${FREEZE_ROOT}",METHOD_CONFIG="${METHOD_CONFIG}",CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT}",COMPACT_OUTPUT_ROOT="${CHECKPOINT_OUTPUT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT}",CHECKPOINT_TEMP_ROOT="${CHECKPOINT_TEMP_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",GROUP_COUNT="${GROUP_COUNT}",GROUPS_PER_ARRAY_TASK=1 \
         "${WORKER}"
 )"
 CHECKPOINT_ARRAY_JOB_ID="${checkpoint_submission%%;*}"
