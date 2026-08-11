@@ -150,7 +150,7 @@ actualAttemptIndex = exactIntegerColumn( ...
 sourceSeedBase = exactIntegerColumn( ...
     selection.source_seed_base, 'checkpoint seed base');
 [sourceAcceptedSeed, sourceAcceptedAttemptIndex] = ...
-    readCheckpointAcceptedIdentity(selection);
+    readCheckpointAcceptedIdentity(selection, dataRoot);
 assert(all(actualSelectedIndex == expectedSelectedIndex), ...
     'ProductionReplay:SelectedIndexMismatch', ...
     'Replay selected-sample index does not exactly match the frozen selection.');
@@ -282,15 +282,30 @@ end
 
 
 function [acceptedSeeds, acceptedAttempts] = ...
-        readCheckpointAcceptedIdentity(selection)
+        readCheckpointAcceptedIdentity(selection, dataRoot)
 % Read the exact accepted seed and attempt for every selected source row.
 
 selectedIndices = exactIntegerColumn( ...
     selection.selected_sample_index, 'selected_sample_index');
-checkpointFiles = strtrim(string(selection.source_checkpoint_file));
-assert(all(~ismissing(checkpointFiles) & checkpointFiles ~= ""), ...
+sourceCheckpointFiles = strtrim(string(selection.source_checkpoint_file));
+assert(all(~ismissing(sourceCheckpointFiles) & sourceCheckpointFiles ~= ""), ...
     'ProductionReplay:MissingCheckpointPath', ...
     'Every selected realization must name its frozen source checkpoint.');
+
+% Sampling tables retain the original source path as provenance. Resolve a
+% platform-local copy from the frozen data root when that path was recorded
+% on another operating system (for example, D:/... in an Engaging run).
+checkpointFiles = strings(height(selection), 1);
+for irow = 1:height(selection)
+    sourceCheckpointFile = sourceCheckpointFiles(irow);
+    if exist(char(sourceCheckpointFile), 'file') == 2
+        checkpointFiles(irow) = sourceCheckpointFile;
+    else
+        checkpointFiles(irow) = fullfile(dataRoot, 'data', ...
+            selection.scenario_label(irow), selection.window(irow), ...
+            selection.case_label(irow), 'predict_runs.mat');
+    end
+end
 
 acceptedSeeds = nan(height(selection), 1);
 acceptedAttempts = nan(height(selection), 1);

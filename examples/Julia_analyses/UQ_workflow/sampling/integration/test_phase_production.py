@@ -39,6 +39,9 @@ VERIFY_CHECKPOINT_PATH = CHECKPOINT_WORKER.with_name(
 CONTINUATION_SUBMITTER = CHECKPOINT_WORKER.with_name(
     "submit_full_production_continuation.sh"
 )
+PRODUCTION_REPLAY_BATCH = (
+    REPO_ROOT / "examples" / "pc_upscaling_pilot" / "prepare_production_replay_batch.m"
+)
 
 
 def load_status_module():
@@ -84,6 +87,15 @@ def write_marker(path: Path, payload: dict[str, object]) -> None:
 
 
 class PhaseProductionStatusTests(unittest.TestCase):
+    def test_production_replay_resolves_cross_platform_checkpoint_paths(self) -> None:
+        source = PRODUCTION_REPLAY_BATCH.read_text(encoding="utf-8")
+        self.assertIn(
+            "readCheckpointAcceptedIdentity(selection, dataRoot)", source
+        )
+        self.assertIn(
+            "checkpointFiles(irow) = fullfile(dataRoot, 'data'", source
+        )
+
     def test_validated_replay_tolerance_is_a_maximum_policy(self) -> None:
         errors: list[str] = []
         VERIFY_CHECKPOINT.validate_replay_tolerance(
