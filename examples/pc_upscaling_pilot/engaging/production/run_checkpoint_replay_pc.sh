@@ -24,7 +24,8 @@ PREDICT_ROOT="${PREDICT_ROOT:-${FREEZE_ROOT}/inputs/predict}"
 METHOD_CONFIG="${METHOD_CONFIG:-${FREEZE_ROOT}/config/production_method_config.toml}"
 PHYSICS_COMMIT="${PHYSICS_COMMIT:-68351e35f3679317b35532a9ca0533674e0aafb5}"
 METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256:-21266acc83f38d374cdc966d8243834e92b786b75ab1f90dd0a99f4244717a8f}"
-REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-0.005}"
+DEFAULT_REPLAY_TOLERANCE_LOG10="${DEFAULT_REPLAY_TOLERANCE_LOG10:-${REPLAY_TOLERANCE_LOG10:-0.005}}"
+REPLAY_TOLERANCE_EXCEPTIONS="${REPLAY_TOLERANCE_EXCEPTIONS:-}"
 
 module load deprecated-modules gcc/12.2.0-x86_64 \
     python/3.10.8-x86_64 matlab/matlab-2025b
@@ -78,6 +79,37 @@ if [[ "${manifest_index}" != "${GROUP_INDEX}" ]]; then
     echo "Manifest index mismatch: ${manifest_index} != ${GROUP_INDEX}" >&2
     exit 2
 fi
+
+REPLAY_TOLERANCE_LOG10="$(
+    python3 - "${group_id}" "${DEFAULT_REPLAY_TOLERANCE_LOG10}" \
+        "${REPLAY_TOLERANCE_EXCEPTIONS}" <<'PY'
+import math
+import sys
+
+group_id, default_text, exception_text = sys.argv[1:]
+default = float(default_text)
+if not math.isfinite(default) or default <= 0:
+    raise SystemExit(f"Invalid default replay tolerance: {default_text!r}")
+
+exceptions = {}
+for item in filter(None, exception_text.split(",")):
+    try:
+        name, value_text = item.rsplit("=", 1)
+        value = float(value_text)
+    except ValueError as error:
+        raise SystemExit(
+            f"Invalid replay tolerance exception {item!r}; "
+            "expected GROUP_ID=TOLERANCE"
+        ) from error
+    if not name or not math.isfinite(value) or value <= 0:
+        raise SystemExit(f"Invalid replay tolerance exception: {item!r}")
+    if name in exceptions:
+        raise SystemExit(f"Duplicate replay tolerance exception: {name}")
+    exceptions[name] = value
+
+print(f"{exceptions.get(group_id, default):.17g}")
+PY
+)"
 
 SELECTION_CSV="${CHECKPOINT_MANIFEST_ROOT}/${selection_relative_path}"
 OUTPUT_DIR="${COMPACT_OUTPUT_ROOT}/${group_id}"
@@ -152,6 +184,7 @@ echo "matlab_prefdir=${MATLAB_PREFDIR}"
 echo "output_dir=${OUTPUT_DIR}"
 echo "runtime_repo=${RUNTIME_REPO}"
 echo "predict_code_root=${PREDICT_CODE_ROOT}"
+echo "replay_tolerance_log10=${REPLAY_TOLERANCE_LOG10}"
 echo "started_at=$(date --iso-8601=seconds)"
 
 matlab -batch \

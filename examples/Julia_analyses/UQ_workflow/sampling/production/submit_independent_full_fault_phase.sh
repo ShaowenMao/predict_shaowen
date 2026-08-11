@@ -61,6 +61,34 @@ CHECKPOINT_MEMORY="${CHECKPOINT_MEMORY:-18G}"
 ASSEMBLY_MEMORY="${ASSEMBLY_MEMORY:-16G}"
 KR_MEMORY="${KR_MEMORY:-48G}"
 REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10:-0.005}"
+REPLAY_TOLERANCE_EXCEPTIONS="${REPLAY_TOLERANCE_EXCEPTIONS:-}"
+MAX_REPLAY_TOLERANCE_LOG10="$(
+    python3 - "${REPLAY_TOLERANCE_LOG10}" \
+        "${REPLAY_TOLERANCE_EXCEPTIONS}" <<'PY'
+import math
+import sys
+
+default_text, exception_text = sys.argv[1:]
+values = [float(default_text)]
+seen = set()
+for item in filter(None, exception_text.split(",")):
+    try:
+        group_id, value_text = item.rsplit("=", 1)
+        value = float(value_text)
+    except ValueError as error:
+        raise SystemExit(
+            f"Invalid replay tolerance exception {item!r}; "
+            "expected GROUP_ID=TOLERANCE"
+        ) from error
+    if not group_id or group_id in seen or not math.isfinite(value) or value <= 0:
+        raise SystemExit(f"Invalid replay tolerance exception: {item!r}")
+    seen.add(group_id)
+    values.append(value)
+if any(not math.isfinite(value) or value <= 0 for value in values):
+    raise SystemExit(f"Invalid default replay tolerance: {default_text!r}")
+print(f"{max(values):.17g}")
+PY
+)"
 SLURM_MAX_SUBMITTED_JOBS="${SLURM_MAX_SUBMITTED_JOBS:-400}"
 EXTERNAL_CHECKPOINT_JOB_ID="${EXTERNAL_CHECKPOINT_JOB_ID:-}"
 if [[ -n "${EXTERNAL_CHECKPOINT_JOB_ID}" && ! "${EXTERNAL_CHECKPOINT_JOB_ID}" =~ ^[0-9]+$ ]]; then
@@ -254,6 +282,12 @@ status_args=(
     --kr-chunk-size "${CASES_PER_ARRAY_TASK}"
     --max-replay-tolerance-log10 "${REPLAY_TOLERANCE_LOG10}"
 )
+if [[ -n "${REPLAY_TOLERANCE_EXCEPTIONS}" ]]; then
+    IFS=',' read -r -a replay_exception_items <<< "${REPLAY_TOLERANCE_EXCEPTIONS}"
+    for exception_item in "${replay_exception_items[@]}"; do
+        status_args+=(--replay-tolerance-exception "${exception_item}")
+    done
+fi
 eval "$(python3 "${STATUS_TOOL}" "${status_args[@]}" --shell)"
 python3 "${STATUS_TOOL}" \
     "${status_args[@]}" \
@@ -274,6 +308,7 @@ Independent full-fault ${PHASE} production plan
   workflow checkout: ${RUNTIME_REPO}
   PREDICT physics checkout: ${PREDICT_CODE_ROOT}
   method config SHA-256: ${METHOD_CONFIG_SHA256}
+  replay tolerance: ${REPLAY_TOLERANCE_LOG10} default; exceptions: ${REPLAY_TOLERANCE_EXCEPTIONS:-none}
   checkpoint replay/Pc: ${CHECKPOINT_COMPLETE}/${CHECKPOINT_TOTAL} complete
   geology assembly: ${ASSEMBLY_COMPLETE}/${ASSEMBLY_TOTAL} complete
   dynamic Kr/final export: ${KR_COMPLETE}/${KR_TOTAL} complete
@@ -367,7 +402,7 @@ if [[ "${CHECKPOINT_MISSING}" -gt 0 ]]; then
             --array="${CHECKPOINT_ARRAY_SPEC}%${CHECKPOINT_MAX_CONCURRENT}" \
             --output="${LOG_ROOT}/checkpoint_pc/%x_%A_%a.out" \
             --error="${LOG_ROOT}/checkpoint_pc/%x_%A_%a.err" \
-            --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT}",FREEZE_ROOT="${FREEZE_ROOT}",PREDICT_ROOT="${PREDICT_ROOT}",METHOD_CONFIG="${METHOD_CONFIG}",CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT}",COMPACT_OUTPUT_ROOT="${CHECKPOINT_OUTPUT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT}",CHECKPOINT_TEMP_ROOT="${CHECKPOINT_TEMP_ROOT}",MATLAB_SHORT_ROOT="${MATLAB_SHORT_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",GROUP_COUNT="${CHECKPOINT_TOTAL}",GROUPS_PER_ARRAY_TASK="${GROUPS_PER_ARRAY_TASK}" \
+            --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT}",FREEZE_ROOT="${FREEZE_ROOT}",PREDICT_ROOT="${PREDICT_ROOT}",METHOD_CONFIG="${METHOD_CONFIG}",CHECKPOINT_MANIFEST_ROOT="${CHECKPOINT_MANIFEST_ROOT}",COMPACT_OUTPUT_ROOT="${CHECKPOINT_OUTPUT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT}",CHECKPOINT_TEMP_ROOT="${CHECKPOINT_TEMP_ROOT}",MATLAB_SHORT_ROOT="${MATLAB_SHORT_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",DEFAULT_REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",REPLAY_TOLERANCE_EXCEPTIONS="${REPLAY_TOLERANCE_EXCEPTIONS}",GROUP_COUNT="${CHECKPOINT_TOTAL}",GROUPS_PER_ARRAY_TASK="${GROUPS_PER_ARRAY_TASK}" \
             "${PRODUCTION_DIR}/run_checkpoint_replay_pc_chunk.sh"
         )"
         CHECKPOINT_JOB_ID="${submission%%;*}"
@@ -385,7 +420,7 @@ if [[ "${CHECKPOINT_MISSING}" -gt 0 ]]; then
             --dependency="afterany:${CHECKPOINT_JOB_ID}" \
             --output="${LOG_ROOT}/checkpoint_gate/%x_%j.out" \
             --error="${LOG_ROOT}/checkpoint_gate/%x_%j.err" \
-            --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",RUN_ROOT="${RUN_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",DEFAULT_REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}" \
+            --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",RUN_ROOT="${RUN_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",DEFAULT_REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",REPLAY_TOLERANCE_EXCEPTIONS="${REPLAY_TOLERANCE_EXCEPTIONS}" \
             "${PRODUCTION_DIR}/run_checkpoint_completion_gate.sh"
     )"
     CHECKPOINT_GATE_JOB_ID="${gate_submission%%;*}"
@@ -395,6 +430,7 @@ else
     PHYSICS_COMMIT="${PHYSICS_COMMIT}" \
     METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}" \
     DEFAULT_REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}" \
+    REPLAY_TOLERANCE_EXCEPTIONS="${REPLAY_TOLERANCE_EXCEPTIONS}" \
         bash "${PRODUCTION_DIR}/run_checkpoint_completion_gate.sh"
 fi
 
@@ -444,7 +480,7 @@ if [[ "${KR_MISSING}" -gt 0 ]]; then
             --output="${LOG_ROOT}/kr/%x_%A_%a.out" \
             --error="${LOG_ROOT}/kr/%x_%A_%a.err" \
             "${kr_dependency[@]}" \
-            --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT}",FREEZE_ROOT="${FREEZE_ROOT}",PREDICT_ROOT="${PREDICT_ROOT}",PERMEABILITY_INPUT="${PERMEABILITY_INPUT}",CASE_WORK_ROOT="${CASE_WORK_ROOT}",CASE_INPUT_ROOT="${CASE_INPUT_ROOT}",CASE_RESULT_ROOT="${CASE_RESULT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT}",CASE_TEMP_ROOT="${CASE_TEMP_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${REPLAY_TOLERANCE_LOG10}",CASE_COUNT="${KR_TOTAL}",CASES_PER_ARRAY_TASK="${CASES_PER_ARRAY_TASK}" \
+            --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",PREDICT_CODE_ROOT="${PREDICT_CODE_ROOT}",FREEZE_ROOT="${FREEZE_ROOT}",PREDICT_ROOT="${PREDICT_ROOT}",PERMEABILITY_INPUT="${PERMEABILITY_INPUT}",CASE_WORK_ROOT="${CASE_WORK_ROOT}",CASE_INPUT_ROOT="${CASE_INPUT_ROOT}",CASE_RESULT_ROOT="${CASE_RESULT_ROOT}",SCRATCH_ROOT="${SCRATCH_ROOT}",NODE_LOCAL_TMP_ROOT="${NODE_LOCAL_TMP_ROOT}",CASE_TEMP_ROOT="${CASE_TEMP_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",REPLAY_TOLERANCE_LOG10="${MAX_REPLAY_TOLERANCE_LOG10}",CASE_COUNT="${KR_TOTAL}",CASES_PER_ARRAY_TASK="${CASES_PER_ARRAY_TASK}" \
             "${PRODUCTION_DIR}/run_case_dynamic_kr_chunk.sh"
     )"
     KR_JOB_ID="${kr_submission%%;*}"
@@ -461,7 +497,7 @@ if [[ "${KR_MISSING}" -gt 0 ]]; then
             --dependency="afterany:${KR_JOB_ID}" \
             --output="${LOG_ROOT}/final_gate/%x_%j.out" \
             --error="${LOG_ROOT}/final_gate/%x_%j.err" \
-            --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",RUN_ROOT="${RUN_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",MAX_SOURCE_LOG_PERMEABILITY_MISMATCH="${REPLAY_TOLERANCE_LOG10}" \
+            --export=ALL,RUNTIME_REPO="${RUNTIME_REPO}",RUN_ROOT="${RUN_ROOT}",PHYSICS_COMMIT="${PHYSICS_COMMIT}",METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}",MAX_SOURCE_LOG_PERMEABILITY_MISMATCH="${MAX_REPLAY_TOLERANCE_LOG10}" \
             "${PRODUCTION_DIR}/run_case_completion_gate.sh"
     )"
     FINAL_GATE_JOB_ID="${final_submission%%;*}"
@@ -470,7 +506,7 @@ else
     RUN_ROOT="${RUN_ROOT}" \
     PHYSICS_COMMIT="${PHYSICS_COMMIT}" \
     METHOD_CONFIG_SHA256="${METHOD_CONFIG_SHA256}" \
-    MAX_SOURCE_LOG_PERMEABILITY_MISMATCH="${REPLAY_TOLERANCE_LOG10}" \
+    MAX_SOURCE_LOG_PERMEABILITY_MISMATCH="${MAX_REPLAY_TOLERANCE_LOG10}" \
         bash "${PRODUCTION_DIR}/run_case_completion_gate.sh"
 fi
 
@@ -494,6 +530,8 @@ python3 - \
     "${PREDICT_ROOT}" \
     "${METHOD_CONFIG_SHA256}" \
     "${REPLAY_TOLERANCE_LOG10}" \
+    "${REPLAY_TOLERANCE_EXCEPTIONS}" \
+    "${MAX_REPLAY_TOLERANCE_LOG10}" \
     "${CHECKPOINT_COMPLETE}" \
     "${CHECKPOINT_MISSING}" <<'PY'
 from datetime import datetime, timezone
@@ -520,6 +558,8 @@ import sys
     predict_root,
     method_config_sha256,
     replay_tolerance,
+    replay_tolerance_exceptions,
+    downstream_replay_tolerance,
     checkpoint_complete,
     checkpoint_missing,
 ) = sys.argv[1:]
@@ -535,6 +575,12 @@ record = {
     "numerical_equivalence": {
         "metric": "maximum_absolute_log10_permeability_difference",
         "maximum_tolerance": float(replay_tolerance),
+        "group_specific_exceptions": {
+            item.rsplit("=", 1)[0]: float(item.rsplit("=", 1)[1])
+            for item in replay_tolerance_exceptions.split(",")
+            if item
+        },
+        "downstream_maximum_tolerance": float(downstream_replay_tolerance),
         "semantics": "maximum_allowed; stricter successful markers remain valid",
     },
     "provenance": {

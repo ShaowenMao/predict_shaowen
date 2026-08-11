@@ -164,6 +164,16 @@ SHA-256 of the reconstructed integer material-unit map. Completion gates
 accept older successful markers produced with a stricter tolerance, so a
 continuation submits only missing or invalid groups.
 
+Rare cross-platform sparse-solver outliers may use a named, provenance-backed
+exception without changing the campaign default. Set, for example,
+`REPLAY_TOLERANCE_EXCEPTIONS="checkpoint_s05_c012_famp2=0.00525"`. The phase
+status tool, replay worker, and checkpoint gate apply that value only to the
+named group; unknown group IDs are rejected. Exact checkpoint, selected-index,
+seed, accepted-attempt, physics/configuration hash, and discrete material-map
+identity checks remain mandatory. Downstream representative replay and final
+QA use the largest explicitly documented tolerance only after every source
+checkpoint has passed its group-specific gate.
+
 The independent-full-fault Phase 1 architecture covers 972 groups with 195
 tasks, five groups per task, one CPU and 18 GiB per task, a 24-hour wall time,
 and a 96-task concurrency cap. A production incident showed that the legacy

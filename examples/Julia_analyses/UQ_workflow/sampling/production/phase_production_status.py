@@ -27,6 +27,13 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--replay-tolerance-exception",
+        action="append",
+        default=[],
+        metavar="GROUP_ID=TOLERANCE",
+        help="Explicit group-specific replay tolerance; may be repeated.",
+    )
+    parser.add_argument(
         "--shell",
         action="store_true",
         help="Print numeric counts and compressed missing-index ranges for Bash.",
@@ -39,6 +46,27 @@ def read_rows(path: Path) -> list[dict[str, str]]:
         return []
     with path.open(newline="", encoding="utf-8-sig") as stream:
         return list(csv.DictReader(stream))
+
+
+def parse_tolerance_exceptions(values: list[str]) -> dict[str, float]:
+    """Parse explicit checkpoint-group numerical-equivalence exceptions."""
+
+    exceptions: dict[str, float] = {}
+    for value in values:
+        try:
+            group_id, tolerance_text = value.rsplit("=", 1)
+            tolerance = float(tolerance_text)
+        except ValueError as error:
+            raise ValueError(
+                f"Invalid replay tolerance exception {value!r}; "
+                "expected GROUP_ID=TOLERANCE"
+            ) from error
+        if not group_id or not math.isfinite(tolerance) or tolerance <= 0:
+            raise ValueError(f"Invalid replay tolerance exception: {value!r}")
+        if group_id in exceptions:
+            raise ValueError(f"Duplicate replay tolerance exception: {group_id}")
+        exceptions[group_id] = tolerance
+    return exceptions
 
 
 def valid_marker(path: Path, expected: dict[str, object]) -> bool:
@@ -167,10 +195,19 @@ def add_chunk_status(stage: dict[str, object], chunk_size: int) -> None:
 def checkpoint_status(
     run_root: Path,
     maximum_tolerance: float = 0.005,
+    tolerance_exceptions: dict[str, float] | None = None,
 ) -> dict[str, object]:
     rows = read_rows(run_root / "checkpoint_manifest" / "checkpoint_groups.csv")
     identity = read_run_identity(run_root)
     missing: list[int] = []
+    exceptions = tolerance_exceptions or {}
+    known_group_ids = {row["group_id"] for row in rows}
+    unknown_exceptions = sorted(set(exceptions) - known_group_ids)
+    if unknown_exceptions:
+        raise ValueError(
+            "Tolerance exceptions reference unknown checkpoint groups: "
+            + ", ".join(unknown_exceptions)
+        )
     for row in rows:
         index = int(row["group_index"])
         marker = (
@@ -190,7 +227,8 @@ def checkpoint_status(
             expected["method_config_sha256"] = identity.get(
                 "production_method_config_sha256"
             )
-        if not valid_checkpoint_marker(marker, expected, maximum_tolerance):
+        group_tolerance = exceptions.get(row["group_id"], maximum_tolerance)
+        if not valid_checkpoint_marker(marker, expected, group_tolerance):
             missing.append(index)
     return {
         "total": len(rows),
@@ -277,15 +315,20 @@ def case_status(run_root: Path) -> dict[str, object]:
 def main() -> int:
     args = parse_args()
     run_root = args.run_root.resolve()
+    tolerance_exceptions = parse_tolerance_exceptions(
+        args.replay_tolerance_exception
+    )
     report = {
         "schema_version": "independent_full_fault_phase_status_v1",
         "run_root": str(run_root),
         "checkpoint": checkpoint_status(
             run_root,
             args.max_replay_tolerance_log10,
+            tolerance_exceptions,
         ),
         "assembly": assembly_status(run_root),
         "dynamic_kr": case_status(run_root),
+        "replay_tolerance_exceptions": tolerance_exceptions,
     }
     add_chunk_status(report["checkpoint"], args.checkpoint_chunk_size)
     add_chunk_status(report["assembly"], args.assembly_chunk_size)

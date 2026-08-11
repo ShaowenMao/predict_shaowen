@@ -217,6 +217,48 @@ class PhaseProductionStatusTests(unittest.TestCase):
             self.assertEqual(status["complete"], 2)
             self.assertEqual(status["missing_indices"], [3])
 
+    def test_phase_status_applies_only_named_tolerance_exception(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            marker_root = root / "checkpoint_pc"
+            write_csv(
+                root / "checkpoint_manifest" / "checkpoint_groups.csv",
+                ["group_index", "group_id"],
+                [[1, "documented"], [2, "not_documented"]],
+            )
+            for group_id in ("documented", "not_documented"):
+                write_marker(
+                    marker_root / group_id / "checkpoint.done.json",
+                    {
+                        "status": "complete",
+                        "group_id": group_id,
+                        "replay_tolerance_log10": 0.00525,
+                        "max_replay_abs_log10_difference": 0.0052189,
+                    },
+                )
+
+            status = STATUS.checkpoint_status(
+                root,
+                maximum_tolerance=0.005,
+                tolerance_exceptions={"documented": 0.00525},
+            )
+            self.assertEqual(status["complete"], 1)
+            self.assertEqual(status["missing_indices"], [2])
+
+    def test_phase_status_rejects_unknown_tolerance_exception(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_csv(
+                root / "checkpoint_manifest" / "checkpoint_groups.csv",
+                ["group_index", "group_id"],
+                [[1, "known"]],
+            )
+            with self.assertRaisesRegex(ValueError, "unknown checkpoint groups"):
+                STATUS.checkpoint_status(
+                    root,
+                    tolerance_exceptions={"unknown": 0.00525},
+                )
+
     def test_phase_launcher_separates_sampling_and_orchestration_commits(self) -> None:
         launcher = PHASE_LAUNCHER.read_text(encoding="utf-8")
         self.assertIn(
