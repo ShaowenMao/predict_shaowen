@@ -1,0 +1,34 @@
+% Compatibility helpers for the official 2025 PNAS template commands.
+% These definitions are used only when the vendored class does not provide
+% the corresponding commands itself.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{pnas-2025-compat}[2026/08/07 PNAS 2025 command compatibility]
+
+\RequirePackage{etoolbox}
+
+\makeatletter
+
+\@ifundefined{articletype}{%
+  \newcommand{\articletype}[1]{\def\@articletype{#1}}%
+  \pretocmd{\@maketitle}{%
+    {\raggedright\sffamily\bfseries\fontsize{7}{8}\selectfont RESEARCH ARTICLE\par}%
+    {\raggedright\sffamily\fontsize{7}{8}\selectfont
+      \@ifundefined{@articletype}{}{\@articletype}\par}%
+    \vskip8pt%
+  }{}{}%
+}{}
+
+\@ifundefined{dataavail}{%
+  \newcommand{\dataavail}[1]{%
+    \section*{Data, Materials, and Software Availability}
+    \noindent #1%
+  }%
+}{}
+
+% pnas-new v1.46 labels the bibliography page as LastPage while modern
+% lastpage also creates that label at end of document. Keep the package's
+% true end-of-document label and remove the obsolete duplicate.
+\patchcmd{\endthebibliography}{\label{LastPage}}{}{}{}
+\makeatother
+
+\endinput

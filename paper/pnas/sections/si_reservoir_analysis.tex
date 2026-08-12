@@ -1,0 +1,85 @@
+% !TEX root = ../supporting_information.tex
+
+\SISection{Uncertainty quantification of
+\texorpdfstring{\coTwo{}}{CO2} migration and containment}
+\label{sec:si-migration-containment-uq}
+
+\SISubsection{Quantities of interest and outcome classes}
+
+Primary containment responses quantify whether \coTwo{} enters the top seal
+and the corresponding mass fraction. The primary migration response is the
+maximum upward distance reached by \coTwo{} relative to the injection
+interval. Secondary responses include the fractions of injected \coTwo{}
+retained in the storage reservoir, entering the modeled fault and overburden,
+and partitioned between dissolved and free phases. All mass fractions use a
+common injected-mass denominator and are evaluated at prespecified output
+times.
+
+Outcome classes distinguish consistent containment, localized fault entry,
+substantial upward migration, and top-seal or overburden interaction. Their
+spatial masks and numerical thresholds are defined before inspecting the
+complete ensemble so that classification does not adapt to the observed
+results. \todo{Provide the final storage-reservoir, fault, top-seal, and
+overburden masks; injected-mass denominator; free and dissolved component
+accounting; maximum-migration calculation; numerical entry tolerances;
+evaluation times; and class thresholds.}
+
+\SISubsection{Design-based geologic effects}
+
+The common 12 independent realizations per geology form a balanced nested
+design. For continuous response $Q_{g,r}$, geologic effects are estimated from
+the four prescribed factors and selected interactions with realizations nested
+within geology. Effects are interpreted over the uniform scenario design, not
+as sensitivities weighted by field occurrence probabilities. Entry quantities
+with a point mass at zero are separated into an occurrence model and a
+conditional-magnitude model. \todo{State the final model form, contrasts,
+standardization, uncertainty intervals, and interaction-selection rule.}
+
+For each geology, the 12 stochastic realizations also estimate the conditional
+median, robust spread, empirical outcome frequencies, and empirical CDFs. The
+medoid and low/high benchmark cases are excluded from these estimators. This
+separation prevents deterministic diagnostic fields from being counted as
+random draws from the conditional fault-property distribution.
+
+\SISubsection{Between- and within-geology contributions}
+
+Let $\bar Q_g$ and $s_g^2$ denote the sample mean and variance among the 12
+independent realizations for geology $g$. With $G=162$, the average
+within-geology contribution is estimated as
+\begin{equation}
+  \widehat V_{\mathrm{within}}
+  =\frac{1}{G}\sum_{g=1}^{G}s_g^2.
+\end{equation}
+The variance among $\bar Q_g$ includes finite-replicate noise, so the
+between-geology design contribution is estimated as
+\begin{equation}
+  \widehat V_{\mathrm{between}}
+  =\max\left[0,
+  \operatorname{Var}_g(\bar Q_g)
+  -\frac{1}{G}\sum_{g=1}^{G}\frac{s_g^2}{12}\right].
+\end{equation}
+Normalized contributions divide each quantity by their sum. Robust spreads
+and outcome-class disagreement accompany this variance summary when responses
+are non-Gaussian, zero-inflated, or multimodal.
+
+\SISubsection{Targeted enrichment and confirmatory analysis}
+
+Phase-1 results nominate geologies using prespecified criteria: more than one
+outcome class, large robust conditional spread, medoid--ensemble disagreement,
+stress benchmarks on opposite sides of a physical threshold, and coverage of
+the geologic design space. Twelve geologies receive 20 new independent
+realizations. The six that remain most realization sensitive receive 40
+further realizations. Selection statistics use only earlier simulations;
+newly added simulations evaluate whether the apparent sensitivity persists.
+\todo{Report the exact thresholds, selected geology identifiers, normalized
+geologic-space coverage, and all selection decisions.}
+
+\SISubsection{Representative and stress benchmark analyses}
+
+For each geology, representative-fault performance is quantified by the
+difference between the medoid result and the stochastic median, the medoid's
+position in the empirical stochastic CDF, and agreement with the majority
+outcome class. Low/high benchmarks are compared as coherent state stresses but
+are excluded from empirical CDFs, variance contributions, and outcome
+probabilities. \todo{Add threshold-sensitivity analyses and complete benchmark
+results for all quantities of interest.}

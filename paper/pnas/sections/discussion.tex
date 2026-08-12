@@ -1,0 +1,56 @@
+% !TEX root = ../manuscript.tex
+
+\section{Discussion}
+
+\todo{Open with three quantitative findings: the dominant geologic controls,
+the geologic settings in which stochastic realizations change the containment
+class, and the observed performance of the representative-fault benchmark.}
+
+\subsection{Why end-to-end uncertainty propagation is needed}
+
+The contribution is not simply the connection of several numerical tools.
+The framework preserves the chain from fault--seal geology to plausible local
+fault-core architectures, physically consistent
+$(\mathbf{K},\phi,P_c,k_r)$ properties, full-fault fields, and
+reservoir-scale outcome distributions. This common chain permits direct
+comparison of broad geologic effects, residual within-geology stochastic
+effects, and representative versus ensemble predictions without replacing
+joint fault properties by independently averaged components.
+
+\subsection{When is stochastic fault modeling needed?}
+
+The required level of fault representation should be tied to the stability of
+the storage conclusion. Where stochastic realizations are consistently
+contained and the medoid agrees with the ensemble, a representative fault may
+be adequate for initial assessment. Mixed containment outcomes indicate that
+an ensemble is needed and that additional fault characterization or monitoring
+has greater value. Where all realizations migrate substantially, further
+sampling may refine the magnitude without changing the broad site or
+injection-management conclusion. \todo{Replace these conditional statements
+with a compact result-supported guide after the enriched simulations are
+analyzed.}
+
+\subsection{Relation to previous uncertainty-propagation studies}
+
+Pettersson et al.\ demonstrate stochastic upscaling, preserve dependence among
+multiphase fault properties, and propagate those properties to field-scale
+leakage distributions using a one-dimensional fine-scale fault description
+\cite{Pettersson2025}. Our framework extends the scientific question to a
+broad fault--seal design space and a spatially variable three-dimensional
+fault: where does additional stochastic detail change the storage conclusion,
+and where does it not? This distinction is more useful than assuming either
+that one representative fault is universally sufficient or that every site
+requires the same ensemble size.
+
+These findings should be interpreted within the scope of the modeled design.
+The 162 scenarios span a balanced geologic design space but do not carry
+field-calibrated occurrence probabilities. PREDICT realizations are
+model-based samples conditional on the prescribed geology, not observations
+of the real fault. Full-fault stochastic fields assume conditional
+independence after conditioning on geology and throw window because available
+data do not constrain a coarse-scale spatial covariance model; they therefore
+omit uncertainty in unresolved large-scale fault continuity. The enriched
+ensembles support common and moderately uncommon outcomes, not precise
+rare-event probabilities. Results also remain conditional on the reservoir
+model, constitutive assumptions, injection scenario, and exclusion of
+geomechanical reactivation.

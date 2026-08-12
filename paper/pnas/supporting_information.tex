@@ -1,0 +1,69 @@
+\documentclass[9pt,twoside]{pnas-new}
+
+\templatetype{pnassupportinginfo}
+
+% The SI format has no manuscript line-number headers. Clearing the inherited
+% draft headers also keeps the 2018 SI style compatible with pnas-new v1.46.
+\fancyhead{}
+
+\usepackage{siunitx}
+
+\graphicspath{{../supplement/figures/}{../figures/}}
+
+\newcommand{\coTwo}{CO$_2$}
+\newcommand{\todo}[1]{\textbf{[TODO: #1]}}
+
+% The official PNAS SI style suppresses ordinary section labels. These local
+% wrappers retain its typography while printing the requested SI hierarchy.
+\newcommand{\SISection}[1]{%
+  \refstepcounter{section}%
+  \section*{\thesection.\ #1}%
+  \addcontentsline{toc}{section}{\protect\numberline{\thesection}#1}%
+}
+\newcommand{\SISubsection}[1]{%
+  \refstepcounter{subsection}%
+  \subsection*{\thesubsection.\ #1}%
+  \addcontentsline{toc}{subsection}{\protect\numberline{\thesubsection}#1}%
+}
+
+\title{End-to-End Uncertainty Quantification of Geologic \coTwo{} Storage in Faulted Reservoirs}
+\author{Shaowen Mao, Llu\'{\i}s Sal\'o-Salgado, Hannah Lu, Patricia Ascanio-Pellon, Christie M. Rogers, Nathan W. Harkins, Rodrick D. Myers, Lisa Lun, and Ruben Juanes}
+\correspondingauthor{Corresponding author: Ruben Juanes. Email: juanes@mit.edu}
+
+% The complete nine-author list does not fit in the official SI running footer.
+% Keep it on the title page and use the conventional short running author.
+\fancyfoot[LO,RE]{\bfseries\sffamily Mao et al.}
+
+\begin{document}
+
+% The official template instruction page is intentionally omitted from the
+% compiled manuscript-ready SI PDF.
+\maketitle
+\SItext
+
+This Supporting Information provides the complete methodological description
+and supporting diagnostics for the study. Its six sections follow the
+end-to-end workflow from the offshore Texas field case and geologic design,
+through local fault-core modeling and property upscaling, to full-fault field
+construction, field-scale simulation, and uncertainty analysis. The main
+manuscript retains the study assumptions needed to interpret the results,
+while implementation details and validation procedures are consolidated here.
+Data and software are deposited separately and cited through the manuscript's
+data-availability statement.
+
+% Start the six-stage SI hierarchy after the unnumbered title-page material.
+\setcounter{section}{0}
+\setcounter{subsection}{0}
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+
+\input{sections/si_field_case_geologic_uncertainty}
+\input{sections/si_local_fault_core_modeling}
+\input{sections/si_local_fault_property_upscaling}
+\input{sections/si_full_fault_sampling}
+\input{sections/si_field_scale_reservoir_simulation}
+\input{sections/si_reservoir_analysis}
+
+\bibliography{references}
+
+\end{document}

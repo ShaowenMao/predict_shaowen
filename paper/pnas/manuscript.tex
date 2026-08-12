@@ -1,0 +1,113 @@
+\documentclass[9pt,twocolumn,twoside]{pnas-new}
+
+\usepackage{pnas-2025-compat}
+\articletype{EARTH, ATMOSPHERIC, AND PLANETARY SCIENCES}
+\templatetype{pnasresearcharticle}
+
+% Use descriptive headings without numeric or alphabetic prefixes.
+\setcounter{secnumdepth}{0}
+
+% Match the class-specific Materials and Methods heading to the regular
+% unnumbered PNAS section-heading typography.
+\makeatletter
+\titleformat{\matmethods@section}
+  {\large\sffamily\bfseries}
+  {}
+  {0em}
+  {#1}
+  []
+\makeatother
+
+\usepackage{siunitx}
+
+\graphicspath{{../figures/}}
+
+\newcommand{\coTwo}{CO$_2$}
+\newcommand{\todo}[1]{\textbf{[TODO: #1]}}
+
+\begin{document}
+
+\title{End-to-End Uncertainty Quantification of Geologic \coTwo{} Storage in Faulted Reservoirs}
+
+\author[a,b]{Shaowen Mao}
+\author[c]{Llu\'{\i}s Sal\'o-Salgado}
+\author[d]{Hannah Lu}
+\author[e]{Patricia Ascanio-Pellon}
+\author[e]{Christie M. Rogers}
+\author[e]{Nathan W. Harkins}
+\author[e]{Rodrick D. Myers}
+\author[e]{Lisa Lun}
+\author[a,b,1]{Ruben Juanes}
+
+\affil[a]{Department of Civil and Environmental Engineering, Massachusetts Institute of Technology, 77 Massachusetts Avenue, Cambridge, Massachusetts 02139, USA}
+\affil[b]{Earth Resources Laboratory, Department of Earth, Atmospheric and Planetary Sciences, Massachusetts Institute of Technology, 77 Massachusetts Avenue, Cambridge, Massachusetts 02139, USA}
+\affil[c]{Department of Earth, Environmental, and Planetary Sciences, University of Tennessee, Knoxville, TN, USA}
+\affil[d]{The Oden Institute for Computational Engineering and Sciences, The University of Texas at Austin, Austin, TX, USA}
+\affil[e]{ExxonMobil Technology and Engineering Company, Spring, TX, USA}
+
+\leadauthor{Mao}
+
+% Replace the final sentence with the principal quantitative finding after the
+% Phase-1 and targeted-enrichment analyses are complete.
+\significancestatement{Faults are commonly represented by one effective property field even though their internal architecture is unresolved. We propagate uncertainty from fault--seal geology through stochastic three-dimensional fault-core properties to field-scale carbon dioxide migration and containment. Repeated full-fault realizations test whether a representative fault preserves the reservoir-scale conclusion across 162 prescribed geologies. This design separates broad geologic controls from realization-to-realization variability and identifies where ensemble modeling and additional fault characterization are most valuable for storage assessment.}
+
+\authorcontributions{\todo{Assign author contributions using the final PNAS contribution taxonomy.}}
+\authordeclaration{\todo{Add the final competing-interest declaration for all authors.}}
+\correspondingauthor{\textsuperscript{1}To whom correspondence should be addressed: Ruben Juanes. Email: juanes@mit.edu}
+
+\keywords{geologic carbon storage $|$ faults $|$ uncertainty quantification $|$ multiphase flow $|$ reservoir simulation}
+
+\begin{abstract}
+Faults can either impede or transmit injected \coTwo{}, but unresolved fault-core structure makes their influence on storage security difficult to assess. Most field-scale models use one representative fault, implicitly assuming that local stochastic variability does not alter the containment conclusion. We develop an end-to-end framework to test that assumption across a prescribed fault--seal geologic design space. For each of 162 geologic scenarios and six throw windows, PREDICT generates 2,000 stochastic three-dimensional fault-core realizations. Physics-based upscaling provides joint permeability, porosity, capillary-pressure, and relative-permeability properties, which are assembled into spatially heterogeneous full-fault fields. Phase 1 contains 12 conditionally independent full-fault realizations per geology for conditional uncertainty analysis, together with separate representative-medoid and low/high-state benchmarks. High-performance simulations of a roughly two-million-cell offshore Texas model track \coTwo{} retention, fault and top-seal entry, upward migration, and phase partitioning for 1,000 years. We use the balanced ensemble to identify geologic controls and quantify within-geology stochastic variability, then enrich selected geologies where initial realizations indicate mixed containment outcomes. \todo{Insert the dominant geologic effect, the frequency and magnitude of mixed outcomes, and the representative-fault performance.} The analysis determines when a representative fault is adequate and when stochastic fault-core ensembles are needed for reliable storage assessment.
+\end{abstract}
+
+\dates{This manuscript was compiled on \today}
+\doi{10.1073/pnas.XXXXXXXXXX}
+
+\maketitle
+\thispagestyle{firststyle}
+\ifthenelse{\boolean{shortarticle}}{\ifthenelse{\boolean{singlecolumn}}{\abscontentformatted}{\abscontent}}{}
+
+% Keep three introductory paragraphs beside the first-page significance box,
+% then restore the standard two-column width at paragraph four.
+\firstpage{4}
+
+% PNAS omits an explicit Introduction heading for research articles.
+\input{sections/introduction}
+
+\input{sections/end_to_end_uq_workflow}
+
+\begin{figure*}[t!]
+  \centering
+  \includegraphics[width=\textwidth,trim=0 15mm 0 0,clip]{workflow/workflow_overview.pdf}
+  \caption{End-to-end uncertainty quantification of \coTwo{} migration and
+  containment in faulted reservoirs. PREDICT maps local fault--seal geology to
+  stochastic three-dimensional fault-core properties; physics-based upscaling
+  and conditionally independent full-fault sampling generate spatially
+  heterogeneous $\mathbf{K}$, $\phi$, $P_c$, and $k_r$ fields; and JutulDarcy
+  propagates those fields through field-scale storage simulations. Phase 1
+  evaluates all 162 prescribed geologies with 12 stochastic fields and three
+  separate benchmark fields per geology. Reservoir outcomes guide targeted
+  enrichment of geologies with mixed behavior.}
+  \label{fig:end-to-end-workflow}
+\end{figure*}
+
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/conclusions}
+
+% PNAS places the concise Materials and Methods summary after the findings;
+% complete procedures are consolidated in the separately compiled SI Appendix.
+% The class applies \small to this block by default. Restore the main-text
+% font and baseline spacing so the Methods typography matches the article.
+\matmethods{{\normalsize\input{sections/materials_and_methods}}}
+\showmatmethods{}
+
+\dataavail{The PREDICT source code and reproducible analysis workflow are maintained at \url{https://github.com/ShaowenMao/predict_shaowen}. \todo{Deposit the submitted software version and derived data in archival repositories; add persistent identifiers, licenses, dataset citations, and any access conditions.}}
+
+\acknow{\todo{Add funding, computing resources, and technical contributions.}}
+\showacknow{}
+
+\bibliography{references}
+
+\end{document}

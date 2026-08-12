@@ -1,0 +1,114 @@
+% !TEX root = ../supporting_information.tex
+
+\SISection{Stochastic modeling of local 3D fault-core architectures}
+\label{sec:si-local-fault-core-modeling}
+
+\SISubsection{PREDICT inputs and stochastic realization generation}
+
+For each geology and throw window, PREDICT generates 2,000 accepted stochastic
+fault-core realizations conditioned on local stratigraphy, fault throw, and
+the prescribed geologic parameters. Adjacent units of the same lithology are
+collapsed before fault-core generation so that artificial boundaries between
+equivalent neighboring units do not create additional smear sources. Each
+accepted realization retains its fine-scale material architecture and one
+actual joint permeability vector $(k_{xx},k_{yy},k_{zz})$. The three
+permeability components are never selected independently.
+
+The PREDICT model formulation, stochastic fault-core construction, and
+property-upscaling framework are described by Sal\'o-Salgado et
+al.~\cite{SaloSalgado2023,SaloSalgado2025}; the public implementation and
+examples are available at \url{https://github.com/lsalo/predict}. We therefore
+document only the study-specific ensemble design and convergence assessment
+here.
+
+\refstepcounter{table}
+\label{tab:si-predict-ensemble}
+\noindent\textbf{Table \thetable.} Summary of the PREDICT ensemble used by the
+full-fault workflow. Replace provisional entries and add the final
+scenario-level parameter values before submission.
+\begin{center}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Item & Current design \\
+    \midrule
+    Geologic scenarios & 162 \\
+    Throw windows per geology & 6 \\
+    PREDICT realizations per window & 2000 \\
+    Permeability components retained jointly & $k_{xx}$, $k_{yy}$, $k_{zz}$ \\
+    Layer representation & Adjacent same-material units collapsed \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\SISubsection{PREDICT convergence assessment}
+
+We assess how many PREDICT realizations are needed to obtain stable
+distributions of upscaled fault permeability. The assessment uses one
+fixed-stratigraphy scenario from the Texas offshore case. The scenario contains six
+throw windows, and we assess convergence separately for each window using
+independent Monte Carlo ensembles.
+
+We first generate three independent large ensembles (20,000 PREDICT realizations) for each window. Note that we do not treat any of these finite ensembles as the exact or true permeability distribution. Instead, we compare the permeability distribution of three large ensembles pairwise by calculating the distance between each pair of distributions, and then take the median of the three distances to define a reference floor. The reference floor is typically very small because of the large number of realizations in each ensemble, so it can be used to evaluate whether smaller ensembles with fewer PREDICT realizations are converging to a stable permeability distribution. The distance metrics are described in the next paragraph.
+
+We then perform PREDICT simulations with
+fewer realizations to assess convergence for each window. We test
+$N=\{20,50,100,200,300,400,500,750,1000,1500,2000\}$. We
+generate 30 independent repeated ensembles for each $N$. We compare each ensemble with all three large ensembles with 20,000 realizations pairwise, calculating the distance between each pair of permeability distributions. Each ensemble has three distances to the three large ensembles, and we use the median of the three distances for convergence analysis. The distance between two permeability distributions is calculated in $\log_{10}(k\,[\mathrm{mD}])$ space using two distribution-distance metrics: (1) mean absolute error (MAE) between histogram probabilities on 24 common bins spanning $[-7,3]$ and (2) the exact empirical one-dimensional Wasserstein-1 distance computed from the unbinned samples. A larger distance indicates that the two distributions are more different.
+
+To assess whether a common ensemble size provides consistent convergence
+across all throw windows and permeability components, we pool the distances
+after normalizing each by the reference floor for its window, component, and
+metric. Figure~\ref{fig:si-predict-convergence} shows how these pooled
+normalized distances vary with $N$. The median normalized distance decreases
+monotonically with increasing $N$. Across the 18 window--component
+combinations, log--log fits have median slopes of
+$-0.488$ and $-0.497$ for mean absolute error and Wasserstein-1 distance,
+respectively (Table~\ref{tab:si-predict-convergence}).
+These slopes are close to the $N^{-1/2}$ decay expected for Monte Carlo
+sampling error. The median coefficients of determination are at least
+$0.988$ for both metrics.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{predict_convergence_reference_floor_summary.pdf}
+  \caption{Reference-floor convergence of the PREDICT permeability
+  distributions. For each repeated ensemble, the median distance to the three
+  reference ensembles is divided by the corresponding empirical reference
+  floor. Solid lines and shaded bands show the median and 10th--90th
+  percentiles, respectively, over six windows, three permeability components,
+  and 30 independent repeats at each sample size. The horizontal dashed line
+  marks the empirical reference floor.}
+  \label{fig:si-predict-convergence}
+\end{figure}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Summary of the reference-floor convergence assessment. Ratios at
+  $N=2000$ pool six windows, three permeability components, and 30 repeats.
+  Slopes and $R^2$ values summarize the 18 window--component log--log fits for
+  each metric.}
+  \label{tab:si-predict-convergence}
+  \begin{tabular}{@{}lcccc@{}}
+    \toprule
+    Metric &
+    \multicolumn{2}{c}{Distance/reference floor at $N=2000$} &
+    Median slope &
+    Median $R^2$ \\
+    \cmidrule(lr){2-3}
+    & Median & P10--P90 & & \\
+    \midrule
+    Mean absolute error & 2.10 & 1.24--3.15 & $-0.488$ & 0.993 \\
+    Wasserstein-1 distance & 1.80 & 0.90--3.62 & $-0.497$ & 0.988 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+At $N=2000$, the aggregate median discrepancy is within approximately a
+factor of two of the empirical large-ensemble floor for both metrics.
+Increasing $N$ from 1000 to 2000 reduces the aggregate median normalized
+distance by only 27--29\% while doubling the PREDICT cost. Because the fitted
+rates indicate continued $N^{-1/2}$ improvement rather than a sharp finite
+threshold, $N=2000$ should not be interpreted as exact convergence. Instead,
+we select it as a reproducible diminishing-returns compromise that
+substantially stabilizes the empirical distributions while keeping subsequent
+production-scale PREDICT calculations computationally feasible.

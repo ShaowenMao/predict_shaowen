@@ -108,7 +108,7 @@
   \workflowasset{47.0}{21.2}{28mm}{35mm}{assets/derived/pc_kr_curves.pdf}
 
   % -----------------------------------------------------------------------
-  % Column 2: hierarchical full-fault sampling.
+  % Column 2: full-fault property sampling.
   % -----------------------------------------------------------------------
   \fill[workflowText] (80.8,104.8) rectangle ++(1.05,1.05);
   \node[workflow left title] at (95.0,105.35) {%
@@ -174,7 +174,7 @@
   \workflowasset{108.0}{21.8}{25mm}{18.5mm}{assets/derived/panel2_kr_w4_ensemble.pdf}
 
   \node[workflow left title,align=center] at (95.0,8.1) {%
-    10 full-fault property realizations\\[-0.3pt]
+    12 stochastic fields $+$ 3 benchmarks\\[-0.3pt]
     per geologic scenario
   };
 
@@ -208,8 +208,8 @@
   ]{assets/derived/panel3_migration_cross_sections_transparent.pdf}};
 
   \fill[workflowText] (140.0,34.7) rectangle ++(1.05,1.05);
-  \node[workflow left title,anchor=west] at (142.3,35.25) {Uncertainty quantification};
-  \node[workflow figure label] at (158.5,30.5) {1,620 multiphase reservoir simulations};
+  \node[workflow left title,anchor=west] at (142.3,35.25) {Assessment and targeted enrichment};
+  \node[workflow figure label] at (158.5,30.5) {2,430 Phase-1 reservoir simulations};
 
   % Matched workflow-only redraws of the audited migration and containment
   % diagnostics. Both assets have identical native dimensions, typography,
@@ -225,9 +225,9 @@
   \node[workflow figure label] at (173.7,6.4) {CO$_2$ containment};
 
   \node[workflow figure label,align=center,text width=186mm] at (95.0,-5.2) {%
-    Caption: End-to-end uncertainty quantification workflow for geologic CO$_2$ storage in faulted reservoirs.\\[-0.2pt]
-    PREDICT generates stochastic local fault properties, hierarchical sampling constructs representative\\[-0.2pt]
-    upscaled full-fault realizations, and JutulDarcy simulates field-scale CO$_2$ migration and containment.%
+    End-to-end uncertainty quantification workflow for geologic CO$_2$ storage in faulted reservoirs.\\[-0.2pt]
+    PREDICT generates stochastic local fault properties, and conditionally independent sampling constructs\\[-0.2pt]
+    spatially heterogeneous full-fault fields for JutulDarcy simulation of CO$_2$ migration and containment.%
   };
 \end{tikzpicture}
 \end{document}

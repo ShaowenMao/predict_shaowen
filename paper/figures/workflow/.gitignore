@@ -3,8 +3,8 @@ build_last.log
 __pycache__/
 *.py[cod]
 
-# Final manuscript/review renders are reproducible build products.
-workflow_overview.pdf
+# The vector PDF is tracked because it is a direct manuscript input. Other
+# review renders remain reproducible build products.
 workflow_overview_preview.png
 workflow_overview.aux
 workflow_overview.fdb_latexmk

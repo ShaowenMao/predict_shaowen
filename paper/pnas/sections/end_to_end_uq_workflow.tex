@@ -1,0 +1,37 @@
+% !TEX root = ../manuscript.tex
+
+\section{End-to-end uncertainty quantification workflow}
+
+The framework connects uncertainties that are commonly treated in isolation:
+fault--seal geology, unresolved fault-core architecture, spatially variable
+full-fault properties, and field-scale \coTwo{} migration and containment
+(Fig.~\ref{fig:end-to-end-workflow}). It has three linked components---local
+fault-property modeling, full-fault property sampling, and field-scale storage
+simulation. This hierarchy allows broad geologic effects to be distinguished
+from residual stochastic variability conditional on a prescribed geology.
+
+At the local scale, the 162 geologic scenarios specify structural and
+stratigraphic conditions within six throw windows. For every geology--window
+combination, PREDICT generates 2,000 stochastic three-dimensional fault-core
+architectures and their joint anisotropic permeability. Exact realization
+replay and physics-based upscaling then provide internally consistent
+permeability, porosity, capillary-pressure, and relative-permeability
+properties.
+
+At the full-fault scale, selected local realizations populate six windows
+along dip and 87 slices along strike. Phase 1 uses 12 conditionally independent
+full-fault realizations per geology to characterize stochastic variability,
+while a full-distribution medoid and coherent low- and high-state fields serve
+as separate deterministic benchmarks. Reproducible manifests preserve the
+selected realization, seed, code version, and property provenance for every
+fault element.
+
+At the field scale, JutulDarcy propagates these heterogeneous fault properties
+through a roughly two-million-cell offshore Texas storage model over 1,000
+years. The balanced ensemble identifies geologic controls and within-geology
+variability in migration and containment, and targeted enrichment resolves
+conditional outcome distributions for geologies that exhibit mixed behavior.
+The study design and assumptions needed to interpret the ensemble are
+summarized in Materials and Methods. Complete sampling, replay, upscaling,
+simulation, validation, and analysis procedures are provided in the SI
+Appendix.

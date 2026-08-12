@@ -1,0 +1,37 @@
+% !TEX root = ../supporting_information.tex
+
+\SISection{Field-scale reservoir simulation of geologic
+\texorpdfstring{\coTwo{}}{CO2} storage}
+\label{sec:si-field-scale-reservoir-simulation}
+
+\SISubsection{Reservoir model and simulation setup}
+
+The field-scale model contains approximately two million active cells and
+represents megatonne-scale \coTwo{} injection into the offshore Texas storage
+interval followed by migration and containment over 1,000 years. JutulDarcy
+solves the multiphase flow problem. Each realization preserves the common
+reservoir geometry and operating conditions while replacing the geology-
+specific stratigraphy and the spatially variable fault permeability,
+porosity, capillary-pressure functions, and relative-permeability functions.
+
+\todo{Document the JutulDarcy version, grid and fluid model, injection
+schedule, well controls, and boundary and initial conditions.}
+
+\SISubsection{Reservoir-input validation}
+
+Before model construction, the importer verifies that the fault-property and
+stratigraphy files share the same geology identifier, design metadata, and
+compatible hashes. It then checks complete six-window by 87-slice coverage,
+permeability units and coordinate convention, porosity bounds, capillary-
+pressure and relative-permeability region indices, and consistency of the
+native saturation endpoints.
+
+\SISubsection{Numerical verification and restart procedures}
+
+A case is accepted for analysis only after the simulation reaches the
+requested final time and passes the prescribed mass-balance and output-
+integrity checks.
+
+\todo{Document the nonlinear and linear solvers, timestep controls, restart
+procedure, mass-balance tolerance, five saved output times, failed-case
+recovery rules, and final validation results.}

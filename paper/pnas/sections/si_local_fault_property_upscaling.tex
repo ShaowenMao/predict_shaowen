@@ -1,0 +1,107 @@
+% !TEX root = ../supporting_information.tex
+
+\SISection{Physics-based upscaling of local fault properties}
+\label{sec:si-local-fault-property-upscaling}
+
+\SISubsection{Exact realization replay}
+
+Every selected library row stores the original realization identifier,
+PREDICT random seed, checkpoint hash, code commit, and method-configuration
+hash. Replay uses this provenance record to reconstruct the selected
+fine-scale parent units, clay-smear occupancy, porosity, and permeability
+fields without archiving every original fine-scale realization. The replayed
+effective permeability must agree with the frozen library value within the
+validated numerical-equivalence tolerance, while the realization identifier,
+seed, code and configuration hashes, and discrete material architecture must
+match exactly. A failed check stops downstream upscaling for that fault
+element rather than silently substituting another realization.
+
+\todo{Report the final numerical-equivalence tolerance, checkpoint schema,
+software versions, and replay-validation coverage across all selected
+realizations.}
+
+\SISubsection{Effective permeability and porosity}
+
+Effective permeability is computed with the flow-based PREDICT upscaling
+calculation, which applies pressure differences to the replayed fine-scale
+fault core and obtains the directional flux responses. Effective porosity is
+the pore-volume-weighted average of the fine-cell porosities. Permeability and
+porosity are linked to the same replayed realization and are never assembled
+from different source rows.
+
+PREDICT reports the permeability tensor in its local fault coordinate system.
+Before reservoir export, the tensor is mapped to reservoir-grid coordinates
+using
+\begin{equation}
+  \mathbf{K}_{\mathrm{res}} =
+  \mathbf{R}\mathbf{K}_{\mathrm{local}}\mathbf{R}^{\mathsf T},
+  \label{eq:si-tensor-rotation}
+\end{equation}
+where $\mathbf{R}$ contains the local fault-normal, strike, and dip directions
+expressed in reservoir coordinates. Exported files retain the local tensor,
+rotation metadata, transformed reservoir tensor, component order, and units.
+This explicit transformation prevents local $k_{xx}$, $k_{yy}$, and $k_{zz}$
+from being interpreted directly as reservoir-grid components.
+
+\todo{State the final local-axis convention, give the explicit rotation
+matrix, document the permeability-unit conversion, and report tensor-
+transformation validation against the downstream importer.}
+
+\SISubsection{Capillary-pressure upscaling}
+
+Capillary-pressure curves are upscaled by connected invasion percolation on
+the replayed fine grid. Local entry pressures are obtained by scaling the
+reference material relations with the corresponding fine-cell permeability
+and porosity. At each imposed invasion threshold, the connected invaded pore
+volume determines the bulk gas saturation. Continuing the invasion sequence
+therefore produces both the effective drainage curve and its native maximum
+gas-saturation endpoint; the effective irreducible water saturation is one
+minus that endpoint.
+
+The production reservoir input retains a separate full-slice capillary-
+pressure curve for every one of the 522 fault elements. This representation
+preserves along-strike variation in entry pressure, curve shape, and
+saturation endpoint. An entry-pressure-branch-medoid representation is
+retained only as a documented sensitivity option and is not used for the
+production cases described in the main text.
+
+\todo{Provide the reference material curves, Leverett-scaling relation,
+invasion boundary condition, connectivity convention, threshold sequence,
+and numerical interpolation used for reservoir export.}
+
+\SISubsection{Relative-permeability upscaling}
+
+Dynamic relative-permeability upscaling solves the validated fine-grid flow
+problem for an actual replayed slice. For each throw window, the representative
+slice is selected as the medoid of the effective irreducible-water-saturation
+values obtained from the 87 capillary-pressure upscalings. The resulting gas
+and water relative-permeability curve shapes are then mapped to the physical
+saturation endpoints of the associated capillary-pressure regions. This
+reduces the number of dynamic calculations while preserving the slice-
+specific capillary endpoints required for reservoir simulation.
+
+The robust dynamic solver uses internally controlled time stepping and the
+validated AMGCL linear solver where supported. The workflow disallows
+along-strike grid collapse and representative-slice substitution during the
+capillary-pressure calculations. Relative-permeability curves must be
+monotonic in the expected direction, remain within $[0,1]$, and terminate at
+endpoints consistent with their assigned capillary-pressure regions.
+
+\todo{Describe the fine-grid flow equations, phase properties, boundary and
+initial conditions, saturation-state schedule, convergence criteria,
+representative-slice medoid calculation, and endpoint-mapping equations.}
+
+\SISubsection{Reservoir-ready consistency checks}
+
+Each reservoir-ready property file is checked for complete $6\times87$
+coverage, finite positive permeability, valid porosity, monotonic capillary-
+pressure curves, physical relative-permeability bounds, and matching
+saturation endpoints. The companion stratigraphy file must have the same
+geology identifier and compatible content hash. Additional checks verify the
+permeability units, local-to-reservoir tensor transformation, saturation-
+region lookup tables, realization provenance, and one-to-one mapping between
+the sampling manifest and replayed properties. Export proceeds only after all
+checks pass.
+
+\todo{Tabulate every acceptance criterion and report validation coverage for
+the complete production dataset.}

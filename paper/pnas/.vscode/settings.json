@@ -1,0 +1,53 @@
+{
+  "latex-workshop.latex.autoBuild.run": "onSave",
+  "latex-workshop.latex.outDir": "%DIR%/build",
+  "latex-workshop.view.pdf.viewer": "tab",
+  "latex-workshop.view.pdf.tab.editorGroup": "right",
+  "latex-workshop.latex.watch.pdf.delay": 1000,
+  "latex-workshop.synctex.afterBuild.enabled": true,
+  "latex-workshop.latex.tools": [
+    {
+      "name": "pnas-latexmk",
+      "command": "latexmk",
+      "args": [
+        "-pdf",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "-synctex=1",
+        "-outdir=%OUTDIR%",
+        "-pdflatex=pdflatex --disable-installer %O %S",
+        "%DOC_EXT%"
+      ],
+      "env": {
+        "BIBINPUTS": "%DIR%/..;"
+      }
+    }
+  ],
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "PNAS document (pdfLaTeX)",
+      "tools": [
+        "pnas-latexmk"
+      ]
+    }
+  ],
+  "latex-workshop.latex.recipe.default": "PNAS document (pdfLaTeX)",
+  "latex-workshop.latex.clean.enabled": true,
+  "latex-workshop.latex.clean.fileTypes": [
+    "*.aux",
+    "*.bbl",
+    "*.blg",
+    "*.fdb_latexmk",
+    "*.fls",
+    "*.log",
+    "*.out",
+    "*.synctex.gz"
+  ],
+  "files.associations": {
+    "*.cls": "latex",
+    "*.sty": "latex"
+  },
+  "workbench.editorAssociations": {
+    "*.pdf": "latex-workshop-pdf-hook"
+  }
+}

@@ -1,0 +1,36 @@
+% !TEX root = ../manuscript.tex
+
+The study uses a balanced, unweighted design of 162 prescribed fault--seal
+geologies. Each geology is represented by six throw windows, and PREDICT
+generates 2,000 joint anisotropic-permeability realizations for every
+geology--window combination. Selected realizations are replayed and upscaled
+to internally consistent permeability, porosity, capillary-pressure, and
+relative-permeability properties. The complete geologic design, PREDICT
+generation rules, convergence assessment, replay procedure, and property
+upscaling calculations are provided in the SI Appendix.
+
+For each geology, Phase 1 contains 12 stochastic full-fault realizations plus
+three separate deterministic benchmarks: a full-distribution medoid and
+coherent low- and high-state fields. Each stochastic field contains one draw
+for every combination of six windows and 87 along-strike slices. Draws are
+uniform with replacement and conditionally independent after conditioning on
+geology and throw window; this construction avoids imposing an unsupported
+cross-window or along-strike covariance model and does not assert that real
+faults are spatially independent. Only the 12 stochastic fields enter
+probabilistic and variance-based analyses. The deterministic fields diagnose
+representative and stress behavior and are not interpreted as probabilities,
+bounds, or percentiles. Sampling algorithms, state construction, stable seed
+generation, provenance manifests, and validation tests are documented in the
+SI Appendix.
+
+JutulDarcy propagates the heterogeneous full-fault properties through a
+roughly two-million-cell offshore Texas storage model for 1,000 years. Primary
+responses quantify top-seal entry and maximum upward migration; secondary
+responses quantify storage-reservoir retention, fault entry, and dissolved
+and free-phase partitioning. Geologic effects and average within-geology
+variability are estimated from the common 12-realization balanced ensemble.
+Prespecified outcome criteria identify geologies for additional independent
+realizations, while enriched cases remain excluded from the balanced global
+variance decomposition. Complete model settings, spatial definitions,
+quantities of interest, statistical estimators, enrichment rules, and
+reservoir-input consistency checks are provided in the SI Appendix.

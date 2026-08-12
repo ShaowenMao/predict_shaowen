@@ -1,0 +1,103 @@
+% !TEX root = ../supporting_information.tex
+
+\SISection{Construction of full-fault property fields}
+\label{sec:si-full-fault-sampling}
+
+\SISubsection{PREDICT library validation}
+
+Each geology-window library contains 2,000 accepted realizations and stores the
+joint $(k_{xx},k_{yy},k_{zz})$ vector, original realization identifier,
+PREDICT seed, checkpoint hash, code commit, and method-configuration hash.
+Automated validation requires complete finite positive permeability values,
+unique and replayable provenance records, and a consistent component order.
+\todo{Tabulate the frozen library schema and report validation coverage for all
+$162\times6$ libraries.}
+
+\SISubsection{Conditionally independent full-fault construction}
+
+Let $\widehat P_{g,w}$ denote the empirical 2,000-member PREDICT library for
+geology $g$ and throw window $w$. For stochastic full-fault realization $r$,
+the property source assigned to along-strike slice $s$ is sampled as
+\begin{equation}
+  \boldsymbol{\theta}_{g,w,s,r}
+  \sim \widehat P_{g,w},
+  \qquad w=1,\ldots,6,\quad s=1,\ldots,87,
+  \label{eq:si-conditional-full-fault-sampling}
+\end{equation}
+where $\boldsymbol{\theta}$ identifies one actual PREDICT realization and
+links it to its internally consistent
+$(\mathbf{K},\phi,P_c,k_r)$ properties. Sampling is uniform with replacement
+and conditionally independent across windows, slices, and stochastic
+replicates after conditioning on geology and throw window. This construction
+does not infer cross-window correlation or claim that the physical fault is
+spatially independent. It deliberately avoids imposing a full-fault
+covariance model that is unsupported by the window-by-window PREDICT output.
+
+Every geology uses the same Phase-1 design: 12 stochastic full-distribution
+fields, one deterministic full-distribution-medoid field, and coherent low-
+and high-state medoid fields. Phase 1 therefore contains
+$162\times15=2{,}430$ field-scale cases. Only the 12 stochastic fields per
+geology enter empirical probabilities, conditional distributions, or global
+variance decompositions. The three deterministic fields are diagnostic
+benchmarks and carry no probability weight.
+
+\SISubsection{Full-distribution and state-library medoids}
+
+For log-permeability vector
+\begin{equation}
+  \mathbf{y}_i =
+  (\log_{10}k_{xx,i},\log_{10}k_{yy,i},\log_{10}k_{zz,i}),
+\end{equation}
+the full-distribution medoid is
+\begin{equation}
+  i_{\mathrm{full}}=
+  \arg\min_i\sum_{j=1}^{2000}\lVert\mathbf{y}_i-\mathbf{y}_j\rVert_2.
+  \label{eq:si-full-medoid}
+\end{equation}
+Ties are broken using the smallest original realization identifier. The
+result is therefore an actual joint PREDICT realization rather than a
+synthetic component-wise median.
+
+Low and high state libraries retain 20\% of each window library. Joint samples
+are clustered in physical three-dimensional $\log_{10}(k)$ space with
+$k$-medoids over $K=1,\ldots,5$. A multi-cluster solution must have at least
+5\% of samples in every cluster and a mean silhouette of at least 0.25.
+Clusters are ordered by the median joint rank score
+\begin{equation}
+  r_{\mathrm{joint}}^{(m)} =
+  \frac{r_{xx}^{(m)}+r_{yy}^{(m)}+r_{zz}^{(m)}}{3}.
+\end{equation}
+Complete extreme clusters are retained where possible, and the boundary
+cluster is truncated by joint-rank order to obtain exactly 400 samples. The
+low/high benchmark realization is the medoid of the final 400-member library,
+not necessarily the medoid of one constituent cluster.
+
+\SISubsection{Deterministic full-fault manifests}
+
+Every case manifest contains 522 rows, one for each window-slice element. For
+an independent case, one source row is sampled uniformly with replacement from
+the complete 2,000-member library of the corresponding window. Seeds are
+derived from a stable hash of the base seed, geology identifier, phase, case
+type, replicate identifier, and window identifier. Consequently, manifests
+are byte-reproducible and independent of parallel execution order.
+
+The representative benchmark assigns the full-distribution medoid of each
+window to all 87 slices in that window. The low- and high-state stress
+benchmarks analogously assign their state-library medoids, producing coherent
+fault-wide low and high fields. These fields test representative and stress
+behavior; they are not interpreted as bounds or percentiles. Each manifest
+row explicitly records whether it belongs to the probabilistic ensemble, a
+representative benchmark, or a stress benchmark. \todo{Provide the complete
+manifest schema, seed-hash algorithm, and case-identifier table.}
+
+\SISubsection{Sampling-fidelity and independence checks}
+
+For each geology-window pair, the 12 Phase-1 independent fields provide
+$12\times87=1{,}044$ draws. Their component-wise Wasserstein distances and
+joint energy distance from the 2,000-member source library are compared with a
+reference distribution obtained from synthetic 1,044-member samples. Pairwise
+rank correlations between windows at matching slice indices are likewise
+compared with simulations under independence. These tests verify marginal
+fidelity and detect accidental coupling from shared streams or rank matching;
+they do not establish geological independence. \todo{Report acceptance
+intervals and results for all production manifests.}

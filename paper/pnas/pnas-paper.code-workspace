@@ -1,0 +1,13 @@
+{
+  "folders": [
+    {
+      "name": "PNAS paper",
+      "path": "."
+    }
+  ],
+  "extensions": {
+    "recommendations": [
+      "james-yu.latex-workshop"
+    ]
+  }
+}

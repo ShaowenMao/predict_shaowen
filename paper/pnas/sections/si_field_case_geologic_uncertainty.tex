@@ -1,0 +1,57 @@
+% !TEX root = ../supporting_information.tex
+
+\SISection{Offshore Texas Field Case and Geologic Uncertainty}
+\label{sec:si-field-case-geologic-uncertainty}
+
+\SISubsection{Geologic model}
+
+The Gulf Coast of Texas has been considered a promising region for geologic \coTwo{} storage due to its thick, laterally extensive, and regionally continuous Miocene sandstones. We focus on the Miocene section within the Texas State Waters, which is an attractive offshore alternative to onshore storage. The setting
+
+
+
+
+
+
+
+
+The geologic setting consists of
+
+
+
+The field-scale model represents an offshore Texas storage setting with
+approximately two million grid cells and a three-dimensional growth fault that
+offsets the storage interval and partially offsets the top seal.
+
+\todo{Insert the final field-model dimensions, boundary conditions, spatial
+resolution, and geologic rationale.}
+
+\SISubsection{Fault-region discretization and throw windows}
+
+The portion of the fault intersecting the top-seal system is divided into six
+throw windows along dip and 87 slices along strike. Local juxtaposition
+therefore varies among windows, and each full-fault property realization
+contains $6\times87=522$ fault elements. Layer order and thickness are stored
+separately for the footwall and hanging wall of every window so that the
+geology-specific stratigraphy and fault-property files can be paired and
+validated before reservoir simulation.
+
+\todo{Provide the final window boundaries, discretization dimensions, and
+their geologic rationale.}
+
+\SISubsection{Geologic scenario design}
+
+The prescribed design contains six layer-thickness structures spanning low,
+medium, and high sand proportions with uniform and nonuniform thickness. Each
+structure is combined factorially with three faulting depths, three
+clay-volume fractions in sand-rich units, and three clay-volume fractions in
+clay-rich units, producing
+\begin{equation}
+  6\times3\times3\times3=162
+\end{equation}
+geologic scenarios. Every scenario has equal design weight. The ensemble is
+therefore suitable for controlled comparisons across the prescribed
+fault--seal space, but its frequencies are not interpreted as calibrated
+field occurrence probabilities.
+
+\todo{Tabulate the final factor levels, units, and the mapping from geology
+identifiers to the complete factorial design.}
