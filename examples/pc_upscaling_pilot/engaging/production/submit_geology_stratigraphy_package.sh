@@ -41,19 +41,60 @@ module load deprecated-modules gcc/12.2.0-x86_64 python/3.10.8-x86_64
     exit 2
 }
 
+read -r EXPECTED_GEOLOGIES EXPECTED_CASES EXPECTED_CASES_PER_GEOLOGY \
+    EXPECTED_CASE_IDS_CSV < <(
+python3 - "${RUN_ROOT}/case_completion_gate.json" \
+    "${RUN_ROOT}/case_work_manifest/case_work.csv" <<'PY'
+import csv
+import json
+import sys
+from collections import defaultdict
+
+gate = json.load(open(sys.argv[1], encoding="utf-8"))
+with open(sys.argv[2], newline="", encoding="utf-8-sig") as stream:
+    rows = list(csv.DictReader(stream))
+ids = defaultdict(list)
+for row in rows:
+    ids[row["geology_id"]].append(int(float(row["case_id"])))
+if not ids:
+    raise SystemExit("Case-work manifest is empty")
+canonical = tuple(sorted(ids[min(ids)]))
+if len(canonical) != len(set(canonical)):
+    raise SystemExit("Duplicate case IDs in case-work manifest")
+if any(tuple(sorted(values)) != canonical for values in ids.values()):
+    raise SystemExit("Case-ID coverage differs among geologies")
+expected = (len(ids), len(rows))
+if (
+    gate.get("status") != "complete"
+    or gate.get("error_count") != 0
+    or gate.get("expected_geology_count") != expected[0]
+    or gate.get("expected_case_count") != expected[1]
+    or gate.get("result_markers_validated") != expected[1]
+):
+    raise SystemExit("Final case gate does not match the case-work manifest")
+print(expected[0], expected[1], len(canonical), ",".join(map(str, canonical)))
+PY
+)
+
 cat <<EOF
 Geology-stratigraphy package plan
   run_id: ${RUN_ID}
   source run: ${RUN_ROOT}
   frozen PREDICT data: ${FREEZE_ROOT}/inputs/predict
   package root: ${PACKAGE_ROOT}
-  expected geology MAT files: 162
-  expected full-slice fault-case links: 1620
+  expected geology MAT files: ${EXPECTED_GEOLOGIES}
+  expected full-slice fault-case links: ${EXPECTED_CASES}
+  exact case IDs per geology: ${EXPECTED_CASE_IDS_CSV}
   dependency job: ${DEPENDENCY_JOB_ID:-none; final QA must already be complete}
 EOF
 
 if [[ -f "${PACKAGE_ROOT}/geology_stratigraphy.done.json" ]]; then
-    python3 "${VERIFY_SCRIPT}" --package-root "${PACKAGE_ROOT}"
+    python3 "${VERIFY_SCRIPT}" \
+        --package-root "${PACKAGE_ROOT}" \
+        --expected-geologies "${EXPECTED_GEOLOGIES}" \
+        --expected-cases "${EXPECTED_CASES}" \
+        --expected-cases-per-geology "${EXPECTED_CASES_PER_GEOLOGY}" \
+        --expected-case-ids "${EXPECTED_CASE_IDS_CSV}"
     echo "The package is already complete; no submission is needed."
     exit 0
 fi
@@ -105,6 +146,10 @@ python3 - \
     "${RUN_ROOT}" \
     "${FREEZE_ROOT}" \
     "${PACKAGE_ROOT}" \
+    "${EXPECTED_GEOLOGIES}" \
+    "${EXPECTED_CASES}" \
+    "${EXPECTED_CASES_PER_GEOLOGY}" \
+    "${EXPECTED_CASE_IDS_CSV}" \
     "${DEPENDENCY_JOB_ID}" \
     "${job_id}" <<'PY'
 from datetime import datetime, timezone
@@ -117,6 +162,10 @@ import sys
     run_root,
     freeze_root,
     package_root,
+    expected_geologies,
+    expected_cases,
+    expected_cases_per_geology,
+    expected_case_ids_csv,
     dependency_job_id,
     job_id,
 ) = sys.argv[1:]
@@ -128,8 +177,10 @@ manifest = {
     "run_root": run_root,
     "freeze_root": freeze_root,
     "package_root": package_root,
-    "expected_geology_count": 162,
-    "expected_fault_case_count": 1620,
+    "expected_geology_count": int(expected_geologies),
+    "expected_fault_case_count": int(expected_cases),
+    "expected_cases_per_geology": int(expected_cases_per_geology),
+    "expected_case_ids": [int(value) for value in expected_case_ids_csv.split(",")],
     "dependency_job_id": dependency_job_id or None,
     "job_id": job_id,
 }

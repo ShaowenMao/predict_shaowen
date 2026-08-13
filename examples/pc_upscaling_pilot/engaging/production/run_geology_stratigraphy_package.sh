@@ -12,12 +12,17 @@ OVERWRITE_INCOMPLETE="${OVERWRITE_INCOMPLETE:-0}"
 VERIFY_SCRIPT="${RUNTIME_REPO}/examples/pc_upscaling_pilot/engaging/production/verify_geology_stratigraphy_package.py"
 MATLAB_SOURCE_ROOT="${RUNTIME_REPO}/examples/pc_upscaling_pilot"
 COMPLETION_GATE="${RUN_ROOT}/case_completion_gate.json"
+CASE_WORK_FILE="${RUN_ROOT}/case_work_manifest/case_work.csv"
 
 module load deprecated-modules gcc/12.2.0-x86_64 \
     python/3.10.8-x86_64 matlab/matlab-2025b
 
 [[ -f "${COMPLETION_GATE}" ]] || {
     echo "Missing final case-completion gate: ${COMPLETION_GATE}" >&2
+    exit 2
+}
+[[ -f "${CASE_WORK_FILE}" ]] || {
+    echo "Missing case-work manifest: ${CASE_WORK_FILE}" >&2
     exit 2
 }
 [[ -d "${PREDICT_DATA_ROOT}" ]] || {
@@ -29,16 +34,47 @@ module load deprecated-modules gcc/12.2.0-x86_64 \
     exit 2
 }
 
-python3 - "${COMPLETION_GATE}" <<'PY'
+read -r EXPECTED_GEOLOGY_COUNT EXPECTED_CASE_COUNT \
+    EXPECTED_CASES_PER_GEOLOGY EXPECTED_CASE_IDS_CSV < <(
+python3 - "${COMPLETION_GATE}" "${CASE_WORK_FILE}" <<'PY'
+import csv
 import json
 import sys
+from collections import defaultdict
 
 gate = json.load(open(sys.argv[1], encoding="utf-8"))
+with open(sys.argv[2], newline="", encoding="utf-8-sig") as stream:
+    rows = list(csv.DictReader(stream))
+if not rows:
+    raise SystemExit("Case-work manifest is empty")
+required = {"geology_id", "case_id"}
+if not required.issubset(rows[0]):
+    raise SystemExit("Case-work manifest lacks geology_id or case_id")
+
+ids_by_geology = defaultdict(list)
+for row in rows:
+    case_value = float(row["case_id"])
+    case_id = int(case_value)
+    if case_value != case_id or case_id <= 0:
+        raise SystemExit(f"Invalid case ID: {row['case_id']!r}")
+    ids_by_geology[row["geology_id"]].append(case_id)
+
+canonical_ids = tuple(sorted(ids_by_geology[min(ids_by_geology)]))
+if len(canonical_ids) != len(set(canonical_ids)):
+    raise SystemExit("The first geology contains duplicate case IDs")
+for geology_id, values in sorted(ids_by_geology.items()):
+    if tuple(sorted(values)) != canonical_ids:
+        raise SystemExit(
+            f"Case-ID coverage for {geology_id} does not match {canonical_ids}"
+        )
+
+geology_count = len(ids_by_geology)
+case_count = len(rows)
 expected = {
     "status": "complete",
-    "expected_geology_count": 162,
-    "expected_case_count": 1620,
-    "result_markers_validated": 1620,
+    "expected_geology_count": geology_count,
+    "expected_case_count": case_count,
+    "result_markers_validated": case_count,
     "error_count": 0,
 }
 for field, value in expected.items():
@@ -46,10 +82,34 @@ for field, value in expected.items():
         raise SystemExit(
             f"Final case gate {field}={gate.get(field)!r}; expected {value!r}"
         )
+if geology_count != 162:
+    raise SystemExit(f"Expected 162 geologies; found {geology_count}")
+print(
+    geology_count,
+    case_count,
+    len(canonical_ids),
+    ",".join(str(value) for value in canonical_ids),
+)
 PY
+)
+export EXPECTED_GEOLOGY_COUNT EXPECTED_CASE_COUNT
+export EXPECTED_CASES_PER_GEOLOGY EXPECTED_CASE_IDS_CSV
+
+verify_args=(
+    --package-root
+    "${PACKAGE_ROOT}"
+    --expected-geologies
+    "${EXPECTED_GEOLOGY_COUNT}"
+    --expected-cases
+    "${EXPECTED_CASE_COUNT}"
+    --expected-cases-per-geology
+    "${EXPECTED_CASES_PER_GEOLOGY}"
+    --expected-case-ids
+    "${EXPECTED_CASE_IDS_CSV}"
+)
 
 if [[ -f "${PACKAGE_ROOT}/geology_stratigraphy.done.json" ]]; then
-    python3 "${VERIFY_SCRIPT}" --package-root "${PACKAGE_ROOT}"
+    python3 "${VERIFY_SCRIPT}" "${verify_args[@]}"
     echo "Geology-stratigraphy package is already complete: ${PACKAGE_ROOT}"
     exit 0
 fi
@@ -98,9 +158,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
-matlab -batch "addpath('${MATLAB_SOURCE_ROOT}'); build_production_geology_stratigraphy_package(getenv('PREDICT_DATA_ROOT'), getenv('RUN_ROOT'), getenv('STRATIGRAPHY_STAGING_ROOT'));"
+matlab -batch "addpath('${MATLAB_SOURCE_ROOT}'); caseIds = str2double(strsplit(getenv('EXPECTED_CASE_IDS_CSV'), ',')); build_production_geology_stratigraphy_package(getenv('PREDICT_DATA_ROOT'), getenv('RUN_ROOT'), getenv('STRATIGRAPHY_STAGING_ROOT'), 'ExpectedGeologyCount', str2double(getenv('EXPECTED_GEOLOGY_COUNT')), 'ExpectedCaseIds', caseIds);"
 
-python3 "${VERIFY_SCRIPT}" --package-root "${staging_root}"
+staging_verify_args=("${verify_args[@]}")
+staging_verify_args[1]="${staging_root}"
+python3 "${VERIFY_SCRIPT}" "${staging_verify_args[@]}"
 
 python3 - "${staging_root}" "${PACKAGE_ROOT}" <<'PY'
 import os
@@ -114,6 +176,6 @@ if target.exists():
 os.replace(staging, target)
 PY
 
-python3 "${VERIFY_SCRIPT}" --package-root "${PACKAGE_ROOT}"
+python3 "${VERIFY_SCRIPT}" "${verify_args[@]}"
 printf '%s\n' "${PACKAGE_ROOT}" > "${RUN_ROOT}/geology_stratigraphy_package_path.txt"
 echo "Published geology-stratigraphy package: ${PACKAGE_ROOT}"

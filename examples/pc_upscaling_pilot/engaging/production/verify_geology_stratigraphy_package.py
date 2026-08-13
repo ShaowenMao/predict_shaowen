@@ -17,7 +17,35 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-geologies", type=int, default=162)
     parser.add_argument("--expected-cases", type=int, default=1620)
     parser.add_argument("--expected-cases-per-geology", type=int, default=10)
+    parser.add_argument(
+        "--expected-case-ids",
+        default="",
+        help="Comma-separated exact case IDs; defaults to 1..cases-per-geology",
+    )
     return parser.parse_args()
+
+
+def expected_case_ids(args: argparse.Namespace) -> tuple[int, ...]:
+    if args.expected_case_ids.strip():
+        values = tuple(
+            int(item.strip())
+            for item in args.expected_case_ids.split(",")
+            if item.strip()
+        )
+    else:
+        values = tuple(range(1, args.expected_cases_per_geology + 1))
+    if (
+        not values
+        or any(value <= 0 for value in values)
+        or len(values) != len(set(values))
+        or tuple(sorted(values)) != values
+    ):
+        raise ValueError("Expected case IDs must be unique, positive, and sorted")
+    if len(values) != args.expected_cases_per_geology:
+        raise ValueError(
+            "Expected case-ID count does not equal expected cases per geology"
+        )
+    return values
 
 
 def read_rows(path: Path) -> list[dict[str, str]]:
@@ -69,6 +97,7 @@ def validate_checksum_file(package_root: Path, checksum_file: Path) -> int:
 
 def main() -> int:
     args = parse_args()
+    required_case_ids = expected_case_ids(args)
     package_root = args.package_root.resolve()
     completion_path = package_root / "geology_stratigraphy.done.json"
     manifest_path = package_root / "geology_stratigraphy_manifest.csv"
@@ -93,6 +122,12 @@ def main() -> int:
         actual = completion.get(field)
         if actual != expected:
             raise ValueError(f"{field}={actual!r}; expected {expected!r}")
+    recorded_case_ids = completion.get("expected_case_ids")
+    if recorded_case_ids is not None:
+        if tuple(int(value) for value in recorded_case_ids) != required_case_ids:
+            raise ValueError(
+                "Completion-certificate case IDs do not match the requested IDs"
+            )
 
     require_hash(
         manifest_path,
@@ -188,9 +223,9 @@ def main() -> int:
         if fault_path.stat().st_size != int(row["FileSizeBytes"]):
             raise ValueError(f"Linked fault MAT byte mismatch: {fault_path}")
 
-    expected_case_ids = set(range(1, args.expected_cases_per_geology + 1))
+    expected_case_id_set = set(required_case_ids)
     for geology_id in manifest_by_geology:
-        if case_ids_by_geology[geology_id] != expected_case_ids:
+        if case_ids_by_geology[geology_id] != expected_case_id_set:
             raise ValueError(f"Case coverage mismatch for {geology_id}")
     duplicates = [key for key, count in key_counts.items() if count != 1]
     if duplicates:
@@ -203,6 +238,7 @@ def main() -> int:
         "geology_count": len(manifest),
         "fault_case_link_count": len(links),
         "cases_per_geology": args.expected_cases_per_geology,
+        "case_ids": list(required_case_ids),
         "checksummed_package_file_count": checksum_count,
         "full_slice_only": True,
         "fault_property_files_modified": False,

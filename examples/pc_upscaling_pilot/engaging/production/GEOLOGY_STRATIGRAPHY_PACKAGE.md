@@ -1,9 +1,10 @@
 # Geology-Stratigraphy Companion Package
 
 This post-QA stage creates one compact geology-specific stratigraphy MAT file
-for every geology in a completed production run. It links the geology to its
-ten validated full-slice fault-property cases without modifying the existing
-Pc, Kr, permeability, or porosity outputs.
+for every geology in a completed production run. It derives the exact case-ID
+set from the immutable case-work manifest and links each geology to every
+validated full-slice fault-property case without modifying the existing Pc,
+Kr, permeability, or porosity outputs.
 
 ## Package Contents
 
@@ -40,9 +41,13 @@ The stage runs only after the final case-completion gate passes. It requires:
 
 - 162 unique geologies;
 - six frozen PREDICT checkpoints per geology;
-- cases 01 through 10 for every geology;
+- the same exact, nonduplicated case-ID set for every geology;
 - one readable full-slice fault-property MAT file per case;
-- exact geology and case identity matches in all 1,620 linked files.
+- exact geology and case identity matches in every linked file.
+
+For the Phase-1 independent-full-fault design, this means 162 geologies and
+the 15 case IDs `1-12, 101-103`, for 2,430 linked fault-property files. The
+completion certificate records this noncontiguous case-ID set explicitly.
 
 Outputs are first written to an isolated partial directory. The package is
 atomically published only after all counts, hashes, links, and checksums pass.
