@@ -1,0 +1,9 @@
+# Exploratory Step62 renderer products.
+source/step62_two_faults_full_domain_front_opaque_test*.png
+source/step62_two_faults_unannotated.png
+
+# Superseded geometry-independent Figure 2 render. The script remains a
+# diagnostic and a shared source of scenario definitions.
+fig2_top_seal_interbed_scenarios.pdf
+fig2_top_seal_interbed_scenarios.png
+fig2_top_seal_interbed_scenarios.svg

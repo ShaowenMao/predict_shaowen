@@ -1,0 +1,120 @@
+# PNAS figure-generation workflow
+
+This document records the reproducible workflow for the PNAS field-case
+figures. Final manuscript figures are written to `paper/pnas/figures` in PDF,
+PNG, and SVG formats. The PDF files are the LaTeX inputs; the 600-dpi PNG files
+are convenient review copies; and the SVG files preserve editable vector text
+and annotations.
+
+## Dependencies
+
+Use Python 3 with the packages listed in
+`paper/figures/workflow/requirements.txt`. A working LaTeX installation is
+needed because the plotting scripts use Computer Modern through Matplotlib's
+`text.usetex` option.
+
+```powershell
+python -m pip install -r paper\figures\workflow\requirements.txt
+```
+
+The scripts expect the protected Step62 grid in a sibling checkout named
+`mrst_predict_sim_grid_integration` or `mrst_predict_sim_grid_dev`. An explicit
+`--grid-vtu` argument can be supplied when the checkout is elsewhere.
+
+## Figure 1: offshore Texas field setting and geologic model
+
+Figure 1 is assembled by:
+
+```powershell
+python paper\pnas\tools\plot_fig1_field_case_model.py
+```
+
+The composition script:
+
+- crops and reorders the regional map and cross section from
+  `figures/source/salo_salgado_2025_field_case_source.jpeg`;
+- uses the committed Step62 3-D model render
+  `figures/source/step62_two_faults_full_domain_unannotated.png`;
+- reads the exact Step62 active 2-D VTU for the right-hand geology view;
+- validates that the cross section contains 24,886 active triangular cells;
+- adds the panel labels, dimensions, coordinate axes, faults, injector, and
+  geology annotations; and
+- exports `fig1_offshore_texas_field_case_model.{pdf,png,svg}`.
+
+The regional source artwork is adapted from Saló-Salgado et al. (2025). The
+two source panels are kept as one raster asset so their original geologic
+content is not redrawn or reinterpreted.
+
+### Optional regeneration of the Step62 3-D model render
+
+The committed model render lets Figure 1 be rebuilt without a multi-gigabyte
+3-D VTU. When a compatible Step62 VTU is available, the underlying renderer is
+`paper/figures/workflow/render_3d_reservoir_active_inactive.py`. A typical
+full-domain command is:
+
+```powershell
+$activeVtu = '<Step62 3-D VTU with current geology indicators>'
+$gridDir = 'D:\Github\mrst_predict_sim_grid_integration\setup_shaowen_resolution\grid_candidates\step_62_matched_upper_lower_transition'
+$faultNodes = 'D:\Github\mrst_predict_sim_grid_integration\setup_shaowen_resolution\fnodcoord.mat'
+
+python paper\figures\workflow\render_3d_reservoir_active_inactive.py `
+  --active-vtu $activeVtu `
+  --raw-grid $gridDir `
+  --fault-node-coordinates $faultNodes `
+  --secondary-fault-trace paper\pnas\figures\source\step62_secondary_fault_trace.csv `
+  --output paper\pnas\figures\source\step62_two_faults_full_domain_unannotated.png `
+  --cutaway-y 0 `
+  --delineate-full-fault `
+  --vertical-exaggeration 1.5 `
+  --top-surface-opacity 0.20 `
+  --opaque-front-xz `
+  --opaque-active-sides `
+  --injector 22500 12816 2012 `
+  --injector-point-size 12
+```
+
+The secondary-fault surface is a visualization-only reconstruction from actual
+Step62 mesh vertices. Its anchors and limitations are documented in
+`figures/source/step62_secondary_fault_trace_provenance.md`; it is not a
+simulated uncertain fault-property domain.
+
+## Figure 2: top-seal interbed scenarios
+
+The manuscript version uses the exact Step62 cross-section geometry:
+
+```powershell
+python paper\pnas\tools\plot_fig2_real_stratigraphy.py
+```
+
+It reads the tracked scenario definitions in
+`examples/thickness_scenario_designs.csv` and the verified sand proportions in
+`examples/footwall_sand_ratio_by_thickness_scenario.csv`. All six panels use
+the same mesh geometry and topology; only lithology assignments change. The
+script exports
+`fig2_top_seal_interbed_scenarios_real_geometry.{pdf,png,svg}`.
+
+`plot_fig2_thickness_scenarios.py` contains the shared scenario parsing,
+apparent-thickness values, and style definitions. It can also create a
+geometry-independent schematic for diagnostic use, but that schematic is not
+the manuscript Figure 2.
+
+## Validation and manuscript build
+
+Run syntax checks and regenerate both figures before a release:
+
+```powershell
+python -m py_compile `
+  paper\figures\workflow\render_3d_reservoir_active_inactive.py `
+  paper\pnas\tools\plot_fig1_field_case_model.py `
+  paper\pnas\tools\plot_fig2_real_stratigraphy.py `
+  paper\pnas\tools\plot_fig2_thickness_scenarios.py
+
+python paper\pnas\tools\plot_fig1_field_case_model.py
+python paper\pnas\tools\plot_fig2_real_stratigraphy.py
+
+cd paper\pnas
+.\tools\build_pnas.ps1 -Document .\supporting_information.tex
+```
+
+Visually inspect the regenerated PNGs and the compiled Supporting Information
+PDF at publication scale before committing updated figure assets.
