@@ -98,6 +98,24 @@ apparent-thickness values, and style definitions. It can also create a
 geometry-independent schematic for diagnostic use, but that schematic is not
 the manuscript Figure 2.
 
+## Figure S3: 3-D fault domain and throw-window discretization
+
+Figure S3 is generated from the exact protected Step62 cross-section and the
+87-segment along-strike extrusion:
+
+```powershell
+python paper\pnas\tools\figs3_fault_domain\compose_fault_domain_windows.py
+```
+
+The workflow validates the W1-W6 cell counts, the 1,731-cell 2-D fault
+footprint, and the resulting 150,597-cell 3-D fault domain. Panel (a) uses a
+three-times vertically exaggerated, high-resolution PyVista geometry render;
+its rulers, labels, and legend are added as vector Matplotlib artists. Panel
+(b), including its triangular mesh and throw-window boundaries, is fully
+vector in the PDF. See
+`tools/figs3_fault_domain/README.md` for input provenance, source-render
+regeneration, and detailed validation commands.
+
 ## Validation and manuscript build
 
 Run syntax checks and regenerate both figures before a release:
@@ -107,10 +125,15 @@ python -m py_compile `
   paper\figures\workflow\render_3d_reservoir_active_inactive.py `
   paper\pnas\tools\plot_fig1_field_case_model.py `
   paper\pnas\tools\plot_fig2_real_stratigraphy.py `
-  paper\pnas\tools\plot_fig2_thickness_scenarios.py
+  paper\pnas\tools\plot_fig2_thickness_scenarios.py `
+  paper\pnas\tools\figs3_fault_domain\compose_fault_domain_windows.py `
+  paper\pnas\tools\figs3_fault_domain\render_fault_domain_base.py `
+  paper\pnas\tools\figs3_fault_domain\render_fault_domain_overview.py `
+  paper\pnas\tools\figs3_fault_domain\render_fault_grid_multiscale.py
 
 python paper\pnas\tools\plot_fig1_field_case_model.py
 python paper\pnas\tools\plot_fig2_real_stratigraphy.py
+python paper\pnas\tools\figs3_fault_domain\compose_fault_domain_windows.py
 
 cd paper\pnas
 .\tools\build_pnas.ps1 -Document .\supporting_information.tex
