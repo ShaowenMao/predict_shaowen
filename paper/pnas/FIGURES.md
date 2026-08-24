@@ -116,6 +116,23 @@ vector in the PDF. See
 `tools/figs3_fault_domain/README.md` for input provenance, source-render
 regeneration, and detailed validation commands.
 
+## Figure S5: directional permeability upscaling
+
+Figure S5 is generated from a compact W3 replay and its matching linked
+2,000-realization permeability ensemble:
+
+```powershell
+python paper\pnas\tools\figs5_directional_upscaling\render_directional_upscaling.py
+```
+
+Panel (a) applies the three local directional flow experiments to one
+representative fault-core architecture. Panel (b) shows the corresponding
+marginal ensemble distributions while retaining the scientific interpretation
+of each row as a joint three-component permeability vector. Both compact MAT
+inputs, their SHA-256 hashes, scenario identifiers, validation rules, and the
+exact rebuild command are documented in
+`tools/figs5_directional_upscaling/README.md`.
+
 ## Validation and manuscript build
 
 Run syntax checks and regenerate both figures before a release:
@@ -129,11 +146,13 @@ python -m py_compile `
   paper\pnas\tools\figs3_fault_domain\compose_fault_domain_windows.py `
   paper\pnas\tools\figs3_fault_domain\render_fault_domain_base.py `
   paper\pnas\tools\figs3_fault_domain\render_fault_domain_overview.py `
-  paper\pnas\tools\figs3_fault_domain\render_fault_grid_multiscale.py
+  paper\pnas\tools\figs3_fault_domain\render_fault_grid_multiscale.py `
+  paper\pnas\tools\figs5_directional_upscaling\render_directional_upscaling.py
 
 python paper\pnas\tools\plot_fig1_field_case_model.py
 python paper\pnas\tools\plot_fig2_real_stratigraphy.py
 python paper\pnas\tools\figs3_fault_domain\compose_fault_domain_windows.py
+python paper\pnas\tools\figs5_directional_upscaling\render_directional_upscaling.py
 
 cd paper\pnas
 .\tools\build_pnas.ps1 -Document .\supporting_information.tex

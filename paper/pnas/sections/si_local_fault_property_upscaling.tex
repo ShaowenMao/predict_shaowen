@@ -24,10 +24,27 @@ realizations.}
 
 Effective permeability is computed with the flow-based PREDICT upscaling
 calculation, which applies pressure differences to the replayed fine-scale
-fault core and obtains the directional flux responses. Effective porosity is
+fault core and obtains the directional flux responses
+(Fig.~\ref{fig:si-directional-permeability-upscaling}). Effective porosity is
 the pore-volume-weighted average of the fine-cell porosities. Permeability and
 porosity are linked to the same replayed realization and are never assembled
 from different source rows.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\textwidth]{fig5_predict_directional_permeability_upscaling.pdf}
+  \caption{Directional flow-based permeability upscaling for PREDICT
+  fault-core realizations. (a) One representative W3 realization is subjected
+  separately to steady single-phase flow in the local fault-normal ($x$),
+  strike-parallel ($y$), and dip-parallel ($z$) directions. Blue arrows show
+  the imposed flow direction on the opposing boundary faces; the other faces
+  are no-flow boundaries. The three calculations yield one linked vector of
+  effective permeability components for the realization. (b) Marginal probability
+  distributions of the three effective-permeability components from 2,000 W3
+  realizations. The fault-normal dimension in (a) is exaggerated by a factor
+  of 42 for visibility.}
+  \label{fig:si-directional-permeability-upscaling}
+\end{figure}
 
 PREDICT reports the permeability tensor in its local fault coordinate system.
 Before reservoir export, the tensor is mapped to reservoir-grid coordinates
