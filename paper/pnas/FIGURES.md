@@ -21,9 +21,9 @@ The scripts expect the protected Step62 grid in a sibling checkout named
 `mrst_predict_sim_grid_integration` or `mrst_predict_sim_grid_dev`. An explicit
 `--grid-vtu` argument can be supplied when the checkout is elsewhere.
 
-## Figure 1: offshore Texas field setting and geologic model
+## Figure S1: offshore Texas field setting and geologic model
 
-Figure 1 is assembled by:
+Figure S1 is assembled by:
 
 ```powershell
 python paper\pnas\tools\plot_fig1_field_case_model.py
@@ -36,7 +36,8 @@ The composition script:
 - uses the committed Step62 3-D model render
   `figures/source/step62_two_faults_full_domain_unannotated.png`;
 - reads the exact Step62 active 2-D VTU for the right-hand geology view;
-- validates that the cross section contains 24,886 active triangular cells;
+- validates the 24,886-triangle Step62 visualization mesh (distinct from the
+  21,245-cell active reservoir-simulation footprint);
 - adds the panel labels, dimensions, coordinate axes, faults, injector, and
   geology annotations; and
 - exports `fig1_offshore_texas_field_case_model.{pdf,png,svg}`.
@@ -47,7 +48,7 @@ content is not redrawn or reinterpreted.
 
 ### Optional regeneration of the Step62 3-D model render
 
-The committed model render lets Figure 1 be rebuilt without a multi-gigabyte
+The committed model render lets Figure S1 be rebuilt without a multi-gigabyte
 3-D VTU. When a compatible Step62 VTU is available, the underlying renderer is
 `paper/figures/workflow/render_3d_reservoir_active_inactive.py`. A typical
 full-domain command is:
@@ -78,7 +79,7 @@ Step62 mesh vertices. Its anchors and limitations are documented in
 `figures/source/step62_secondary_fault_trace_provenance.md`; it is not a
 simulated uncertain fault-property domain.
 
-## Figure 2: top-seal interbed scenarios
+## Figure S2: top-seal interbed scenarios
 
 The manuscript version uses the exact Step62 cross-section geometry:
 
@@ -96,7 +97,7 @@ script exports
 `plot_fig2_thickness_scenarios.py` contains the shared scenario parsing,
 apparent-thickness values, and style definitions. It can also create a
 geometry-independent schematic for diagnostic use, but that schematic is not
-the manuscript Figure 2.
+the manuscript Figure S2.
 
 ## Figure S3: 3-D fault domain and throw-window discretization
 
@@ -116,6 +117,22 @@ vector in the PDF. See
 `tools/figs3_fault_domain/README.md` for input provenance, source-render
 regeneration, and detailed validation commands.
 
+## Figure S4: geology-to-PREDICT fault properties
+
+Figure S4 is generated from the exact Step62 cross-section geometry and a
+compact, source-verified W3 PREDICT replay:
+
+```powershell
+python paper\pnas\tools\figs4_predict_geology_fault_properties\render_predict_geology_fault_properties.py
+```
+
+The workflow uses one internally consistent example from the nonuniform,
+medium-sand scenario through the selected W3 throw-window geometry, sand and
+clay-smear placement, dip-parallel permeability, and porosity. The compact MAT
+input, realization identifiers, source hash, repository-relative defaults,
+and validation procedure are documented in
+`tools/figs4_predict_geology_fault_properties/README.md`.
+
 ## Figure S5: directional permeability upscaling
 
 Figure S5 is generated from a compact W3 replay and its matching linked
@@ -133,9 +150,26 @@ inputs, their SHA-256 hashes, scenario identifiers, validation rules, and the
 exact rebuild command are documented in
 `tools/figs5_directional_upscaling/README.md`.
 
+## Figure S6: PREDICT ensemble convergence
+
+Figure S6 and its companion summary tables are generated in MATLAB from the
+tracked reference-floor convergence tables:
+
+```powershell
+matlab -batch "addpath('paper/tools'); generate_si_predict_convergence_summary"
+```
+
+The source tables are in
+`examples/gom_reference_floor_cell_union_psmear_full/tables`. The generator
+pools all six throw windows, three permeability components, and 30 repeats at
+each tested ensemble size; normalizes each score by its matching reference
+floor; and exports a vector PDF, a 600-dpi PNG, and three audit tables. The
+figure is written to
+`paper/supplement/figures/predict_convergence_reference_floor_summary.{pdf,png}`.
+
 ## Validation and manuscript build
 
-Run syntax checks and regenerate both figures before a release:
+Run syntax checks and regenerate all six figures before a release:
 
 ```powershell
 python -m py_compile `
@@ -147,16 +181,22 @@ python -m py_compile `
   paper\pnas\tools\figs3_fault_domain\render_fault_domain_base.py `
   paper\pnas\tools\figs3_fault_domain\render_fault_domain_overview.py `
   paper\pnas\tools\figs3_fault_domain\render_fault_grid_multiscale.py `
+  paper\pnas\tools\figs4_predict_geology_fault_properties\render_predict_geology_fault_properties.py `
+  paper\pnas\tools\figs4_predict_geology_fault_properties\render_predict_fine_properties.py `
+  paper\pnas\tools\figs4_predict_geology_fault_properties\render_predict_smear_placement.py `
   paper\pnas\tools\figs5_directional_upscaling\render_directional_upscaling.py
 
 python paper\pnas\tools\plot_fig1_field_case_model.py
 python paper\pnas\tools\plot_fig2_real_stratigraphy.py
 python paper\pnas\tools\figs3_fault_domain\compose_fault_domain_windows.py
+python paper\pnas\tools\figs4_predict_geology_fault_properties\render_predict_geology_fault_properties.py
 python paper\pnas\tools\figs5_directional_upscaling\render_directional_upscaling.py
+matlab -batch "addpath('paper/tools'); generate_si_predict_convergence_summary"
 
 cd paper\pnas
 .\tools\build_pnas.ps1 -Document .\supporting_information.tex
 ```
 
 Visually inspect the regenerated PNGs and the compiled Supporting Information
-PDF at publication scale before committing updated figure assets.
+PDF at publication scale before committing updated figure assets. Figure S6
+requires MATLAB in addition to the Python and LaTeX dependencies listed above.

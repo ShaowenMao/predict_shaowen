@@ -49,6 +49,7 @@ INJECTOR_Z_KM = 2.012
 INJECTOR_COLOR = "#D83B72"
 STRIKE_ROTATION_DEG = -16.5
 CROSS_FAULT_ROTATION_DEG = 21.5
+X_TRIAD_ROTATION_DEG = STRIKE_ROTATION_DEG + 180.0
 FAULT_CALLOUT_Z_KM = 0.85
 FAULT_RIGHT_Y_AT_CALLOUT_KM = 11.907
 CALLOUT_GAP_PT = 3.5
@@ -241,7 +242,8 @@ def load_step62_mesh(
         raise ValueError(f"Step62 VTU is missing cell arrays: {missing}")
     if grid.n_cells != 24_886:
         raise ValueError(
-            f"Expected 24,886 active Step62 triangles, found {grid.n_cells:,}"
+            "Expected 24,886 triangles in the Step62 visualization mesh, "
+            f"found {grid.n_cells:,}"
         )
     if set(np.unique(grid.celltypes)) != {5}:
         raise ValueError("The Step62 cross section must contain triangles only")
@@ -563,7 +565,7 @@ def annotate_model(
             triad_origin[1] + length * np.sin(angle_radians),
         )
 
-    x_endpoint = triad_endpoint(STRIKE_ROTATION_DEG, triad_length)
+    x_endpoint = triad_endpoint(X_TRIAD_ROTATION_DEG, triad_length)
     y_endpoint = triad_endpoint(CROSS_FAULT_ROTATION_DEG, triad_length)
     z_endpoint = triad_endpoint(-90.0, triad_length)
     axes_arrow(axis, triad_origin, x_endpoint, mutation_scale=5.8)
@@ -578,14 +580,14 @@ def annotate_model(
         clip_on=False,
         zorder=30,
     )
-    x_label = triad_endpoint(STRIKE_ROTATION_DEG, triad_label_length)
+    x_label = triad_endpoint(X_TRIAD_ROTATION_DEG, triad_label_length)
     y_label = triad_endpoint(CROSS_FAULT_ROTATION_DEG, triad_label_length)
     z_label = triad_endpoint(-90.0, triad_label_length)
     axis.text(
         *x_label,
         r"$x$",
         fontsize=6.2,
-        ha="left",
+        ha="right",
         va="center",
         transform=axis.transAxes,
         zorder=29,

@@ -1,0 +1,151 @@
+{
+  "png": "paper/pnas/figures/fig4_predict_geology_fault_properties.png",
+  "pdf": "paper/pnas/figures/fig4_predict_geology_fault_properties.pdf",
+  "sand_percent": 47.43,
+  "panel_a_window_annotations": {
+    "W1": {
+      "fault_unit_id": 2,
+      "cell_count": 62,
+      "center_y_km": 12.836217164329797,
+      "center_z_km": 1.9134363003406039,
+      "lower_boundary": {
+        "basis": "PREDICT constant-depth boundary through the hanging-wall A1/A2 contact; A1 excluded from W1",
+        "footwall_yz_km": [
+          12.854664635634228,
+          1.946665179
+        ],
+        "hangingwall_yz_km": [
+          12.889989159999999,
+          1.946665179
+        ],
+        "length_m": 35.32452436577138
+      }
+    },
+    "W2": {
+      "fault_unit_id": 3,
+      "cell_count": 63,
+      "center_y_km": 12.717348249220596,
+      "center_z_km": 1.801254603334174
+    },
+    "W3": {
+      "fault_unit_id": 4,
+      "cell_count": 62,
+      "center_y_km": 12.611707135352697,
+      "center_z_km": 1.7005010197875308
+    },
+    "W4": {
+      "fault_unit_id": 5,
+      "cell_count": 64,
+      "center_y_km": 12.507661640337835,
+      "center_z_km": 1.599334801178185
+    },
+    "W5": {
+      "fault_unit_id": 6,
+      "cell_count": 62,
+      "center_y_km": 12.406244110306899,
+      "center_z_km": 1.4992437033421897
+    },
+    "W6": {
+      "fault_unit_id": 7,
+      "cell_count": 57,
+      "center_y_km": 12.309821973403658,
+      "center_z_km": 1.3987138633728224
+    }
+  },
+  "window": {
+    "window": "W3",
+    "fault_dip_deg": 43.8,
+    "footwall_dip_deg": 0.0,
+    "hangingwall_dip_deg": -9.7683,
+    "vertical_throw_m": 99.26357485198963,
+    "fault_normal_thickness_m": 0.6451681652546184
+  },
+  "scenario": "scenario_05_medium_sand_nonuniform",
+  "faulting_depth_m": 50.0,
+  "sand_vcl": 0.1,
+  "clay_vcl": 0.4,
+  "sample_index": 12,
+  "seed": 530101740,
+  "fault_normal_exaggeration_panel_c": 22.0,
+  "panel_a_vertical_exaggeration": 4.0,
+  "panel_c_core_orientation": "vertical",
+  "panel_c_camera_offset": [
+    0.72,
+    1.15,
+    0.52
+  ],
+  "panel_c_rotation_about_z_deg": -60.0,
+  "panel_c_world_axes": {
+    "x": [
+      0.5000000000000192,
+      -0.8660254037844276,
+      0.0
+    ],
+    "y": [
+      0.8660254037844385,
+      0.5000000000000002,
+      0.0
+    ],
+    "z": [
+      0.0,
+      0.0,
+      -1.0
+    ]
+  },
+  "source_replay": "paper/pnas/tools/figs4_predict_geology_fault_properties/data/predict_w3_case01_medoid12_replay_compact.mat",
+  "source_grid": "../mrst_predict_sim_grid_integration/setup_shaowen_resolution/grid_candidates/step_62_matched_upper_lower_transition/paraview/gom_step62_matched_upper_lower_transition_active_2d.vtu",
+  "material_summary": {
+    "dims": [
+      100,
+      9,
+      100
+    ],
+    "sand_fraction": 0.5433777777777777,
+    "clay_fraction": 0.4566222222222222,
+    "bounds_physical": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.6451681652546184,
+        143.4148,
+        143.4148
+      ]
+    ]
+  },
+  "property_summary": {
+    "dims": [
+      100,
+      9,
+      100
+    ],
+    "normal_exaggeration": 22.0,
+    "permeability_component": "kzz",
+    "permeability_md_range": [
+      6.042840845017908e-06,
+      358.05389604062924
+    ],
+    "log10_permeability_md_range": [
+      -5.218758843951232,
+      2.553948403714554
+    ],
+    "porosity_range": [
+      0.1346526801132507,
+      0.30005265228502737
+    ],
+    "physical_bounds_m": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.6451681652546184,
+        143.4148,
+        143.4148
+      ]
+    ]
+  }
+}

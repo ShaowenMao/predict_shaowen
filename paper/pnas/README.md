@@ -19,8 +19,8 @@ Build the PNAS Supporting Information with:
 
 The PDFs are written to `build/manuscript.pdf` and `build/supporting_information.pdf`.
 
-The PNAS-specific Figure 1 and Figure 2 generation commands, data provenance,
-and validation steps are documented in [FIGURES.md](FIGURES.md).
+The Figure S1--S6 generation commands, data provenance, and validation steps
+are documented in [FIGURES.md](FIGURES.md).
 
 For VS Code, open `pnas-paper.code-workspace` (or open this `pnas` directory
 directly). The workspace recommends LaTeX Workshop, selects the **PNAS

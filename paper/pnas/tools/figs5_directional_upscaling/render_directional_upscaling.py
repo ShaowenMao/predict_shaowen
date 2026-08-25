@@ -40,12 +40,22 @@ INK = "#252525"
 GRID_EDGE = "#4A4541"
 # Separate the flow cue from the distribution palette.
 ARROW = "#174A73"
+ARROW_INSIDE = "#7F9FB2"
+ARROW_INSIDE_ALPHA = 0.58
 DISTRIBUTION = "#276F73"
 DISPLAY_SAMPLE_INDEX = 590
 NORMAL_EXAGGERATION = 42.0
 PANEL_ROTATION_ABOUT_Z_DEG = -60.0
 RAW_SIZE = (1900, 2050)
 EXPORT_DPI = 600
+# Figure S5 is exported with a tight horizontal crop and then enlarged to
+# 0.92\textwidth in the SI.  A 7.3-pt source font therefore renders at about
+# 11 pt on the SI page, matching Figure S4's effective typography.
+SOURCE_FONT_PT = 7.3
+# Preserve the connector length while reducing both surrounding vertical gaps
+# by one third. Panel (b) moves farther because the connector itself shifts up.
+CONNECTOR_VERTICAL_SHIFT = (0.586 - 0.560) / 3.0
+PANEL_B_VERTICAL_SHIFT = CONNECTOR_VERTICAL_SHIFT + (0.5335 - 0.5035) / 3.0
 
 AXIS_INFO = {
     "x": {
@@ -68,12 +78,12 @@ def configure_style() -> None:
         {
             "font.family": "serif",
             "text.usetex": True,
-            "font.size": 11,
-            "axes.titlesize": 11,
-            "axes.labelsize": 11,
-            "xtick.labelsize": 9.5,
-            "ytick.labelsize": 9.5,
-            "legend.fontsize": 10,
+            "font.size": SOURCE_FONT_PT,
+            "axes.titlesize": SOURCE_FONT_PT,
+            "axes.labelsize": SOURCE_FONT_PT,
+            "xtick.labelsize": SOURCE_FONT_PT,
+            "ytick.labelsize": SOURCE_FONT_PT,
+            "legend.fontsize": SOURCE_FONT_PT,
             "axes.linewidth": 0.72,
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
@@ -304,7 +314,7 @@ def crop_rgba_with_arrows(
     path: Path,
     display_arrows_px: list[dict],
     pad: int = 34,
-) -> tuple[Image.Image, list[dict]]:
+) -> tuple[Image.Image, list[dict], np.ndarray]:
     """Crop one raw render while retaining every projected arrow endpoint."""
     image = Image.open(path).convert("RGBA")
     array = np.asarray(image)
@@ -325,6 +335,7 @@ def crop_rgba_with_arrows(
         int(np.ceil(max(float(ys.max()), float(points[:, 1].max())))) + pad + 1,
     )
     cropped = image.crop((left, top, right, bottom))
+    cropped_core_mask = mask[top:bottom, left:right]
     width = float(right - left)
     height = float(bottom - top)
     axes_arrows = []
@@ -338,23 +349,29 @@ def crop_rgba_with_arrows(
             )
         axes_arrows.append(converted)
     image.close()
-    return cropped, axes_arrows
+    return cropped, axes_arrows, cropped_core_mask
 
 
 def draw_face_arrows(
     axis: plt.Axes,
     arrows: list[dict],
+    core_mask: np.ndarray,
+    axis_key: str,
     target_length_points: float = 18.75,
 ) -> None:
-    """Draw arrows with one fixed physical length for every camera angle.
+    """Draw face-aware arrows with one physical length for every camera angle.
 
     This function must be called after the figure has been drawn once.  The
     initial draw lets Matplotlib apply the image-aspect adjustment before the
-    arrow endpoints are converted to display coordinates.
+    arrow endpoints are converted to display coordinates.  Opacity is assigned
+    to each *physical boundary-face group*, not to pixel runs that happen to
+    overlap the projected core.  The visually nearer face is opaque and the
+    opposing face is uniformly faded.
     """
     target_length_px = target_length_points * axis.figure.dpi / 72.0
     to_display = axis.transAxes
     to_axes = to_display.inverted()
+    prepared = []
     for arrow in arrows:
         start_px = np.asarray(to_display.transform(arrow["start"]), dtype=float)
         end_px = np.asarray(to_display.transform(arrow["end"]), dtype=float)
@@ -373,19 +390,132 @@ def draw_face_arrows(
             end_equal_px = start_px + equal_delta_px
         start_equal = to_axes.transform(start_equal_px)
         end_equal = to_axes.transform(end_equal_px)
+        contact = end_equal if arrow["face"] == "inlet" else start_equal
+        prepared.append(
+            {
+                "face": arrow["face"],
+                "start": start_equal,
+                "end": end_equal,
+                "contact": np.asarray(contact, dtype=float),
+            }
+        )
+
+    face_contacts = {
+        face: np.mean(
+            [item["contact"] for item in prepared if item["face"] == face],
+            axis=0,
+        )
+        for face in ("inlet", "outlet")
+    }
+    if axis_key == "x":
+        # Fault-normal panel: the right boundary face is foreground.
+        opaque_face = max(face_contacts, key=lambda face: face_contacts[face][0])
+    elif axis_key == "y":
+        # Strike-parallel panel: the left boundary face is foreground.
+        opaque_face = min(face_contacts, key=lambda face: face_contacts[face][0])
+    elif axis_key == "z":
+        # Dip-parallel panel: the upper boundary face is foreground.
+        opaque_face = max(face_contacts, key=lambda face: face_contacts[face][1])
+    else:
+        raise ValueError(f"Unknown arrow-panel axis: {axis_key}")
+
+    for item in prepared:
+        foreground = item["face"] == opaque_face
+        start_display = np.asarray(to_display.transform(item["start"]), dtype=float)
+        end_display = np.asarray(to_display.transform(item["end"]), dtype=float)
+        arrow_direction = end_display - start_display
+        arrow_direction /= float(np.linalg.norm(arrow_direction))
+        # Matplotlib's ``-|>`` head length is 0.4 times the mutation scale.
+        # Stop the separately rendered shaft at that base so it cannot project
+        # through the filled triangular head.
+        head_length_px = 0.40 * 10.8 * axis.figure.dpi / 72.0
+        shaft_end = to_axes.transform(end_display - arrow_direction * head_length_px)
+        if foreground:
+            # The near-face arrows sit in front of the core and therefore stay
+            # fully opaque along their complete projected length.
+            axis.plot(
+                [item["start"][0], shaft_end[0]],
+                [item["start"][1], shaft_end[1]],
+                transform=axis.transAxes,
+                color=ARROW,
+                alpha=1.0,
+                linewidth=1.30,
+                solid_capstyle="round",
+                clip_on=False,
+                zorder=8,
+            )
+            endpoint_hidden = False
+        else:
+            # For the far-face arrows, fade only the portion hidden behind the
+            # projected core. Any shaft or arrowhead outside the block
+            # silhouette remains fully opaque.
+            samples = np.linspace(0.0, 1.0, 241)
+            points = (
+                np.asarray(item["start"])[None, :] * (1.0 - samples[:, None])
+                + np.asarray(shaft_end)[None, :] * samples[:, None]
+            )
+            height, width = core_mask.shape
+            columns = np.clip(
+                np.rint(points[:, 0] * (width - 1)).astype(int), 0, width - 1
+            )
+            rows = np.clip(
+                np.rint((1.0 - points[:, 1]) * (height - 1)).astype(int),
+                0,
+                height - 1,
+            )
+            overlaps_core = core_mask[rows, columns]
+            run_starts = np.r_[
+                0, np.flatnonzero(overlaps_core[1:] != overlaps_core[:-1]) + 1
+            ]
+            run_ends = np.r_[run_starts[1:], overlaps_core.size]
+            for run_start, run_end in zip(run_starts, run_ends, strict=True):
+                segment = points[run_start:run_end]
+                if segment.shape[0] == 1:
+                    segment = np.vstack((segment, segment))
+                hidden = bool(overlaps_core[run_start])
+                axis.plot(
+                    segment[:, 0],
+                    segment[:, 1],
+                    transform=axis.transAxes,
+                    color=ARROW_INSIDE if hidden else ARROW,
+                    alpha=ARROW_INSIDE_ALPHA if hidden else 1.0,
+                    linewidth=1.30,
+                    solid_capstyle="round",
+                    clip_on=False,
+                    zorder=8,
+                )
+            endpoint_column = int(
+                np.clip(np.rint(item["end"][0] * (width - 1)), 0, width - 1)
+            )
+            endpoint_row = int(
+                np.clip(
+                    np.rint((1.0 - item["end"][1]) * (height - 1)),
+                    0,
+                    height - 1,
+                )
+            )
+            endpoint_hidden = bool(core_mask[endpoint_row, endpoint_column])
+
+        # Render every head from the complete start-to-end vector. Using the
+        # same path length and mutation scale makes the head geometry identical
+        # for opaque and depth-cued arrows; only its tone follows the endpoint.
+        head_color = ARROW_INSIDE if endpoint_hidden else ARROW
+        head_alpha = ARROW_INSIDE_ALPHA if endpoint_hidden else 1.0
         axis.add_patch(
             FancyArrowPatch(
-                start_equal,
-                end_equal,
+                item["start"],
+                item["end"],
                 transform=axis.transAxes,
                 arrowstyle="-|>",
-                mutation_scale=7.2,
-                linewidth=1.30,
-                color=ARROW,
+                mutation_scale=10.8,
+                linewidth=0.0,
+                facecolor=head_color,
+                edgecolor=head_color,
+                alpha=head_alpha,
                 shrinkA=0.0,
                 shrinkB=0.0,
                 clip_on=False,
-                zorder=8,
+                zorder=9,
             )
         )
 
@@ -395,11 +525,25 @@ def add_marginal_distributions(
     logk: np.ndarray,
     bounds: tuple[float, float] = (-6.0, 2.0),
 ) -> None:
-    panel_width = 0.16
+    panel_scale = 0.90
+    panel_width = 0.16 * panel_scale
+    previous_panel_height = 0.18 * panel_scale
+    # Reduce h/w by 0.1 while keeping the current width fixed.
+    panel_height = previous_panel_height - 0.10 * panel_width
     column_centers = (0.320, 0.500, 0.680)
     left_positions = tuple(center - panel_width / 2.0 for center in column_centers)
-    bottom = 0.229
-    panel_height = 0.18
+    # Scale each histogram proportionally about its previous center without
+    # changing any typography or the surrounding annotations.
+    previous_panel_center_y = 0.272 + 0.5 * 0.18 + 0.0265
+    previous_panel_top = previous_panel_center_y + 0.5 * panel_height
+    # Move the complete histogram group upward until its gap to the fixed
+    # panel title is half of the preceding layout's gap.
+    panel_center_y = (
+        previous_panel_center_y
+        + 0.5 * (0.5035 - previous_panel_top)
+        + PANEL_B_VERTICAL_SHIFT
+    )
+    bottom = panel_center_y - 0.5 * panel_height
     labels = (
         r"$\log_{10}(k_{xx}^{\mathrm{eff}}\,[\mathrm{mD}])$",
         r"$\log_{10}(k_{yy}^{\mathrm{eff}}\,[\mathrm{mD}])$",
@@ -437,22 +581,22 @@ def add_marginal_distributions(
             axis.tick_params(axis="y", length=0)
 
     figure.text(
-        0.192,
+        0.204,
         bottom + 0.5 * panel_height,
         r"Probability",
         ha="center",
         va="center",
         rotation=90,
-        fontsize=11,
+        fontsize=SOURCE_FONT_PT,
     )
 
     figure.text(
         0.5,
-        0.429,
-        r"Joint permeability distributions with $2{,}000$ realizations",
+        0.5035 + PANEL_B_VERTICAL_SHIFT,
+        r"Marginal permeability distributions with $2{,}000$ realizations",
         ha="center",
         va="bottom",
-        fontsize=11,
+        fontsize=SOURCE_FONT_PT,
     )
 
 
@@ -471,7 +615,7 @@ def compose(
     image_axes = []
     pending_arrows = []
     for axis_key, x in zip(("x", "y", "z"), x_positions, strict=True):
-        image, face_arrows = crop_rgba_with_arrows(
+        image, face_arrows, core_mask = crop_rgba_with_arrows(
             raw_images[axis_key],
             render_summaries[axis_key]["flow_arrow"]["display_arrows_px"],
         )
@@ -480,29 +624,29 @@ def compose(
         axis.set_axis_off()
         axis._source_image = image  # keep the PIL image alive through savefig
         image_axes.append(axis)
-        pending_arrows.append((axis, face_arrows))
+        pending_arrows.append((axis, face_arrows, core_mask, axis_key))
 
     figure.text(
         0.5,
-        0.968,
+        0.955,
         r"Flow-based upscaling in three directions",
         ha="center",
         va="top",
-        fontsize=11,
+        fontsize=SOURCE_FONT_PT,
     )
     for center, axis_key in zip((0.300, 0.500, 0.690), ("x", "y", "z"), strict=True):
         figure.text(
             center,
-            0.610,
+            0.621,
             AXIS_INFO[axis_key]["title"],
             ha="center",
             va="center",
-            fontsize=11,
+            fontsize=SOURCE_FONT_PT,
         )
     figure.text(
         0.5,
-        0.552,
-        r"One permeability vector "
+        0.586,
+        r"One joint permeability vector "
         r"$(k^{\mathrm{eff}}_{xx},\,k^{\mathrm{eff}}_{yy},\,k^{\mathrm{eff}}_{zz})$ "
         r"per realization",
         ha="center",
@@ -510,18 +654,27 @@ def compose(
     )
     figure.add_artist(
         FancyArrowPatch(
-            (0.5, 0.522),
-            (0.5, 0.472),
+            (0.5, 0.560 + CONNECTOR_VERTICAL_SHIFT),
+            (0.5, 0.5335 + CONNECTOR_VERTICAL_SHIFT),
             transform=figure.transFigure,
             arrowstyle="-|>",
-            mutation_scale=10,
-            linewidth=0.8,
+            mutation_scale=7.5,
+            linewidth=0.65,
             color=INK,
         )
     )
 
-    figure.text(0.192, 0.968, r"(a)", ha="center", va="top", fontsize=11)
-    figure.text(0.192, 0.429, r"(b)", ha="center", va="bottom", fontsize=11)
+    figure.text(
+        0.204, 0.955, r"(a)", ha="center", va="top", fontsize=SOURCE_FONT_PT
+    )
+    figure.text(
+        0.204,
+        0.5035 + PANEL_B_VERTICAL_SHIFT,
+        r"(b)",
+        ha="center",
+        va="bottom",
+        fontsize=SOURCE_FONT_PT,
+    )
 
     logk = np.log10(permeability)
     add_marginal_distributions(figure, logk)
@@ -529,8 +682,8 @@ def compose(
     # Resolve the aspect-adjusted image boxes before fixing all directional
     # arrows to the same physical length.
     figure.canvas.draw()
-    for axis, face_arrows in pending_arrows:
-        draw_face_arrows(axis, face_arrows)
+    for axis, face_arrows, core_mask, axis_key in pending_arrows:
+        draw_face_arrows(axis, face_arrows, core_mask, axis_key)
 
     png_path = output_stem.with_suffix(".png")
     pdf_path = output_stem.with_suffix(".pdf")
