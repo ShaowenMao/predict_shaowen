@@ -1,0 +1,14 @@
+{
+  "policy": "relative_memory_accept105_size120_v1",
+  "source_lock": "eabcd8865b6e5ea892a4637e2bac4024704858637a8fc53aacfe9c2a619da9d6",
+  "passed": true,
+  "memory": {
+    "peak_bytes": 2132357120,
+    "limit_bytes": 2952790016,
+    "events": 0,
+    "version": 1
+  },
+  "original_execution_identity": "b55149fc930cb128e0c1274e02df4ae7960f967b805842f590697a71c32798ce",
+  "numerical_worker_byte_identical": true,
+  "cache_unmodified": true
+}

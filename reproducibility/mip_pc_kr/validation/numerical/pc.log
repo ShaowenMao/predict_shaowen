@@ -1,0 +1,6 @@
+Test Summary:               | Pass  Total  Time
+Input, scaling, conventions |   17     17  7.0s
+Test Summary:                                   | Pass  Total  Time
+Independent path thresholds and exact fast path |  720    720  0.9s
+Test Summary:                      | Pass  Total  Time
+Sampling and streaming interchange |    9      9  1.2s

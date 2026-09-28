@@ -1,0 +1,167 @@
+{
+  "campaign_launch_approved": false,
+  "case": "s03_c022_case12",
+  "complete_522_mapping_imported": true,
+  "derived_owners": 510,
+  "dispatcher_test_receipt": {
+    "full_campaign_launched": false,
+    "passed": true,
+    "platform": "posix",
+    "skipped": 0,
+    "tests": 18
+  },
+  "full_grid_no_time_marching": true,
+  "max_abs_krg_sampling_error": 0.20584825903925985,
+  "max_abs_krw_sampling_error": 0.6265448327281546,
+  "memory": {
+    "assemble": {
+      "events": 0,
+      "limit_bytes": 4294967296,
+      "peak_bytes": 2381221888
+    },
+    "audit": {
+      "events": 0,
+      "limit_bytes": 1073741824,
+      "peak_bytes": 47292416
+    },
+    "derive000": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 93233152
+    },
+    "derive001": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 55738368
+    },
+    "derive002": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 55812096
+    },
+    "derive003": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 55623680
+    },
+    "derive004": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 125194240
+    },
+    "derive005": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 125517824
+    },
+    "derive006": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 125267968
+    },
+    "derive007": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 56098816
+    },
+    "derive008": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 56852480
+    },
+    "derive009": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 56000512
+    },
+    "derive010": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 57438208
+    },
+    "derive011": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 56963072
+    },
+    "derive012": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 55750656
+    },
+    "derive013": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 55939072
+    },
+    "derive014": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 56008704
+    },
+    "derive015": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 85598208
+    },
+    "fullgrid": {
+      "events": 0,
+      "limit_bytes": 13019119616,
+      "peak_bytes": 11004891136
+    },
+    "native": {
+      "events": 0,
+      "limit_bytes": 3221225472,
+      "peak_bytes": 2351878144
+    },
+    "prefix": {
+      "events": 0,
+      "limit_bytes": 536870912,
+      "peak_bytes": 57503744
+    },
+    "warm": {
+      "events": 0,
+      "limit_bytes": 2952790016,
+      "peak_bytes": 1102352384
+    }
+  },
+  "native_values_and_derivatives_passed": true,
+  "partial_batch_recovery_passed": true,
+  "passed": true,
+  "pc100_preserved": true,
+  "placements": 522,
+  "production_modified": false,
+  "remaining": "2430-case owner manifest and qualified resource-class admission; reservoir QoI impact not tested here",
+  "sampling_flags": 448,
+  "selected_states_range": [
+    10,
+    10
+  ],
+  "stage_receipts": {
+    "assemble": "b166f1f21b65809e75b972a560294a8293fbf20ea0a6a4e9818d1a299eefda52",
+    "audit": "d60ea07dc901f1a80105df6325bcb8e4ce0156d298c1b47d92df600c54defe9e",
+    "derive000": "0a8fe29868a4e423a26131b3a5a6e3741ff620d98d2662cdea1c2ba2963f6530",
+    "derive001": "309d32e975da0f8ad8666503788c1e467c8ce0b70d0dbf9b1413e32c2bc238f3",
+    "derive002": "6e5b74f5cf3d7e4e614531f79ac1e7ca058a6367a1616d0d79b5f92fb39f27a1",
+    "derive003": "042988dd8c29fdd34a7dd5ecaf844a0a2241ed5ba92b7b723264a23280d3a66a",
+    "derive004": "08b1011576e884d4322df49b5d9775f4a90c8979a0c186c20b8e8c27b6d056fd",
+    "derive005": "0e82820dc180ffa4b0a59fce7b55c9b6a4a873ac6f5bfd811fac8806191b719d",
+    "derive006": "f170251674ce0e4bcc187b190a9ed2e14068ee61cc72024fbd4a847942dcb611",
+    "derive007": "386fe7eebcd7ecbb9b8741662fbd7f86cb6e4fe21bd31bb2604a56d6471f8e0c",
+    "derive008": "dc68ef92b08812065ca4f8210b3bb7bb7fde85f9abefad02d73158e1fa03ea47",
+    "derive009": "db204af43015b2ddae19bb5f679ebfe610c1533adc9281e433b70a697e96d2cc",
+    "derive010": "0c04c5cac4ab71bf3f0788d5258f6722aa9b0630ab5a4ac8ad6f1652cf8e424b",
+    "derive011": "9b8e268d8599fe6f757c770eadc33f7d1f5e960b1ce2c47bc7b3811739e52024",
+    "derive012": "d224746584b4fa36a7b0063c14cf913cf80a0197a8fa02aff40b3c3741ae9533",
+    "derive013": "447f27a16aa0a524e573276736ebf639d00c6fdfc4cfe65c3fc2bb66f7749084",
+    "derive014": "6a0a873f2e098ff1dabb7067797290a49afa42287979868ce0a278e292652ffa",
+    "derive015": "04c4782b06baf581912358832d251cb933423e10ad1303c13470085aec5311e4",
+    "fullgrid": "a4b21ce5af7cd2b8cc37653aaf9f3724039fdcb2626809b98ce17e7a8243049c",
+    "native": "f5e7eadd7e1de0d549628bd6ab2a7ac530f2fc0292ccae2af7b83b8af2e28744",
+    "prefix": "65ffe829c8e92580865c975afe57c08a64043f043b9e458982129ad8342ad08b",
+    "warm": "58e299bc2c6ce88ab2dcfb21f8e8ab7279eee0b522932770a9d56dbaaefd2944"
+  },
+  "status": "PASS_ONE_FAULT_AND_BOUNDED_DISPATCHER",
+  "unique_scientific_inputs": 510,
+  "warm_worker_dispatch_passed": true
+}

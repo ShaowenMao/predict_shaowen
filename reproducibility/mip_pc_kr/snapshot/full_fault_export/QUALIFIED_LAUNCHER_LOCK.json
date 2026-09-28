@@ -1,0 +1,18 @@
+{
+  "base_lock_sha256": "87adcf956e64b5f0415a32e6c7aa6128eecda7d6b5ebccb12b3a0c5f8e1dc109",
+  "dispatcher_changes": [
+    "job_entry_path",
+    "additional_source_guard"
+  ],
+  "files": {
+    "qualified_dispatch.py": "bf247ff57ab19b5e69e17452aade3a7b783fc611997ea4ae8dc6fb0287811029",
+    "qualified_driver.py": "c3bc469bd5b985b8e1ee12342739abf53980af0a77234cda15425a3b16f4d62b",
+    "qualified_job.sh": "d5ae0837cf820f27743e4654bc8cdf6d442fbfb520de1103d90d45dd794775a5",
+    "repairs/runtime_version_v1/recover.py": "7a89ff30ac1d6e3da7a4ecf30d5def119cd7a496a4c09c7dc4486db3adc5ad95"
+  },
+  "old_campaign_modified": false,
+  "reservoir_julia": "1.10.4",
+  "source_of_fullgrid_handler": "same runtime_version_v1 recovery used in full-grid qualification",
+  "source_of_matlab_environment": "same frozen temp_paths.py used by passed assembly recovery",
+  "upscaler_julia": "1.12.6"
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": "independent_full_fault_phase_handoff_v1",
+  "created_at_utc": "2026-08-09T04:53:37.661095+00:00",
+  "design_version": "independent_full_fault_v1",
+  "phase": "phase1",
+  "canonical_manifest": "D:\\codex_gom\\UQ_workflow\\independent_full_fault_v1_phase1_20260809_v1\\phase1\\phase1_sampling_manifest_all_geologies.csv",
+  "canonical_manifest_sha256": "8e73ee50daac9607d1a1742b98443807b51a67ca4d71fdd1057db422f9eb3501",
+  "adapted_sampling_sha256": "9947ae854c4ad0c584e88809e5379f19f6dc30b4de50f6f41698a813cf088b45",
+  "field_permeability_mat_sha256": "314f554180d584b63de32efcab116cd6d605e66221b141a8eb42fc8cd70614b9",
+  "geology_catalog_sha256": "fb8ecfd85122b3743f56e4d8f5fbc36709d7cf75b3429fdc28939042944ff9fd",
+  "production_method_config_sha256": "25769a6db9ff7c2d165b7e2b78eb7a446235e2f478498154779cd9c4c1c0e886",
+  "geology_count": 162,
+  "case_count": 2430,
+  "assignment_count": 1268460,
+  "unique_replay_pc_task_count": 792533,
+  "development_overrides": {
+    "allow_dirty": false,
+    "allow_sampling_code_mismatch": false
+  },
+  "file_count": 173,
+  "total_bytes": 4723862878,
+  "inventory_sha256": "92e8ffd6173b22a7d843a95d5db72d67f0fe5c240a62a2d1ce2624b32eb858e9"
+}

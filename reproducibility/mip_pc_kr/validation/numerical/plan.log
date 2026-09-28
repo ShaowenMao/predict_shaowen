@@ -1,0 +1,7 @@
+Precompiling packages...
+   6144.7 ms  ✓ IterativeSolvers (serial)
+  1 dependency successfully precompiled in 6 seconds
+Test Summary:                                    | Pass  Total  Time
+Fixed100 pressure-only plan and binary roundtrip |   17     17  2.2s
+Test Summary:                                        | Pass  Total  Time
+Exact endpoint, without loosening the coverage guard |   55     55  0.1s

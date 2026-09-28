@@ -1,0 +1,44 @@
+[
+  {
+    "name": "low_mip_wrr30_fault_nohys",
+    "specific": "D:\\codex_gom\\studies\\mip_pc_breakthrough_6case_20260916_v1\\inputs\\low_mip_wrr30_fault_nohys\\candidate_specific.mat",
+    "sha256": "7024e76499e98bc7fd034e63a1e88cdb9cde10d0e70431134e96a8ebebda067f",
+    "cores": 522,
+    "changed_pc_nodes": 12837
+  },
+  {
+    "name": "low_mip_wrr60_fault_nohys",
+    "specific": "D:\\codex_gom\\studies\\mip_pc_breakthrough_6case_20260916_v1\\inputs\\low_mip_wrr60_fault_nohys\\candidate_specific.mat",
+    "sha256": "ef06d8826d09d1f2a9d45c0c581066d6f65920a59f445db4967deb4c0dce2418",
+    "cores": 522,
+    "changed_pc_nodes": 10689
+  },
+  {
+    "name": "intermediate_mip_wrr30_fault_nohys",
+    "specific": "D:\\codex_gom\\studies\\mip_pc_breakthrough_6case_20260916_v1\\inputs\\intermediate_mip_wrr30_fault_nohys\\candidate_specific.mat",
+    "sha256": "3d94724e42693f7aa18030650d04dc7f6fc00bf30cf73583ff17dc65243643f1",
+    "cores": 522,
+    "changed_pc_nodes": 9231
+  },
+  {
+    "name": "intermediate_mip_wrr60_fault_nohys",
+    "specific": "D:\\codex_gom\\studies\\mip_pc_breakthrough_6case_20260916_v1\\inputs\\intermediate_mip_wrr60_fault_nohys\\candidate_specific.mat",
+    "sha256": "64e669b40ecac17616574c3da04fb7da761f8e69bbe8ad79f18af47875f9828f",
+    "cores": 522,
+    "changed_pc_nodes": 8446
+  },
+  {
+    "name": "high_mip_wrr30_fault_nohys",
+    "specific": "D:\\codex_gom\\studies\\mip_pc_breakthrough_6case_20260916_v1\\inputs\\high_mip_wrr30_fault_nohys\\candidate_specific.mat",
+    "sha256": "d77fd3577e4c3d66599f640fa0eb237a9b6c4a3241276a111a1bbb84c2a4a02f",
+    "cores": 522,
+    "changed_pc_nodes": 2970
+  },
+  {
+    "name": "high_mip_wrr60_fault_nohys",
+    "specific": "D:\\codex_gom\\studies\\mip_pc_breakthrough_6case_20260916_v1\\inputs\\high_mip_wrr60_fault_nohys\\candidate_specific.mat",
+    "sha256": "1723226a52b6b6344098ee7c02e3688f8cf90abbbfa419b0154ffe2e6edbdb4b",
+    "cores": 522,
+    "changed_pc_nodes": 2882
+  }
+]

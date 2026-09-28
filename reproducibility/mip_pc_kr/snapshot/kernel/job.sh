@@ -1,0 +1,14 @@
+#!/bin/bash
+set -euo pipefail
+umask 077
+ROOT=$1
+STAGE=$2
+module load deprecated-modules gcc/12.2.0-x86_64 julia/1.12.6
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+export JULIA_CPU_TARGET=generic JULIA_NUM_THREADS=2 JULIA_NUM_GC_THREADS=1
+export OPENBLAS_NUM_THREADS=2 MKL_NUM_THREADS=2 OMP_NUM_THREADS=2
+export JULIA_PKG_PRECOMPILE_AUTO=0 JULIA_PKG_OFFLINE=true JULIA_NUM_PRECOMPILE_TASKS=1
+export JULIA_LOAD_PATH='@:@stdlib'
+export TMPDIR="$ROOT/tmp/$SLURM_JOB_ID"
+mkdir -p "$TMPDIR"
+exec python3.12 -u "$ROOT/remote.py" run "$STAGE"

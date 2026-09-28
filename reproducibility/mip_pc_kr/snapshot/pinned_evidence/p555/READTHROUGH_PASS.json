@@ -1,0 +1,79 @@
+{
+  "passed": true,
+  "owners": [
+    "s05_c002_case01_core193",
+    "s03_c011_case06_core229",
+    "s06_c005_case10_core004",
+    "s01_c005_case06_core001",
+    "s04_c005_case11_core514"
+  ],
+  "mappings": [
+    {
+      "case": "s01_c005_case06",
+      "slot": 1,
+      "region": 9,
+      "window": "famp1",
+      "slice": 1,
+      "owner": "s01_c005_case06_core001",
+      "numerical_key": "5c0b0c7d73f5749d1f300fe905065514001046af1dfd0a6f1dfff163037e90e5",
+      "sgof": "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/numerical_wave01_reuse_v1/staged_dispatch_v1/attempts/flow_s01_c005_case06_core001_job22773884/numerical/sgof.csv",
+      "sgof_sha256": "33e6f088ecb9b427c0fcd044173bcd1737d60ecf367f037741ec36f311965f45",
+      "replay_receipt": "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/wave01/accepted/s01_c005_case06/core001.json",
+      "replay_receipt_sha256": "edf59962b658a9cc46996a1a0f2b5abe94b5e9ed25303bfa96060564ca28a852"
+    },
+    {
+      "case": "s03_c011_case06",
+      "slot": 229,
+      "region": 237,
+      "window": "famp3",
+      "slice": 55,
+      "owner": "s03_c011_case06_core229",
+      "numerical_key": "eff61d6e5b1bdfb034e41c24c497433988d7f631e9bc83fa7e5fd354e6707b6f",
+      "sgof": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_120000_q/cores/s03_c011_case06_core229/sgof.csv",
+      "sgof_sha256": "eddf18eb219899b3139d19abbe9763384e41f25fee727c48b6f2274561382a45",
+      "replay_receipt": "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/wave01/accepted/s03_c011_case06/core229.json",
+      "replay_receipt_sha256": "c10c8b11d870971e47c913d06033190320d62b4aa2baf40d9efc2c7e1f5800d9"
+    },
+    {
+      "case": "s04_c005_case11",
+      "slot": 514,
+      "region": 522,
+      "window": "famp6",
+      "slice": 79,
+      "owner": "s04_c005_case11_core514",
+      "numerical_key": "e6c240f46dd2ee2c89928b74c09678d807efb756c7eaa8083ec3c52b86686780",
+      "sgof": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/dispatcher_v1/batches/b002/cores/s04_c005_case11_core514/sgof.csv",
+      "sgof_sha256": "d909fb8ab14309e988147f5942a74dbb1b96e6af0c2b185206a8967840f2c9d2",
+      "replay_receipt": "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/wave01/accepted/s04_c005_case11/core514.json",
+      "replay_receipt_sha256": "5b0abf461b1bb9d25412df14ca6ffd1c7e9138ea7a1fa2635daa1a525ff6ea60"
+    },
+    {
+      "case": "s05_c002_case01",
+      "slot": 193,
+      "region": 201,
+      "window": "famp3",
+      "slice": 19,
+      "owner": "s05_c002_case01_core193",
+      "numerical_key": "961d09e1b30cbf885da58136f207ec7b3434014939c5c0b76d356093bf3ac7ce",
+      "sgof": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_120000_q/cores/s05_c002_case01_core193/sgof.csv",
+      "sgof_sha256": "2093f57cdb89741c905bab962c411a85776ad66dcb439190f59d9c3f5de6123d",
+      "replay_receipt": "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/wave01/accepted/s05_c002_case01/core193.json",
+      "replay_receipt_sha256": "11a89e0855ddee1a3aa19df6595b0322474cc1844718a1646d6b31eff601be19"
+    },
+    {
+      "case": "s06_c005_case10",
+      "slot": 4,
+      "region": 12,
+      "window": "famp1",
+      "slice": 4,
+      "owner": "s06_c005_case10_core004",
+      "numerical_key": "695f96d0a2967da3080dbfa2de200bc09b52fd33339134003d98dd2e51c62ed4",
+      "sgof": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_120000_q/cores/s06_c005_case10_core004/sgof.csv",
+      "sgof_sha256": "0e22ae9038659750d4fab1645bfbc564ba22171ba068e6a23fd7ce9a4c4eb09e",
+      "replay_receipt": "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/wave01/accepted/s06_c005_case10/core004.json",
+      "replay_receipt_sha256": "8543a89ee04f03cdf61af44393e42962be2638cd345a651a40522f5e61fda5d9"
+    }
+  ],
+  "legacy_and_prior_wave_preserved": true,
+  "source_distinct_receipts": true
+}

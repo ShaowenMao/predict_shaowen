@@ -1,0 +1,62 @@
+[
+  {
+    "file": "gom_step62_effective_pc_global_plateau_full.sbatch",
+    "old_sha256": "094c369fa8c055419e49618f0db1dfb61dc573bdcdbb8ce9e044fb258bf3bc87",
+    "new_sha256": "094c369fa8c055419e49618f0db1dfb61dc573bdcdbb8ce9e044fb258bf3bc87",
+    "same_after_launcher_path_relocation": true
+  },
+  {
+    "file": "gom_step62_production_final_check.jl",
+    "old_sha256": "fe95fe88931261b5fe7b70018ae2921011623822a903f4a4f3567e0286a013b5",
+    "new_sha256": "75599f225268ae5aaebccfbebd90494181caf95634f68560fb1c6ae2b67ac669",
+    "same_after_launcher_path_relocation": false
+  },
+  {
+    "file": "gom_step62_effective_pc_global_plateau_contract.jl",
+    "old_sha256": "f4a00fa5f36b8cedc779586a2467c38e049d64ecaaf31dddbaddbbb7a16a829a",
+    "new_sha256": "f4a00fa5f36b8cedc779586a2467c38e049d64ecaaf31dddbaddbbb7a16a829a",
+    "same_after_launcher_path_relocation": true
+  },
+  {
+    "file": "gom_step62_effective_pc_global_plateau_common.sh",
+    "old_sha256": "c20de17d4fa29612752caa9b797203a852302e8390815bc39e0983acac9de9f7",
+    "new_sha256": "c20de17d4fa29612752caa9b797203a852302e8390815bc39e0983acac9de9f7",
+    "same_after_launcher_path_relocation": true
+  },
+  {
+    "file": "pair_input_audit.jl",
+    "old_sha256": "eb58cf8580ac6ec7e475f9edaa683febc0a32ce9bcbf240dcaa817e600bec4bd",
+    "new_sha256": "eb7bc010020883487e46e4f9dc360a525b929b0da54690c1c708fbe721b4fd11",
+    "same_after_launcher_path_relocation": false
+  },
+  {
+    "file": "gom_step62_effective_pc_global_plateau_preflight.sbatch",
+    "old_sha256": "a0359c6684135b529be0b62846a2efabef97bb35023e3916339ccfc1242bd634",
+    "new_sha256": "a0359c6684135b529be0b62846a2efabef97bb35023e3916339ccfc1242bd634",
+    "same_after_launcher_path_relocation": true
+  },
+  {
+    "file": "gom_step62_effective_pc_global_plateau_final_check.jl",
+    "old_sha256": "98d69abe0ecc8dd7a76e6dc28f87cedbdb889c55596eb76ada95d49bf639323e",
+    "new_sha256": "98d69abe0ecc8dd7a76e6dc28f87cedbdb889c55596eb76ada95d49bf639323e",
+    "same_after_launcher_path_relocation": true
+  },
+  {
+    "file": "candidate_guard.sh",
+    "old_sha256": "8e72048f26b93eb2179cdeaef4024161854e6979e1044b7bd5ed393a2e8f7dff",
+    "new_sha256": "516b72fa7dbea013435016976327bdd48e24826c0b43c41a11c531bb643dc640",
+    "same_after_launcher_path_relocation": true
+  },
+  {
+    "file": "gom_step62_effective_pc_global_plateau_preflight.jl",
+    "old_sha256": "d8bad9e2a879147f39f6a4c493e4d83bd52dbb607c045fe7d6307208c92b802f",
+    "new_sha256": "d8bad9e2a879147f39f6a4c493e4d83bd52dbb607c045fe7d6307208c92b802f",
+    "same_after_launcher_path_relocation": true
+  },
+  {
+    "file": "gom_step62_effective_pc_global_plateau_runtime_diagnostics.jl",
+    "old_sha256": "4b0095399995d9b744a39b43b37c4a95fabbe0639beedae11c609bdeadba2cc3",
+    "new_sha256": "4b0095399995d9b744a39b43b37c4a95fabbe0639beedae11c609bdeadba2cc3",
+    "same_after_launcher_path_relocation": true
+  }
+]

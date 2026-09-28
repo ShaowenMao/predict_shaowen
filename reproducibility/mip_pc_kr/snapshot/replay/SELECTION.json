@@ -1,0 +1,1099 @@
+{
+  "status": "PASS_BOUNDED_METADATA_SELECTION",
+  "entries": [
+    {
+      "case": {
+        "task": 66,
+        "case_key": "s01_c005_case06",
+        "geology_id": "s01_c005",
+        "geology_hash": "11b445e2cb364cb3ed3b7c7316df91e5932bc1609920c803a0a98ac6d9620565",
+        "realization_id": 6,
+        "level3_case_name": "independent_full_006",
+        "specific_path": "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s01_c005_case06_full_slice_geology_specific.mat",
+        "specific_sha256": "ec0681db11343a3ae01d5f2d6eefa3aef3a49810c9b27f0e6bd6de64d9160d64",
+        "specific_bytes": 6061529
+      },
+      "assignment_sha256": "0bd1627a69186217c4a7e7fa0425d0bcbfbb8f83bb535f549084a7f09d743552",
+      "original_rows": [
+        [
+          66,
+          "s01_c005_case06",
+          "s01_c005",
+          1,
+          15,
+          23,
+          1954,
+          110503682,
+          "de3f1188ca5ff288b4077ad0e53eaf6884a04d025f8f42feb360098cc5516719",
+          "f51e2e298147a2222ad532a12c5a58dffd1f6785652401354355b6fb5b5a73e6"
+        ],
+        [
+          66,
+          "s01_c005_case06",
+          "s01_c005",
+          2,
+          78,
+          173,
+          667,
+          120502395,
+          "13e9c1f3a96b918366fb2361ded55b9fbe4eefae685581905119738ed62d0c95",
+          "85ce7853d5b2c4a95ccae919b3b471917ed767284d9debff4afd6d2fb50b3afc"
+        ],
+        [
+          66,
+          "s01_c005_case06",
+          "s01_c005",
+          3,
+          44,
+          226,
+          157,
+          130501885,
+          "4a5da35571905a2a9373dacd3246b90c5f7d14517ab29e7816aeb8692e125d7a",
+          "5895756b457cf1c3d636e2d4c637445012612614ba201d5c37e739476d41a6ec"
+        ],
+        [
+          66,
+          "s01_c005_case06",
+          "s01_c005",
+          4,
+          14,
+          283,
+          1967,
+          140503695,
+          "3eeb379eda1339f92d6352f3855a3004f33ea92428edc4f57fd7a73eeac1c57e",
+          "0b241917ee0f0db3c242a0f9141c01d87aa4334ff04052062e9ddbe7f0ed6c2c"
+        ],
+        [
+          66,
+          "s01_c005_case06",
+          "s01_c005",
+          5,
+          71,
+          427,
+          16,
+          150501744,
+          "2aa2beaef30ac70c30ba423677e2df7fb3bce9964c6ab74d87377da467a7eaee",
+          "ee69dbde48862a3f2051ba65fd9493333fd9a6ae8a49b2b1cc3160969be0bc96"
+        ],
+        [
+          66,
+          "s01_c005_case06",
+          "s01_c005",
+          6,
+          29,
+          472,
+          1076,
+          160502804,
+          "17a1e65add01dae596f4a1946bc61d8817af6629da2b68ff19e1549186f2837e",
+          "6295b0af95f9cacb38195042ce15b3cd76a84aefabfff5f945cb450ddafd2554"
+        ]
+      ],
+      "admission": "HELD_NO_VERIFIED_FINE_INPUT"
+    },
+    {
+      "case": {
+        "task": 135,
+        "case_key": "s01_c009_case103",
+        "geology_id": "s01_c009",
+        "geology_hash": "850cf8d79b583c1a0583362f074d8363550a62235d172031d721eaf469f71f76",
+        "realization_id": 103,
+        "level3_case_name": "high_state_stress",
+        "specific_path": "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s01_c009_case103_full_slice_geology_specific.mat",
+        "specific_sha256": "5d63bb5b7a4c88ff386c7bbe8253cf55c0f5eff49bf49db8a14efc9b9701a933",
+        "specific_bytes": 5593440
+      },
+      "assignment_sha256": "d000757bbc7986fe9e6552da4a000950f7c948235fa540143a7966fb3e02009c",
+      "original_rows": [
+        [
+          135,
+          "s01_c009_case103",
+          "s01_c009",
+          1,
+          6,
+          14,
+          396,
+          110902124,
+          "161cff5323be9587749cd477541eb9149686d192353fcac5c0794e8284cfd984",
+          "945d2257b341221e5b3dac6697124f25d9a473f151ef84931f757fb3ee9192ef"
+        ],
+        [
+          135,
+          "s01_c009_case103",
+          "s01_c009",
+          2,
+          49,
+          144,
+          450,
+          120902178,
+          "9f0b00d05e67e6ab2f156acf8d0a33711fb74a92a997d93c0cc9633d464685c8",
+          "e372b0e66198512be656bda74d59701c427f68078f8488f9dfae79917f9c9a9f"
+        ],
+        [
+          135,
+          "s01_c009_case103",
+          "s01_c009",
+          3,
+          7,
+          189,
+          1267,
+          130902995,
+          "0cf06340cf3e020d6139c3d755cd74863d443826d03e04038d1bc699f4c3703a",
+          "8e96a08d6018cd940d22215a145191945dea7bdb05aaaf387a3665d210399a9c"
+        ],
+        [
+          135,
+          "s01_c009_case103",
+          "s01_c009",
+          4,
+          34,
+          303,
+          21,
+          140901749,
+          "af98e40110e24873d048f8a1290967f1ade246dd15f1b5e0e6cdc991e57e51c8",
+          "f4033f41cf514e0fb9f349954620a45055ef550c4a9541c117ca6af40d59c009"
+        ],
+        [
+          135,
+          "s01_c009_case103",
+          "s01_c009",
+          5,
+          22,
+          378,
+          1457,
+          150903185,
+          "1ff0d99acd3bcb309a8097997e6eaf4d9ec63cbdfda49ca6f220e5a9e0052e6e",
+          "5ff9280b03b94690cbcc5547d3e8d1c0138f16182cd8cc619c2f1eafdb421ec4"
+        ],
+        [
+          135,
+          "s01_c009_case103",
+          "s01_c009",
+          6,
+          62,
+          505,
+          52,
+          160901780,
+          "b88199425c3cc6c306e3f0ea6ac93f87129e6d0e41c40d4513d856189590e9c3",
+          "830322b84916702129bff6779b8458a37450d4e2b166389e88facd6b8475f515"
+        ]
+      ],
+      "admission": "HELD_NO_VERIFIED_FINE_INPUT"
+    },
+    {
+      "case": {
+        "task": 540,
+        "case_key": "s02_c009_case103",
+        "geology_id": "s02_c009",
+        "geology_hash": "88b7cbcd3ac8f2d3134197b6e98d8ea5deb66878a23a247a768262fa2cfdc05d",
+        "realization_id": 103,
+        "level3_case_name": "high_state_stress",
+        "specific_path": "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s02_c009_case103_full_slice_geology_specific.mat",
+        "specific_sha256": "21aa48e6aea01dee5a282c712def54d4296b6d93b4bacf11a362a51f9e0aac2e",
+        "specific_bytes": 5862244
+      },
+      "assignment_sha256": "535c00e964c2d25e2967fce9b0f2e438cad6c49aa5106af21c12cf22bac42c3a",
+      "original_rows": [
+        [
+          540,
+          "s02_c009_case103",
+          "s02_c009",
+          1,
+          28,
+          36,
+          144,
+          210901872,
+          "a2bdcbe429c54eb393b26bf549074ad1087bee6a3aa8637eeefc082f03ff9868",
+          "ac050c2599251730e2dc663002f347d65206ddaef1ddd8cddecfdf70db7e841b"
+        ],
+        [
+          540,
+          "s02_c009_case103",
+          "s02_c009",
+          2,
+          37,
+          132,
+          703,
+          220902431,
+          "805256d20632bad043aa8c4f8eb8cd1bd998037f8d7526d6c98ddb5d05911321",
+          "ff0e5a91bfad0cf944dc66888497bc2d3b607828baac8d4244887ffc2d8ed337"
+        ],
+        [
+          540,
+          "s02_c009_case103",
+          "s02_c009",
+          3,
+          61,
+          243,
+          789,
+          230902517,
+          "a4ac9b1d1ed662d398ef19ecc735edf594836a8f86618024e87977c6fb0a2da2",
+          "42a3f487cd105c3b94ed14f59dd95e7fc41ce63635ae393bd194096a61640977"
+        ],
+        [
+          540,
+          "s02_c009_case103",
+          "s02_c009",
+          4,
+          81,
+          350,
+          1259,
+          240902987,
+          "53fb82bfa857af65edf84df837c8c054f8f7323a8426bbc0a59b688e178d235f",
+          "66af7efb86a80164ffbf35143b567138fdf0d7ebf4b7c3ba11ccf141e340f573"
+        ],
+        [
+          540,
+          "s02_c009_case103",
+          "s02_c009",
+          5,
+          23,
+          379,
+          1154,
+          250902882,
+          "2fc33401af0afc3476d9b0dad0523f71938960b70fd14362cca2d82e1622b116",
+          "fc4a7ac09d7013007ce3d7de1eac345ddcf3b57941073d35e8d55ae144ea5568"
+        ],
+        [
+          540,
+          "s02_c009_case103",
+          "s02_c009",
+          6,
+          69,
+          512,
+          266,
+          260901994,
+          "02fbac06ad5bb9a94d228c00016c636cc40e30b2a566d45853179c4afc7446ab",
+          "89777ec219a23e43393034432537fa1854d03bb712d3d342090d342d92f1e649"
+        ]
+      ],
+      "admission": "HELD_NO_VERIFIED_FINE_INPUT"
+    },
+    {
+      "case": {
+        "task": 803,
+        "case_key": "s02_c027_case08",
+        "geology_id": "s02_c027",
+        "geology_hash": "4141cd2dba4763d2b5b384972e051732aed166f287a2b007190a2822898996e9",
+        "realization_id": 8,
+        "level3_case_name": "independent_full_008",
+        "specific_path": "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s02_c027_case08_full_slice_geology_specific.mat",
+        "specific_sha256": "02bddb7d6ab59693d1529b5931ae2e86a3ffbf3380f96abf2e552f83acb3e5f1",
+        "specific_bytes": 6379327
+      },
+      "assignment_sha256": "0ce3b7b9f412e8dc10bfeac310e3b98fcb570ca57f54e5395ae27082fc8a95e1",
+      "original_rows": [
+        [
+          803,
+          "s02_c027_case08",
+          "s02_c027",
+          1,
+          75,
+          83,
+          1224,
+          212702952,
+          "2126cfb36149c15c1d5d8e4d065d4d8bfbb88ead19488b3d6f3680dcae5123d7",
+          "225d94f7841961e80911ee94ab64e30aa96ef8a138e1fa920acef5a1f22efde1"
+        ],
+        [
+          803,
+          "s02_c027_case08",
+          "s02_c027",
+          2,
+          85,
+          180,
+          106,
+          222701834,
+          "cac2cad64a7b4d1861eb588ad1f0ad5acb52354d6a505d1af18ca3b7c85ecd26",
+          "e2b22a7387ceb9249b18ecc474b56223f91ff7d41e92d66027f9d80fac44bae2"
+        ],
+        [
+          803,
+          "s02_c027_case08",
+          "s02_c027",
+          3,
+          13,
+          195,
+          39,
+          232701767,
+          "bb05ac037548637f8c05ebc25ef395733176d7425d89b3fd4b153edb477d5268",
+          "6e5a8edc071b1ebd7dc88ba48f8dbf8b00199ba8fac2a447b894fbccc7c381c4"
+        ],
+        [
+          803,
+          "s02_c027_case08",
+          "s02_c027",
+          4,
+          32,
+          301,
+          1577,
+          242703305,
+          "24c9820e9d66b3e8ad4ab827e705980d9044c956fdb2c05acdcee6eac83a0f35",
+          "30d57acb0c9963908fe8479f5634987233ab9ec3f521f5e0ca4a79861788f9bd"
+        ],
+        [
+          803,
+          "s02_c027_case08",
+          "s02_c027",
+          5,
+          67,
+          423,
+          1189,
+          252702917,
+          "d743d8846644a0bbe9fc59083ba28d86b32c4d629867f1def0a8347a381c5c33",
+          "59823a902b59a1893aed407a9d8ab480822a5141d2828d58b4d73a2169bbe542"
+        ],
+        [
+          803,
+          "s02_c027_case08",
+          "s02_c027",
+          6,
+          2,
+          445,
+          1560,
+          262703288,
+          "1750c05b4be74008d52df0f56eaa6abd9b2bcc650f444add43233fdd3c8bd57c",
+          "71a147555f48c5ea0fddb094b1804e5df9a64f053e25b21c3f09c80736aafc4e"
+        ]
+      ],
+      "admission": "HELD_NO_VERIFIED_FINE_INPUT"
+    },
+    {
+      "case": {
+        "task": 966,
+        "case_key": "s03_c011_case06",
+        "geology_id": "s03_c011",
+        "geology_hash": "31cfacd204da7d72a8e82ab5af00f8161cc6aa597ce34b4584aaddbad1b27536",
+        "realization_id": 6,
+        "level3_case_name": "independent_full_006",
+        "specific_path": "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s03_c011_case06_full_slice_geology_specific.mat",
+        "specific_sha256": "094b1a47a27c82aea8afafd97b970e2d15a09bab6effbe50a06e048a607ca513",
+        "specific_bytes": 6439467
+      },
+      "assignment_sha256": "9611a2e8c3c935fee70bc2ebf38a335e328450675598be6082427776772f8be0",
+      "original_rows": [
+        [
+          966,
+          "s03_c011_case06",
+          "s03_c011",
+          1,
+          38,
+          46,
+          1753,
+          311103481,
+          "7fd4e2f3f5cad32def278818be996ba663e1473fc7e53458548fd8ed4608d341",
+          "375df575d115b094364049f68622a7b0cc6a2423a66c64cd9ab8db607008fee0"
+        ],
+        [
+          966,
+          "s03_c011_case06",
+          "s03_c011",
+          2,
+          8,
+          103,
+          1280,
+          321103008,
+          "2caed1592f122458b2b4f947ab0d456d01ab55034d050a0b0794f1d7896ea425",
+          "fc1a508d5cc0c500d8bcbfb0c57d82e2c202c66a4a38388c7b0d750ace965ddb"
+        ],
+        [
+          966,
+          "s03_c011_case06",
+          "s03_c011",
+          3,
+          79,
+          261,
+          1294,
+          331103022,
+          "17e03caf5ed38a10714ddbfb7aefa32533c6bf67e9fa0be41012eff774bbeec8",
+          "fabbe56bbe0a24263557214f1b62569b12c00f0cc1a55833d0baed7e76b8ab7d"
+        ],
+        [
+          966,
+          "s03_c011_case06",
+          "s03_c011",
+          4,
+          52,
+          321,
+          1040,
+          341102768,
+          "e2c7bebe83d24dc8e7140288d7d5665c501aecd69763a6b189dc2faeca89139d",
+          "2d81d6c993437bb8951dd0e3e28e9f82ff9051810374e8abaf56fae96aeaf4b3"
+        ],
+        [
+          966,
+          "s03_c011_case06",
+          "s03_c011",
+          5,
+          75,
+          431,
+          1962,
+          351103690,
+          "9ea5de143a8a0caf8f54e82d8415349605cb0c912b1fbbf7e32fe55d44a37127",
+          "a594b52b5c1c562f006b03302825d99c10aa4fe592b005c49a9db6935393436f"
+        ],
+        [
+          966,
+          "s03_c011_case06",
+          "s03_c011",
+          6,
+          84,
+          527,
+          758,
+          361102486,
+          "8b634292b0abf8ef4def85a43282cd4237d1cfc05fb141afd601119ba0dca8a1",
+          "0e42cc8bca7b3ff3760ed065eb9e703213d8e010f2f067cf394a17fc72394646"
+        ]
+      ],
+      "admission": "HELD_NO_VERIFIED_FINE_INPUT"
+    },
+    {
+      "case": {
+        "task": 1189,
+        "case_key": "s03_c026_case04",
+        "geology_id": "s03_c026",
+        "geology_hash": "6606422c290a8a197c88af1f105665e60f069337bf5d5cb02ff965ee4d7742df",
+        "realization_id": 4,
+        "level3_case_name": "independent_full_004",
+        "specific_path": "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s03_c026_case04_full_slice_geology_specific.mat",
+        "specific_sha256": "d74c1f00d29f5e6cf1bbb2f501b6f3d5db2ae9af63c06e2f6b48b5d84bdab525",
+        "specific_bytes": 6551945
+      },
+      "assignment_sha256": "78fb219902d8181ce14c7f31d0c01c3688582249bb94c1cb79eaa786f1ab9cfb",
+      "original_rows": [
+        [
+          1189,
+          "s03_c026_case04",
+          "s03_c026",
+          1,
+          69,
+          77,
+          686,
+          312602414,
+          "42a00c74636e6bbbc35894122eb866e3088a5d719edc8752218ae589ad8266df",
+          "3110993b64288a6094c696ee670ed8ed06b69c21572bd914721f84e8c8628e8b"
+        ],
+        [
+          1189,
+          "s03_c026_case04",
+          "s03_c026",
+          2,
+          15,
+          110,
+          639,
+          322602367,
+          "3b78300a563af21fbd022f1e20bfd455c9759615783641b6e713ecebdba7a9c4",
+          "c5174e75716e48bc211c04d68b64819c2f8df19fe7995632d9c3cae3e93fa3fb"
+        ],
+        [
+          1189,
+          "s03_c026_case04",
+          "s03_c026",
+          3,
+          39,
+          221,
+          699,
+          332602427,
+          "5ba0e4791046c9a3048f93a89b692aaa2d67e3fb255dedb90fa4dd7414adca44",
+          "2f65812e1e2c4ff1db94e3282fe8ecdd63b83b6c46b36aa389b395a930514bc9"
+        ],
+        [
+          1189,
+          "s03_c026_case04",
+          "s03_c026",
+          4,
+          28,
+          297,
+          179,
+          342601907,
+          "04f017267913e749501c8f07a24bfe1c936d563f77d7ef51a36e6b3ea944931e",
+          "4226f6a7f1b5f74afc8968459d2dfb48ebf78424b1821c6bc6e099e2eb7d3aa0"
+        ],
+        [
+          1189,
+          "s03_c026_case04",
+          "s03_c026",
+          5,
+          58,
+          414,
+          551,
+          352602279,
+          "63bf77ad83729a6f087d5f3094ea84da755f23b0ec7a0b431d23411e2df99dde",
+          "1516a9a591b9c2defc68b366795ba8cf0b9fff7bc6eacab3a80335a5447cc50a"
+        ],
+        [
+          1189,
+          "s03_c026_case04",
+          "s03_c026",
+          6,
+          83,
+          526,
+          278,
+          362602006,
+          "a06aa1e617c67182663f94bd21bf82b9a01d6bb0137db878ae19f1ac71c49d43",
+          "57b3c2c7139ae88acb8c24672b61d7eee9ab27ef1a9449883e59d6471b5b7ef4"
+        ]
+      ],
+      "admission": "HELD_NO_VERIFIED_FINE_INPUT"
+    },
+    {
+      "case": {
+        "task": 1286,
+        "case_key": "s04_c005_case11",
+        "geology_id": "s04_c005",
+        "geology_hash": "9f627b5e7bcf143ac9063ec5f356380a13b129088c6a453d078ee5b8025dba90",
+        "realization_id": 11,
+        "level3_case_name": "independent_full_011",
+        "specific_path": "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s04_c005_case11_full_slice_geology_specific.mat",
+        "specific_sha256": "ba3340e31db603d580d51b227af3c656c80817164c60a6cf8e3bd79d7c67681f",
+        "specific_bytes": 6070822
+      },
+      "assignment_sha256": "334d4c0089cb7f775adb2acf578d5ebda6840c7639079584acfa2ec8adb2da78",
+      "original_rows": [
+        [
+          1286,
+          "s04_c005_case11",
+          "s04_c005",
+          1,
+          7,
+          15,
+          766,
+          410502494,
+          "8081e72f29107a9cfc24fda36413a0843584946d9902f367417356caa77c6bce",
+          "887b62597aa1721e478500770e1af7c898ff51471049a498d566dec0298a13a2"
+        ],
+        [
+          1286,
+          "s04_c005_case11",
+          "s04_c005",
+          2,
+          41,
+          136,
+          667,
+          420502395,
+          "9664ceb41a8da6685a29df9ced2672886dd3afd9c07a3b511134d9d1cbc9d37a",
+          "8026902b0989dd09878265d330af9f2d49b9a74aa20501b68786105c1db537e0"
+        ],
+        [
+          1286,
+          "s04_c005_case11",
+          "s04_c005",
+          3,
+          34,
+          216,
+          1155,
+          430502883,
+          "5e6b2ab2c95be4d30343636698b559d949d4730745e700c637fa292d5da91e0d",
+          "25d5c50c68749ec0153237958d3dd22826a797aebc88b645586fee288721544d"
+        ],
+        [
+          1286,
+          "s04_c005_case11",
+          "s04_c005",
+          4,
+          18,
+          287,
+          338,
+          440502066,
+          "c7e321c7e14fe60f31bf1a5b1752039fc6c5c5f9fa41a9ac4acb6031b03fc86f",
+          "ca7c4f8d84e69f115d04d583877d29ef086173940a9d56f450efaf3e64e03d41"
+        ],
+        [
+          1286,
+          "s04_c005_case11",
+          "s04_c005",
+          5,
+          77,
+          433,
+          736,
+          450502464,
+          "64b4c63f4a9e6d6de40516874695d06282c300fb11ae048e8eeee0d610a05129",
+          "701d48008788f6d9fea66739e9461cee296ac983008f41f0243387e000d418db"
+        ],
+        [
+          1286,
+          "s04_c005_case11",
+          "s04_c005",
+          6,
+          55,
+          498,
+          620,
+          460502348,
+          "3ad62f34a69094d58849eed726df40e4760a5afb80f66d2e5dcbde802163b386",
+          "68663c3d0a0c2e31d2fde9e9b5056190a0fa9f2c9568dee3ed42ad034352f8d3"
+        ]
+      ],
+      "admission": "HELD_NO_VERIFIED_FINE_INPUT"
+    },
+    {
+      "case": {
+        "task": 1322,
+        "case_key": "s04_c008_case02",
+        "geology_id": "s04_c008",
+        "geology_hash": "f21329ddc1638761365694d9138ba00e1c08ecc4332c51f2adee37720e9c894e",
+        "realization_id": 2,
+        "level3_case_name": "independent_full_002",
+        "specific_path": "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s04_c008_case02_full_slice_geology_specific.mat",
+        "specific_sha256": "22501efe7b29dbf80cb745a7293386dc5588d2e05961c6d229e31168b65a0a1b",
+        "specific_bytes": 6275487
+      },
+      "assignment_sha256": "c505d6914cbd455967b12212b4ab666ff354c75045c3d8acaca054be11467409",
+      "original_rows": [
+        [
+          1322,
+          "s04_c008_case02",
+          "s04_c008",
+          1,
+          85,
+          93,
+          665,
+          410802393,
+          "af9073ad89df8f5c07c0b0a0ff807b7574d4511519f51c13992d1dbda8047198",
+          "bde19cd3f1b99f8b46ea0f1615d555a37fb357b22b154406407d9937fe7004e3"
+        ],
+        [
+          1322,
+          "s04_c008_case02",
+          "s04_c008",
+          2,
+          15,
+          110,
+          1998,
+          420803726,
+          "576577f6c184208d130e00c1605a2c7779449f414a019b340570bde45fae5edb",
+          "be43f2ef2397c9ad8ff812d7b0a9f2d174aaf1764b1f9873474a6534c0abdca6"
+        ],
+        [
+          1322,
+          "s04_c008_case02",
+          "s04_c008",
+          3,
+          81,
+          263,
+          1172,
+          430802900,
+          "ca5d95fad8346731eff097dada9686c74c493bc880057a8f1761bd5f436db3a2",
+          "00252bb4cd53401cd9f16fb0305d0745150121e65b49641f717c137b92a0b7e4"
+        ],
+        [
+          1322,
+          "s04_c008_case02",
+          "s04_c008",
+          4,
+          21,
+          290,
+          1180,
+          440802908,
+          "d00038d5f99adbe66cb785deb441f49950b21b6f174d28f7c2c5ed96eb844fa8",
+          "ff6de90df2008ea84e67c1e4d67a99aa1cf9cc5edb0132d9e644de73da965826"
+        ],
+        [
+          1322,
+          "s04_c008_case02",
+          "s04_c008",
+          5,
+          87,
+          443,
+          140,
+          450801868,
+          "5c5e53620fe2f7f5c2e91615a555da7d862830be39982d5289223cd37953d6b3",
+          "b609012968f0c4f64358b28e731062601d0c033b8214090400dddaba70f23aef"
+        ],
+        [
+          1322,
+          "s04_c008_case02",
+          "s04_c008",
+          6,
+          17,
+          460,
+          284,
+          460802012,
+          "5b1d0377f397a77bdadd6df5e30f0ee7f0a13d7e9152f9d1d66b40cdcdd9d909",
+          "e1964ca580e92723268e09219326bf1997cc8a176c2b68759b170d90bda58c36"
+        ]
+      ],
+      "admission": "HELD_NO_VERIFIED_FINE_INPUT"
+    },
+    {
+      "case": {
+        "task": 1636,
+        "case_key": "s05_c002_case01",
+        "geology_id": "s05_c002",
+        "geology_hash": "0d15987277a6ed7afba24205c14c3ec76484b813d8c64425cd408dad28d04e1b",
+        "realization_id": 1,
+        "level3_case_name": "independent_full_001",
+        "specific_path": "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s05_c002_case01_full_slice_geology_specific.mat",
+        "specific_sha256": "52af1e6ae35ff555594bb3663e0f7022e605b60e76b497cc35052ed4e7ab4c81",
+        "specific_bytes": 6177384
+      },
+      "assignment_sha256": "bd4d638903910af55eee5e01f4172fc4a3e0e80d3eb6ab2e8d6d51424bd35de3",
+      "original_rows": [
+        [
+          1636,
+          "s05_c002_case01",
+          "s05_c002",
+          1,
+          41,
+          49,
+          1314,
+          510203042,
+          "13380f38a3d9a78417383506e29b20faa49bc22e55e4b7b6301342d7625ae670",
+          "4d633022f4552bcc62069f7c5d36812b8d85aeb901eec11a434e448fd080268f"
+        ],
+        [
+          1636,
+          "s05_c002_case01",
+          "s05_c002",
+          2,
+          41,
+          136,
+          1000,
+          520202728,
+          "ba0dc21eac0ac32e3689ec3de359e3affee812525d12250f2c65b333d3174181",
+          "ad23c96fdbcbb587a94aceb976ccd859392cfbe5f426e5309cefdb33222cd0ec"
+        ],
+        [
+          1636,
+          "s05_c002_case01",
+          "s05_c002",
+          3,
+          49,
+          231,
+          1159,
+          530202887,
+          "53f4241022454f3fa6fcc4fc31634954b4370103d875896601e244f12d2f8942",
+          "7dd82d81f00bad4152ed75c7de2319d457e49cdb433c770871bbd7f0f3171769"
+        ],
+        [
+          1636,
+          "s05_c002_case01",
+          "s05_c002",
+          4,
+          72,
+          341,
+          1242,
+          540202970,
+          "2e7c7bd588863bed2f49715941b89a513e656d09f87ec84cc737a02a033cc53d",
+          "623b08d84aa8ae9718c1de1fc0c7d8a793a1b4f77bd2a399574317db53ccfb30"
+        ],
+        [
+          1636,
+          "s05_c002_case01",
+          "s05_c002",
+          5,
+          84,
+          440,
+          1032,
+          550202760,
+          "50879b73b4e8107ff93b563166be1260963dbf04c932a22a748bd4f96c0b7c80",
+          "ebf9f8619d6f25371ac6ab4697b6f7dd41152b4e4be5beb21ce2e17a0340fc2b"
+        ],
+        [
+          1636,
+          "s05_c002_case01",
+          "s05_c002",
+          6,
+          83,
+          526,
+          1668,
+          560203396,
+          "bf3a1020fde604a438c055859dbd6d81a9aa82ef428907dc218af1fec2aef36a",
+          "e9ed5be1e0686048e8abf27ab6ada9ac7872a59553b309ba0569f7c801bbaa82"
+        ]
+      ],
+      "admission": "HELD_NO_VERIFIED_FINE_INPUT"
+    },
+    {
+      "case": {
+        "task": 1962,
+        "case_key": "s05_c023_case12",
+        "geology_id": "s05_c023",
+        "geology_hash": "6b779e7336de19292ce574053bf4aa98ae4317428278668407fb233768b5bb5b",
+        "realization_id": 12,
+        "level3_case_name": "independent_full_012",
+        "specific_path": "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s05_c023_case12_full_slice_geology_specific.mat",
+        "specific_sha256": "e00ce43d5022c0b7d0c5882a9bcd1a16f2944dfc3ebcd8b7698d5417021ecf4a",
+        "specific_bytes": 6196544
+      },
+      "assignment_sha256": "c520ff8fa3685097158ddd61204235f9c570494730bd963f176541f581c49060",
+      "original_rows": [
+        [
+          1962,
+          "s05_c023_case12",
+          "s05_c023",
+          1,
+          30,
+          38,
+          1865,
+          512303593,
+          "9cfeb803713ad571afb84f841fce303ff90e6dfc37b7d549e9c7c4743cc77c95",
+          "64ff55369c95ba22864e591bfaba271977961f29196c1e0cfc98ca906eb14f4e"
+        ],
+        [
+          1962,
+          "s05_c023_case12",
+          "s05_c023",
+          2,
+          57,
+          152,
+          893,
+          522302621,
+          "3532c97b0ef7eb0e043f64d209a681106c8d82736864a120ae135f7da6e9594f",
+          "3993f21749707e1c5d9be4327594f66e2b68e4e6bcdc28e09c18b7cfa6020608"
+        ],
+        [
+          1962,
+          "s05_c023_case12",
+          "s05_c023",
+          3,
+          69,
+          251,
+          1565,
+          532303293,
+          "88f5fac1ceedf4bc611a81762a8910eae8c4fee964190f3932be3a75b9dd7d91",
+          "46803e120101f220719f17493d39ef454c266251208b1626d244cee18db43abf"
+        ],
+        [
+          1962,
+          "s05_c023_case12",
+          "s05_c023",
+          4,
+          53,
+          322,
+          1732,
+          542303460,
+          "d1682472826556012467a4fd0e0f7ecb6f14f907c805ce645ecaef9959933bab",
+          "4d1deddbb42fb6951289210f557a77a9c4a61730b4d78de73a9efd07745611f9"
+        ],
+        [
+          1962,
+          "s05_c023_case12",
+          "s05_c023",
+          5,
+          66,
+          422,
+          1740,
+          552303468,
+          "73f1d184283d286de950da2239cc4ef57dd73c11bbc3551c105a60e97a7e3c77",
+          "7c79754027682be16fa1e04fab198646149ee07e5e0f028e240719356696c6f9"
+        ],
+        [
+          1962,
+          "s05_c023_case12",
+          "s05_c023",
+          6,
+          4,
+          447,
+          44,
+          562301772,
+          "6ea9e497a36fb1822d842cc8f49df8a8621c137d77b1bdb98c20aef356860017",
+          "014a8f757ba0b779a9c7237ce431df7a4a3214cdb7143ade51346fa641712f0d"
+        ]
+      ],
+      "admission": "HELD_NO_VERIFIED_FINE_INPUT"
+    },
+    {
+      "case": {
+        "task": 2095,
+        "case_key": "s06_c005_case10",
+        "geology_id": "s06_c005",
+        "geology_hash": "cb7c176c18147b0ab53f02f5c8461419bf8d7117022d2f48a11994a97e1c8e23",
+        "realization_id": 10,
+        "level3_case_name": "independent_full_010",
+        "specific_path": "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s06_c005_case10_full_slice_geology_specific.mat",
+        "specific_sha256": "1cb29dca1704632d4cfb8e4facc481bcc6d523ec737a766dfaf3cb0bded6ca31",
+        "specific_bytes": 6506173
+      },
+      "assignment_sha256": "e419fb2015db1a21e6d24d2c9f73b79d13801e79fa3aaafaf91db0b5e4aee7f7",
+      "original_rows": [
+        [
+          2095,
+          "s06_c005_case10",
+          "s06_c005",
+          1,
+          45,
+          53,
+          433,
+          610502161,
+          "f988c70d5ac84154a69800271b3424f936111f96af6f169f17e243e78b180b40",
+          "9585fb783c9bddb5a6ba738ea14107d0ed676fdf54aa8cd80625bc25df73f06c"
+        ],
+        [
+          2095,
+          "s06_c005_case10",
+          "s06_c005",
+          2,
+          79,
+          174,
+          500,
+          620502228,
+          "08dbda7967d559cf6b539bb94f38ed323c3f3e0901588381ae29e3ba87861123",
+          "b458cd6f9a155040c7ee2fb5fd8386b589468c6440538fbb87feb9f16473ed93"
+        ],
+        [
+          2095,
+          "s06_c005_case10",
+          "s06_c005",
+          3,
+          44,
+          226,
+          1008,
+          630502736,
+          "daa9bddaa7c820ef104c885d2ca36815e2c02cc9d4dde016e6e35f4497662a3e",
+          "4bf48fa4ea58ee935db4c16209b5e7c3474ec0d5e2fbf7ab42935f267a259e0b"
+        ],
+        [
+          2095,
+          "s06_c005_case10",
+          "s06_c005",
+          4,
+          41,
+          310,
+          664,
+          640502392,
+          "9ab6de82b4394314b411badf7063d6dd273885fc1a0c3b3f1968a87595c2e9dc",
+          "63ad0880ff3a6338baada19d9887830ffa671a3a9ffda1ccbd76c07be5c9d560"
+        ],
+        [
+          2095,
+          "s06_c005_case10",
+          "s06_c005",
+          5,
+          77,
+          433,
+          924,
+          650502652,
+          "ed61227f49cf3debba4aaf53727b569bb0dd97f9c4c4be38ad9718a9cdbef6b2",
+          "45a709b324a3961c2e7636de0b2b7cbe5c621d8fcb30e352ae3c024ebb795039"
+        ],
+        [
+          2095,
+          "s06_c005_case10",
+          "s06_c005",
+          6,
+          49,
+          492,
+          1852,
+          660503580,
+          "c1fa037174bc76ea7b3973fc422aceed0b762b7169076067ebc809a8aaafece7",
+          "5915245471a76be27e015f19dba709c028d2db3f54ca1a675012130a38692977"
+        ]
+      ],
+      "admission": "HELD_NO_VERIFIED_FINE_INPUT"
+    },
+    {
+      "case": {
+        "task": 2171,
+        "case_key": "s06_c010_case11",
+        "geology_id": "s06_c010",
+        "geology_hash": "a3ea5e0860f570d3abc99ffa7a4a0f33770464938b2485483a828077ec5b5a3a",
+        "realization_id": 11,
+        "level3_case_name": "independent_full_011",
+        "specific_path": "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s06_c010_case11_full_slice_geology_specific.mat",
+        "specific_sha256": "65df0d5b1c21b1b87e164068a8156d522e5e1d2e4e28119c74a476f720c2ce3e",
+        "specific_bytes": 6446085
+      },
+      "assignment_sha256": "fe20e1991d3736ae00c3557e3381f55e94a08e773e0137a31fb28e33b63e439b",
+      "original_rows": [
+        [
+          2171,
+          "s06_c010_case11",
+          "s06_c010",
+          1,
+          9,
+          17,
+          1781,
+          611003509,
+          "2e1fcfea8d60b5d0c6068a5dcdd76a6f8796dd1f95b6b9d81d66b9a09dd1f32b",
+          "055b7e5b53c329bf98c5665a30d79f89a7a3fd2b6862c97f1e25bbde9ff64634"
+        ],
+        [
+          2171,
+          "s06_c010_case11",
+          "s06_c010",
+          2,
+          20,
+          115,
+          427,
+          621002155,
+          "ea6062b500c091a5f8026e8ed62fc161cade67669d81d085bb9fa4f130d1135b",
+          "f20be4e997d13a97455a9ac595ffa7c191a8b10e63bbb1c5b217a2514d83fe10"
+        ],
+        [
+          2171,
+          "s06_c010_case11",
+          "s06_c010",
+          3,
+          21,
+          203,
+          679,
+          631002407,
+          "fc0bb652cf0b0875a9bb70cdfaed6f7a0c9634e3bde826214455aee565407ca1",
+          "7729d9c54941f84c8905cdf3292172d9f148753ab0bda13d38e3fc5a3a9e5bef"
+        ],
+        [
+          2171,
+          "s06_c010_case11",
+          "s06_c010",
+          4,
+          15,
+          284,
+          181,
+          641001909,
+          "1a7586ac312a0d10f23aaa46f6e3f65b56da1659e0bc83dda1721da49e00ec44",
+          "bbf99f347e4bb2337031dc68cdf3db97d0f84a25d6448b7af8f3aa8fc489b06e"
+        ],
+        [
+          2171,
+          "s06_c010_case11",
+          "s06_c010",
+          5,
+          29,
+          385,
+          868,
+          651002596,
+          "6301bf2bf3faf88b13408948734361381498be2424b6938992382e279a8d69da",
+          "f85c09a74dd1899185ffaf5c4931d2d12f53ef331f44835f810276d06ddd008e"
+        ],
+        [
+          2171,
+          "s06_c010_case11",
+          "s06_c010",
+          6,
+          73,
+          516,
+          15,
+          661001743,
+          "c7d98928037d4a1a5c78d396827c951cad4b102f8f0a23baec793c4b45502433",
+          "88f11258aa35dfd53892a4dc56e8e36d92d1b1949b9cc973baf20a540ce84061"
+        ]
+      ],
+      "admission": "HELD_NO_VERIFIED_FINE_INPUT"
+    }
+  ],
+  "selected_cases": 12,
+  "selected_placements": 72,
+  "geologies_in_source": 162,
+  "manifest_sha256": "adf73c15b1c4edc4b4721c7666a2c2b56aaf800088fff3599a5541dce0ed3dde",
+  "inventory_sha256": "c7520c00819ce2737eecd35acac0d8d54f453c70641406b356da36fc828949b8",
+  "selection_sha256": "e76eeb177a3d0c897141598fc3aff937d66c0b04c146f842e43f00b20d68e0f9",
+  "memory": {
+    "peak_gib": 0.35181427001953125,
+    "limit_gib": 2.0,
+    "required_gib": 1.3518142700195312,
+    "events": 0
+  },
+  "unknown_features": [
+    "fine_grid_dimensions",
+    "permeability_contrast",
+    "mip_path",
+    "numerical_overlay",
+    "replay_memory",
+    "flow_memory"
+  ],
+  "original_specific_files_reread": false,
+  "actual_replay_completed": false,
+  "numerical_cache_hits": 0,
+  "dispatchable_placements": 0,
+  "campaign_ready": false,
+  "production_modified": false
+}

@@ -1,0 +1,50 @@
+intrinsic_conductance = 3.961469546684708e-21
+cells = 110000
+phase_solver_calls = 20
+core = 125
+mode = "sparse10"
+preparation_seconds = 1.293691515
+intrinsic_solver_calls = 1
+intrinsic_flow_seconds = 2.236439161
+intrinsic_permeability_m2 = 5.178503956042499e-21
+mip_observation_seconds = 0.6799427649999998
+wall_seconds = 45.583243169
+pc_points = 100
+production_modified = false
+same_mip_microstates = true
+kr_states = 10
+fast_path = true
+phase_flow_seconds = 31.204852984000002
+validation_hash_seconds = 1.1469496870000004
+selection_seconds = 0.937955739
+selected_indices = [1, 5, 16, 26, 37, 47, 58, 69, 79, 100]
+owner_samples = [1, 5, 16, 26, 37, 47, 58, 69, 79, 100]
+planning_mip_seconds = 2.044357125
+
+[memory]
+VmRSS_kib = 963608
+RssShmem_kib = 0
+julia_live_bytes = 1108818816
+RssFile_kib = 165416
+RssAnon_kib = 798192
+Private_Dirty_kib = 798360
+Anonymous_kib = 798360
+Swap_kib = 0
+VmHWM_kib = 2186004
+Private_Clean_kib = 163828
+
+[model_audit]
+scaling_phi_floor_cells = 0
+clay_conversion_factor = 0.03364451776629584
+clay_reference_anchor_pa = 248151.1395666215
+clay_cells = 110000
+pore_volume_m3 = 2907.1099181596496
+scaling_k_floor_cells = 0
+cell_count = 110000
+sand_cells = 0
+
+[native_lifetime]
+symbolic_released = 2
+symbolic_created = 2
+numeric_created = 18
+numeric_released = 18

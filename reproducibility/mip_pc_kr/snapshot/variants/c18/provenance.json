@@ -1,0 +1,16 @@
+{
+  "reference_campaign": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/variants/intermediate_mip_wrr30_fault_nohys/campaign.toml",
+  "reference_campaign_sha256": "a8be5437976cd6bd5ae6be654e3f732da1e5619b5177b815ba9f4f06a436cd8b",
+  "reference_full_job": "22588300",
+  "reference_specific": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/reservoir_export_s03_c022_case12_20260910_v1/candidate_specific_s03_c022_case12.mat",
+  "reference_specific_sha256": "82fac5cd1e40a65ee26167dc6e54224b469ee84adce5c03148082c0dd7c14c71",
+  "zero_pc_source": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/reservoir_pc_breakthrough_s03_c022_case12_20260910_v1/inputs/candidate_specific_pc_breakthrough_s03_c022_case12.mat",
+  "zero_pc_sha256": "1965e998afa87e5d071a485fb5dafb9758d9f0a6fd11af4dfcdfa78ef5693804",
+  "physical_pc_source": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/reservoir_export_s03_c022_case12_20260910_v1/candidate_specific_s03_c022_case12.mat",
+  "physical_pc_sha256": "82fac5cd1e40a65ee26167dc6e54224b469ee84adce5c03148082c0dd7c14c71",
+  "pc_only_audit_sha256": "c78b5cbcacc912b6ca8defccebf73a7f72a8666b7c1fbd9f3c807dd31e299e20",
+  "kr_policy": "finished_mip_values_unchanged",
+  "solver_policy": "same_corrected_runtime_solver_tolerances_and_timestep_controls",
+  "start_policy": "time_zero_no_restart_reuse",
+  "retention_checker_change": "accept exactly all 210 states; existing state and QoI checks retained"
+}

@@ -1,0 +1,46 @@
+{
+  "GOM_PRODUCTION_SPECIFIC_MAT": {
+    "old": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/comparative_3case_wrr30_60_pc_conventions_20260910_v1/reservoir_matrix_launch_20260911_v1/datasets/s03_c022_case12_wrr60/attempt_job22577151/physical_prebreakthrough/candidate_specific_s03_c022_case12.mat",
+    "new": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/mip_pc_breakthrough_6case_20260916_v1/inputs/intermediate_mip_wrr60_fault_nohys/candidate_specific.mat"
+  },
+  "ZERO_PC_SPECIFIC_MAT": {
+    "old": null,
+    "new": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/comparative_3case_wrr30_60_pc_conventions_20260910_v1/reservoir_matrix_launch_20260911_v1/datasets/s03_c022_case12_wrr60/attempt_job22577151/zero_before_breakthrough/candidate_specific_s03_c022_case12.mat"
+  },
+  "GOM_PRODUCTION_SPECIFIC_SHA256": {
+    "old": "af6a6a90708dba09d3dfdb7779c1a1a9942c7d501057291d2707d6f19c537fc6",
+    "new": "64e669b40ecac17616574c3da04fb7da761f8e69bbe8ad79f18af47875f9828f"
+  },
+  "GOM_PRODUCTION_MANIFEST_SHA256": {
+    "old": "a75c8b85cacac645f344431ca646adc20148fa8cdfc33b86d28599c6bb1d466b",
+    "new": "5077d433901a5cc7cedf84d45b2e6c2dd27f6baecbcecda0807683800bf7d546"
+  },
+  "GOM_PRODUCTION_CAMPAIGN_ID": {
+    "old": "intermediate_mip_wrr60_fault_nohys_20260911",
+    "new": "intermediate_mip_wrr60_fault_nohys_pczero_20260916"
+  },
+  "PHYSICAL_PC_SPECIFIC_MAT": {
+    "old": null,
+    "new": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/comparative_3case_wrr30_60_pc_conventions_20260910_v1/reservoir_matrix_launch_20260911_v1/datasets/s03_c022_case12_wrr60/attempt_job22577151/physical_prebreakthrough/candidate_specific_s03_c022_case12.mat"
+  },
+  "GOM_PRODUCTION_MANIFEST_PATH": {
+    "old": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/variants/intermediate_mip_wrr60_fault_nohys/campaign.toml",
+    "new": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/mip_pc_breakthrough_6case_20260916_v1/variants/intermediate_mip_wrr60_fault_nohys_pczero/campaign.toml"
+  },
+  "GOM_PRODUCTION_ARCHIVE_ROOT": {
+    "old": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/variants/intermediate_mip_wrr60_fault_nohys",
+    "new": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/mip_pc_breakthrough_6case_20260916_v1/variants/intermediate_mip_wrr60_fault_nohys_pczero"
+  },
+  "GOM_PRODUCTION_MANIFEST_COMPANION_PATH": {
+    "old": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/variants/intermediate_mip_wrr60_fault_nohys/campaign.toml.sha256",
+    "new": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/mip_pc_breakthrough_6case_20260916_v1/variants/intermediate_mip_wrr60_fault_nohys_pczero/campaign.toml.sha256"
+  },
+  "MIP_REFERENCE_SPECIFIC_MAT": {
+    "old": null,
+    "new": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/comparative_3case_wrr30_60_pc_conventions_20260910_v1/reservoir_matrix_launch_20260911_v1/datasets/s03_c022_case12_wrr60/attempt_job22577151/physical_prebreakthrough/candidate_specific_s03_c022_case12.mat"
+  },
+  "GOM_PRODUCTION_SPECIFIC_BYTES": {
+    "old": "5540396",
+    "new": "5542582"
+  }
+}

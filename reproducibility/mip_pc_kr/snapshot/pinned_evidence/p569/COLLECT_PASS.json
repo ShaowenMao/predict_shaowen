@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "controls": [
+    {
+      "owner": "s05_c002_case01_core475",
+      "curves_and_tables_byte_identical": true
+    }
+  ],
+  "memory": {
+    "peak_gib": 0.2932090759277344,
+    "limit_gib": 1.375,
+    "events": 0,
+    "required_gib": 0.30786953028291464,
+    "passed": true,
+    "policy": "relative_memory_accept105_size120_v1"
+  },
+  "completed_core_handoffs": 4,
+  "partial_collector_recovery": true,
+  "idempotent_repeat": true
+}

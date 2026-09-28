@@ -1,0 +1,30 @@
+{
+  "files": {
+    "Backend.jl": "2f142efa6db7fe48cf6403a34064c82f81349a4aea3dca1989dfc7f8452308d6",
+    "DESIGN.md": "c83002630b10185fcc602f562e8a2c701dca25b5f4df843a41255bc0823daca5",
+    "ManagedLU.jl": "b29bb641c53e1f28d12ae7c2665b69f9d8c004f8d502f3071d00951c10d13622",
+    "MemoryProbe.jl": "67e71256a2be96074cffc9f10cf763da69204e99f643f1d4b7d768a664e29c6f",
+    "build.py": "19b35d877acf40a3d5d04a320e9f76c6fa41e5d52be1404f02980a092f7126f5",
+    "build_tables.py": "2e2f198b61458cd1c7f98941012ab073056cf2077b4256b658a7e7a15780d01d",
+    "campaign.py": "04cf32e0a7e74dcc3c76c6ce24fa1d6ebe5b9cd3a1a99db5a4a18a2eb384f2c6",
+    "context.py": "a1bec2cd86fe741c5b52638fe64b6798b6779feb7b3de4f821ee32ece83a2e0b",
+    "derivation.json": "4b9256cca37213c427ea8b0a472ac092c2b3123ed228ec87f71a23c43d4497b8",
+    "job.sh": "cbabae3596c7501c1661f3f2b1e3ac7fc9a4e76bcea7feebfd1aed780be495ab",
+    "native.jl": "3f77f60c24724175925f59fef917943cae9d5ad277888d979bbf69f83b104cce",
+    "origin.toml": "70c359aa514fe86b64bb7d444eb8f4c75fe535bbe74def503633d1cb58d5421a",
+    "policy.py": "04194ba3cb369baf123a2ecd4cbc0767dfc58a2cf8cd9bdf0c1711ce2266dc87",
+    "prepare.jl": "901fd68cd1cc7fc1d8cf0b4175fbb9ce77a515c44ce3ca6e3f2c39ff97916e36",
+    "reuse.py": "9171382b13fc10dde208bcfdebb11a2c57069c584b0610769922628a33c115d6",
+    "reuse_campaign.py": "138bf45cc54a6fbfa43f281534eb1d0835f4342005488534546b7f1d74127976",
+    "spec.json": "1f45f1790ebeb19161e52ccaf8968fcf93af600289222d7390f0b236738c03f8",
+    "test_campaign.py": "82c555027d6f6fbc668c268760f800def9ca29d85389ee9ae85912d146da8aa5",
+    "test_policy.py": "01b4a3fc1a3666b7c67051066c73c1f001040cbe357a64356ae5ed47ffce77b9",
+    "test_reuse.py": "fde3886212c3b2775afde7b58b28e5c2d53f3cbbe21afd68d567b9a80582f0b1",
+    "test_reuse_campaign.py": "535f80adb58d2eb79572671ec3b8f11f1afa4b3d4226e4ec36865585f154094e",
+    "tomli/__init__.py": "3e1370fdec8b81d9fb31c27a9eb00df32226ddd5c2ef9bebd6c546555c034a90",
+    "tomli/_parser.py": "f70f0b1b48c1edfc26659581d2f5576de7a30c7725e00348271076b1c1270e50",
+    "tomli/_re.py": "b21e2c0434603bde0a259c0d22b81d73257fa906acb79d18bf3380506a510ca0",
+    "tomli/_types.py": "f864c6d9552a929c7032ace654ee05ef26ca75d21b027b801d77e65907138b74",
+    "worker.jl": "c6be43a94d8525667490b470e932ff19b9aff89e3f96a68b8b72d722a17b2b92"
+  }
+}

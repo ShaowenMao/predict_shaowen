@@ -1,0 +1,18 @@
+{
+  "files": {
+    "build_tables.py": "2e2f198b61458cd1c7f98941012ab073056cf2077b4256b658a7e7a15780d01d",
+    "candidate_guard.sh": "49c93207ce4fbbb7a1b28c242bfc3486be4d711cea0cbb26f8482db09fef9f97",
+    "check_selection.m": "b7ed133fed1704967104b6fde2f8e2cc74f316401736d398307a4a645da4883f",
+    "check_wettability.m": "47339177eb35e72b625e453746d6366eabefbda93ca53d094dc7edef82854147",
+    "DESIGN.md": "65c9badb3c594965800b392c93a5e8e0aa9aca15efed9e55d6896f20dec2fc01",
+    "job.sh": "8d5f322b8f4f002a576b21dce20f24a807aa708745554a370373111881aee0c4",
+    "make_specific.m": "6b179ab9d26631713b8bbe6db0832d4d402259e3c99f3b1bb6f0d39ecc5364ed",
+    "stage_pc.jl": "da2342044556a21b446e150651170e5228116310500319f0e20feb1c1dc692d8",
+    "study.py": "da16015eaf2edd42b40679234027b7ce54a3cf7b0afc67e84ef6b852966585dc",
+    "submit.py": "7cad4100eb5ad7444bc6b1da8fb81afff8bca6ea25f16cc83166e47adcaa8fdc",
+    "test_export_tables.py": "c4b8c56f8bf5e333cab4ca5a703e2db966f033a12ae5f4a05727d02a78822922",
+    "test_extension.py": "af3e624efb58aa74a18f3b8ac858bb7d24202a210064c82682b85989156d82d7",
+    "test_study.py": "333dcf42dc0db7489da455b8e31fde8745a239e0a118b55072426400d54ee316",
+    "validate_constitutive.jl": "c5fb220c73a72360369e17a2bd68508308eb0e3bfdaa4a9825f996e6a8efbd58"
+  }
+}

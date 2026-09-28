@@ -1,0 +1,63 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "name": "low_mip_wrr30_fault_nohys_pczero",
+      "passed": true,
+      "scientific_setup_unchanged_except_pc": true,
+      "source_changes": [
+        "gom_step62_production_final_check.jl",
+        "pair_input_audit.jl"
+      ]
+    },
+    {
+      "name": "low_mip_wrr60_fault_nohys_pczero",
+      "passed": true,
+      "scientific_setup_unchanged_except_pc": true,
+      "source_changes": [
+        "gom_step62_production_final_check.jl",
+        "pair_input_audit.jl"
+      ]
+    },
+    {
+      "name": "intermediate_mip_wrr30_fault_nohys_pczero",
+      "passed": true,
+      "scientific_setup_unchanged_except_pc": true,
+      "source_changes": [
+        "gom_step62_production_final_check.jl",
+        "pair_input_audit.jl"
+      ]
+    },
+    {
+      "name": "intermediate_mip_wrr60_fault_nohys_pczero",
+      "passed": true,
+      "scientific_setup_unchanged_except_pc": true,
+      "source_changes": [
+        "gom_step62_production_final_check.jl",
+        "pair_input_audit.jl"
+      ]
+    },
+    {
+      "name": "high_mip_wrr30_fault_nohys_pczero",
+      "passed": true,
+      "scientific_setup_unchanged_except_pc": true,
+      "source_changes": [
+        "gom_step62_production_final_check.jl",
+        "pair_input_audit.jl"
+      ]
+    },
+    {
+      "name": "high_mip_wrr60_fault_nohys_pczero",
+      "passed": true,
+      "scientific_setup_unchanged_except_pc": true,
+      "source_changes": [
+        "gom_step62_production_final_check.jl",
+        "pair_input_audit.jl"
+      ]
+    }
+  ],
+  "matrix_sha256": "1fcd83d39d54dbd82e524ed9d46f32bd344d1155dce07e850e3021179bbff23f",
+  "preparation_source_sha256": "c969db5ee0dfa6b4ebd224a401f2a0f0339c1a7b9366240b657187f14d48ca9a",
+  "input_transform_source_sha256": "1b51cf4c9feb0a86200b6dd171eb9cfc4cf43123b0c878ee227f586aa67d3539",
+  "native_assembled_model_preflight_still_required": true
+}

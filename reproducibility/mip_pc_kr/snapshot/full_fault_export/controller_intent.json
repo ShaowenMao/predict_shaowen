@@ -1,0 +1,450 @@
+{
+  "admission": {
+    "add_cpus": 1,
+    "add_mib": 512,
+    "external_dependency_or_user_held": [
+      {
+        "job": "22811181",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811180",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2142",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2143",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2144",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2145",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2146",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2147",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2148",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2149",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2150",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2151",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2152",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2153",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2154",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2155",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2156",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2157",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2158",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2159",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2160",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2161",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2162",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2163",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2164",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2165",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2166",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2167",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2168",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2169",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2170",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2171",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2172",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2173",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2174",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2175",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2176",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2177",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2178",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2179",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2180",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2182",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2183",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2184",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2185",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2186",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2187",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2188",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2189",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2191",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2192",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811179_2193",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811205",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811204",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1889",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1890",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1891",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1892",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1893",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1894",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1895",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1896",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1897",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1898",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1899",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1900",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1901",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1902",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1903",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1904",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1905",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1906",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1907",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1908",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1909",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1910",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1911",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1912",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1913",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1914",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1915",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1916",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1917",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1918",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1919",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1920",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1921",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1922",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1923",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1924",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1925",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1927",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1928",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1929",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1930",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1931",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1932",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1933",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1935",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1936",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1937",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1938",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1939",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22811203_1940",
+        "reason": "Dependency"
+      },
+      {
+        "job": "22761558",
+        "reason": "JobHeldUser"
+      }
+    ],
+    "passed": true,
+    "policy": "all_live_and_eligible_external_pending_plus_all_own_pending",
+    "used_cpus": 89,
+    "used_mib": 203776
+  },
+  "command": [
+    "sbatch",
+    "--parsable",
+    "--partition=mit_normal",
+    "--account=mit_amf_advanced_cpu",
+    "--qos=mit_amf_advanced_cpu",
+    "--nodes=1",
+    "--ntasks=1",
+    "--cpus-per-task=1",
+    "--mem=512M",
+    "--time=110",
+    "--exclude=node1622",
+    "--job-name=kr10f_dispatch",
+    "--output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/full_fault_dispatch_v2/logs/controller_%j.out",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/full_fault_dispatch_v2/job.sh",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/full_fault_dispatch_v2",
+    "controller"
+  ]
+}

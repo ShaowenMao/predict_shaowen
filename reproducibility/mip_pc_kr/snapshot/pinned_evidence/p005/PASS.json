@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "owners": [
+    "s05_c002_case01_core239",
+    "s03_c011_case06_core258",
+    "s05_c002_case01_core475",
+    "s06_c005_case10_core138"
+  ],
+  "new_placements": 4,
+  "original_control_read_through": true,
+  "full_case_export_approved": false,
+  "numerical_review": true,
+  "native_import": true,
+  "exact_reuse": true,
+  "collector_recovery": true,
+  "idempotent_publication": true,
+  "source_lock": "5c32c40cad327952ea239d0ced68c54b299d31dc96d7b9ad843dca17854439ec",
+  "memory": {
+    "peak_gib": 0.2911109924316406,
+    "limit_gib": 0.5,
+    "events": 0,
+    "required_gib": 0.3056665426120162,
+    "passed": true,
+    "policy": "relative_memory_accept105_size120_v1"
+  },
+  "pointers": {
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/numerical_wave01_reuse_v1/staged_dispatch_v1/progressive_warm_wave02_20260915_v1/batches/mixed_60000_q/mapped_groups/ea036f7706eee12a4a602f4de00e905f71f6e2860b7aa39837ca6d30eba2fd23.json": "b98f4d5171add92fb7b735349d0a517b9220ae65fa65ab280ac5e86ea582dda3",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/numerical_wave01_reuse_v1/staged_dispatch_v1/progressive_warm_wave02_20260915_v1/batches/mixed_60000_q/mapped_groups/ef0768fc4c7678a19e782f817a9e835bc4ccf49ed7d9417db0766c51101b2611.json": "25956308e5bef43d4499ef548b2757e2485705f020aeb7361316f64fe2424e47",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/numerical_wave01_reuse_v1/staged_dispatch_v1/progressive_warm_wave02_20260915_v1/batches/mixed_60000_q/mapped_groups/fe217097dff4a4ecf6b32739d6a6c4f7ec5c8d0c2e0e47477172c7fca19323c4.json": "423e1a273b0292796bd31835370d73400cd2c10c9e5b5528db22a2eef4611e9d",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/numerical_wave01_reuse_v1/staged_dispatch_v1/progressive_warm_wave02_20260915_v1/batches/mixed_60000_q/mapped_groups/d8c0152bc78bf59a73f3721d2d1084ad10f9a600e746edf2b11272f74e1fec5e.json": "c2202e4ffb0dea92692c9ccd5e9ce893269f0846c6f067772d8407dc8b174e06",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/numerical_wave01_reuse_v1/staged_dispatch_v1/progressive_warm_wave02_20260915_v1/batches/mixed_60000_q/mapped_groups/5c0b0c7d73f5749d1f300fe905065514001046af1dfd0a6f1dfff163037e90e5.json": "077493d3f14c9440957405d64ae7725fa54cf7ce025aa7bd7f9be8449a782997"
+  },
+  "scientific_method_unchanged": true,
+  "legacy_receipts_modified": false,
+  "full_campaign_restart_approved": false,
+  "remaining_gate": "Enable the bounded dispatcher to consume this explicit overlay; qualify other resource classes before expansion."
+}

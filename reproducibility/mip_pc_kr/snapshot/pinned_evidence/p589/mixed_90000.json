@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "resource_class": "mixed_90000",
+  "qualifier": "mixed_90000_q",
+  "source_lock": "548d341a3fae0c19e4bcb9176a12c4fbe07d94ae0f95934ccd84bf37ab6133c3",
+  "memory_mib": {
+    "flow": 7040,
+    "prepare": 1024,
+    "collect": 512,
+    "native": 2304,
+    "publish": 512
+  },
+  "measured_peak_bytes": {
+    "flow": 6110068736,
+    "prepare": 877096960,
+    "collect": 310878208,
+    "native": 807792640,
+    "publish": 382996480
+  },
+  "evidence": {
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_90000_q/runs/live4/RELATIVE_RESOURCE_REVIEW.json": "b7eee89e3602f905db5296bc38ffd00a84ea75293d8a9b35b8d07460cea5cf40",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_90000_q/receipts/prepare_memory.json": "771777816b2c6997c7178b660d51c0fd616e1a142c843ba98bb2b880d080584b",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_90000_q/receipts/flow_memory.json": "33910ffac938c19b5b7feae1a6c27652179d663bca13d9a0e5fabff4071f3530",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_90000_q/receipts/native_memory.json": "074972ab16b5a28c943b510ddc0f80412e599e02c0127c58fdbc76ffcf14ceca",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_90000_q/receipts/publish_memory.json": "3878ebcc5e22bd578492ed864daa7338eb7cf097ce817761385ccfb40861e408",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/numerical_wave01_reuse_v1/staged_dispatch_v1/progressive_warm_wave02_20260915_v1/batches/mixed_90000_q/PASS.json": "36f86750e58dc1daaf5a68f4c63039a03a8b493592930deccbe44ffb1890d220",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_90000_q/receipts/COLLECT_PASS.json": "48acfa307bd37d833afe529d85a496af3cf35e983d375349763736885bf6d4b0",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_90000_q/receipts/NATIVE_PASS.json": "80f430e71e16ebdfb63cdd1a2fc65aaa5396c3d8a54860ecb4d52915c5ac0d49",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_90000_q/receipts/READTHROUGH_PASS.json": "176008726ba02617ec68db199b9ddf6f9667a919248b684e92106855fb66c4bc"
+  },
+  "scope": "four-core fixed100 WRR60 batches in this frozen 12-case plan only",
+  "all2430_expansion": false
+}

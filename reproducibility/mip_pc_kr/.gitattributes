@@ -1,0 +1,6 @@
+*.py text eol=lf
+*.md text eol=lf
+*.jl text eol=lf
+snapshot/** -text
+SOURCE_MANIFEST.json -text
+validation/** -text

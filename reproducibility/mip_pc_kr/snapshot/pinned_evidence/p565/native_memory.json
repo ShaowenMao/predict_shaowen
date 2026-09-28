@@ -1,0 +1,8 @@
+{
+  "peak_gib": 0.7616920471191406,
+  "limit_gib": 2.25,
+  "events": 0,
+  "required_gib": 0.7997766500338912,
+  "passed": true,
+  "policy": "relative_memory_accept105_size120_v1"
+}

@@ -1,0 +1,4 @@
+Test Summary:                                 | Pass  Total  Time
+Managed factors retain corrected-flow results |   12     12  8.9s
+Test Summary:                                       | Pass  Total  Time
+Sparse sampling retains endpoints and unique states |    3      3  1.3s

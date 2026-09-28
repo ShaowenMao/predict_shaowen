@@ -1,0 +1,79 @@
+{
+  "accepted_science_repeated": false,
+  "commands": [
+    [
+      "pc",
+      [
+        "C:/Users/Shaow/.julia/juliaup/julia-1.12.6+0.x64.w64.mingw32/bin/julia.exe",
+        "--startup-file=no",
+        "--math-mode=ieee",
+        "--check-bounds=yes",
+        "--threads=2",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\snapshot\\pipeline\\vendor\\pc\\test\\runtests.jl"
+      ]
+    ],
+    [
+      "bridge",
+      [
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\.venv-mip\\Scripts\\python.exe",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\snapshot\\pipeline\\vendor\\kr\\build_bridge.py",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\snapshot\\pipeline\\vendor\\numeric",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\scratch\\final-check\\bridge"
+      ]
+    ],
+    [
+      "plan",
+      [
+        "C:/Users/Shaow/.julia/juliaup/julia-1.12.6+0.x64.w64.mingw32/bin/julia.exe",
+        "--startup-file=no",
+        "--math-mode=ieee",
+        "--check-bounds=yes",
+        "--threads=2",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\snapshot\\frozen_preparation\\test_plan.jl",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\snapshot\\frozen_preparation\\tests\\raw.bin",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\snapshot\\frozen_preparation\\tests\\geometry.bin",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\scratch\\final-check\\planned"
+      ]
+    ],
+    [
+      "coupled",
+      [
+        "C:/Users/Shaow/.julia/juliaup/julia-1.12.6+0.x64.w64.mingw32/bin/julia.exe",
+        "--startup-file=no",
+        "--math-mode=ieee",
+        "--check-bounds=yes",
+        "--threads=2",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\snapshot\\pipeline\\test_pipeline.jl",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\scratch\\final-check\\planned\\raw.bin",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\scratch\\final-check\\bridge\\phase_bridge.dll",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\scratch\\final-check\\flow"
+      ]
+    ],
+    [
+      "backend",
+      [
+        "C:/Users/Shaow/.julia/juliaup/julia-1.12.6+0.x64.w64.mingw32/bin/julia.exe",
+        "--startup-file=no",
+        "--math-mode=ieee",
+        "--check-bounds=yes",
+        "--threads=2",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\tests\\test_backend.jl",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\scratch\\final-check\\planned\\raw.bin",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\scratch\\final-check\\planned\\geometry.bin",
+        "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\scratch\\final-check\\bridge\\phase_bridge.dll"
+      ]
+    ]
+  ],
+  "julia": "julia version 1.12.6",
+  "logs": {
+    "backend": "7d2d120439e2a514d455c328ff24adf8599466353fd66a680738abd1a4a304a1",
+    "bridge": "335fe4658006663f151c342bbe93e9f67166884aa6cd06931cd305d71e667105",
+    "coupled": "67618341db0a5f53197a7b4d2b4b7b838ea4acb9abe9419542c06781a22e8840",
+    "pc": "4fd3f1648b08b848a6a7a353da77eda88f10c3bb0819d429d1715a7828daf343",
+    "plan": "88aebc2ae44d0af986076dda016ae22fc6a51a2aa521b8b65961a0da34eed6e1"
+  },
+  "passed": true,
+  "platform": "Windows-10-10.0.26200-SP0",
+  "scope": "Small synthetic fixtures only; not full-case Linux deployment or reservoir acceptance",
+  "source_manifest_sha256": "f96530dc4dd4d7cb4c9fb2a54d41a196a0e23f511bfc2954508b3e834ad769a2"
+}

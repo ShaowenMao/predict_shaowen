@@ -1,0 +1,16 @@
+function features(replayFile, outputFile)
+% Read-only geometric descriptors; no saturation or property modification.
+R=load(replayFile,'replay'); G=R.replay.G; V=R.replay.Grid;
+k=double(V.perm); phi=double(V.poro(:)); vol=double(G.cells.volumes(:));
+[diagonal, span]=tensor_descriptors(k);
+assert(numel(phi)==G.cells.num && all(phi>0) && all(phi<1));
+assert(all(vol>0));
+F=struct('num_cells',G.cells.num,'unit_array_dimensions',size(V.units), ...
+    'num_faces',G.faces.num,'porosity_min',min(phi),'porosity_max',max(phi), ...
+    'diagonal_permeability_min',min(diagonal,[],1),'diagonal_permeability_max',max(diagonal,[],1), ...
+    'stored_tensor_components',size(k,2),'log10_permeability_span',span, ...
+    'clay_cell_fraction',mean(double(V.isSmear(:))), ...
+    'clay_pv_fraction',sum(vol.*phi.*double(V.isSmear(:)))/sum(vol.*phi));
+if isfield(G,'cartDims'), F.cartesian_dimensions=G.cartDims; end
+fid=fopen(outputFile,'w');assert(fid>0);fprintf(fid,'%s\n',jsonencode(F));fclose(fid);
+end

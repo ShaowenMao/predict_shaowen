@@ -1,0 +1,16 @@
+{
+  "reference_campaign": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/variants/low_mip_wrr60_fault_nohys/campaign.toml",
+  "reference_campaign_sha256": "1bc0ad457e13d5da1591b2b9d0cb132073e4dcdaab41d1d04e16f5629cba74a6",
+  "reference_full_job": "22588292",
+  "reference_specific": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/comparative_3case_wrr30_60_pc_conventions_20260910_v1/reservoir_matrix_launch_20260911_v1/datasets/s01_c018_case07_wrr60/attempt_job22577150/physical_prebreakthrough/candidate_specific_s01_c018_case07.mat",
+  "reference_specific_sha256": "892ec83db1648f756885d9fed67b10362bc9e1c54fad11c59d064b3d24b65263",
+  "zero_pc_source": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/comparative_3case_wrr30_60_pc_conventions_20260910_v1/reservoir_matrix_launch_20260911_v1/datasets/s01_c018_case07_wrr60/attempt_job22577150/zero_before_breakthrough/candidate_specific_s01_c018_case07.mat",
+  "zero_pc_sha256": "3bb97167ff438dc88a263cbabbd0bfa6f6d713c92d9fd4d17e86e79e763b695c",
+  "physical_pc_source": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/comparative_3case_wrr30_60_pc_conventions_20260910_v1/reservoir_matrix_launch_20260911_v1/datasets/s01_c018_case07_wrr60/attempt_job22577150/physical_prebreakthrough/candidate_specific_s01_c018_case07.mat",
+  "physical_pc_sha256": "892ec83db1648f756885d9fed67b10362bc9e1c54fad11c59d064b3d24b65263",
+  "pc_only_audit_sha256": "6633a88a0918d0197f777a31621d8c0c33ad2c137641da419d06a759aa246b9a",
+  "kr_policy": "finished_mip_values_unchanged",
+  "solver_policy": "same_corrected_runtime_solver_tolerances_and_timestep_controls",
+  "start_policy": "time_zero_no_restart_reuse",
+  "retention_checker_change": "accept exactly all 210 states; existing state and QoI checks retained"
+}

@@ -1,0 +1,53 @@
+{
+  "accepted_science_repeated": false,
+  "commands": [
+    [
+      "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\.venv-mip\\Scripts\\python.exe",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\tests",
+      "-p",
+      "test_workflow.py",
+      "-v"
+    ],
+    [
+      "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\.venv-mip\\Scripts\\python.exe",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\snapshot\\historical_releases\\mip_matrix_launch_20260911_v1\\vendor",
+      "-p",
+      "test_tables.py",
+      "-v"
+    ],
+    [
+      "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\.venv-mip\\Scripts\\python.exe",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "C:\\Users\\Shaow\\.codex\\worktrees\\mip-reproducible-workflows\\predict_shaowen\\reproducibility\\mip_pc_kr\\snapshot\\historical_releases\\mip_matrix_launch_20260911_v1\\vendor",
+      "-p",
+      "test_pc_only.py",
+      "-v"
+    ]
+  ],
+  "libraries": {
+    "h5py": "3.14.0",
+    "numpy": "2.2.6",
+    "scipy": "1.15.3"
+  },
+  "logs": {
+    "package": "b437206942cd50ad3d6de2178a48e1564a66acc9b206ce61a63c33c34cfe7078",
+    "pc_onset": "087c71618abeb5e664687301022d38409d4e848d0b5a41f8330ab8be61644ffe",
+    "physical": "352e226a6d1f8fe3a07d6f98cab2bf50e3e7f2305881c831bfe554b3e48fb3c5"
+  },
+  "passed": true,
+  "platform": "Windows-10-10.0.26200-SP0",
+  "python": "3.10.9 (tags/v3.10.9:1dd9be6, Dec  6 2022, 20:01:21) [MSC v.1934 64 bit (AMD64)]",
+  "scope": "Synthetic fixtures and preservation guards; not live campaign acceptance",
+  "source_manifest_sha256": "f96530dc4dd4d7cb4c9fb2a54d41a196a0e23f511bfc2954508b3e834ad769a2"
+}

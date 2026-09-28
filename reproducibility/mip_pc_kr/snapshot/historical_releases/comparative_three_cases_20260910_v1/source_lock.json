@@ -1,0 +1,12 @@
+{
+  "files": {
+    "DESIGN.md": "83129d8d6fad4fa7ebd61cdb82f921f0e20ab148685c89980a0fb102ff0513a0",
+    "assemble_case.m": "9452f87518df4948ece0cebeb27e4c5eeb019ffe87808420afb33dac4c27b626",
+    "job.sh": "cc794319bd7dfb147ce92d126c9a26596c22a2c52fafe38f74f7a1c0e4cd79da",
+    "scenario.jl": "697dfec4fe56665b11099e78980c5db6c751518fccd0d4b19bc608edc0e116f3",
+    "study.py": "f25301a1a3a928dac753bf9c110c7af9bc77a83fb08e0cdbf50f741834cc0401",
+    "submit.py": "82a3d4a2cdca767c5a7a206b4395bab32ba6574763ea714f98c540bc469f3b27",
+    "test_study.py": "37c5509d8775b68faa5c2172a993507b309c13198f7052453762deb029f50590"
+  },
+  "sha256": "43d11badf7f4575bc9fc3a70c6ec2c5579d22c382f2526ae2d998a1ae49592dd"
+}

@@ -1,0 +1,45 @@
+{
+  "duration_files": {
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/phase1_mip_acceleration_20260911_v1/stage12_kr_batch_throughput_v1/duration_batches_v1/allowlist_recovery_v1/collectors/job22695434/COMBINED.json": "bf26c1609a32f3dba3cce4ff6c2ae39734e809ca65aa73bc56848f208e66fdb6",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/phase1_mip_acceleration_20260911_v1/stage12_kr_batch_throughput_v1/duration_batches_v1/allowlist_recovery_v1/collectors/job22695434/SUMMARY.json": "723e740642629af6b00ab8eadb72f02ee724eb2bbe51a8fffda6135aab8ff9c4"
+  },
+  "files": {
+    "contract.jl": {
+      "path": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/variants/intermediate_mip_wrr60_fault_nohys/source/gom_step62_effective_pc_global_plateau_contract.jl",
+      "sha256": "f4a00fa5f36b8cedc779586a2467c38e049d64ecaaf31dddbaddbbb7a16a829a"
+    },
+    "corrected_campaign.toml": {
+      "path": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/variants/intermediate_mip_wrr60_fault_nohys/campaign.toml",
+      "sha256": "a75c8b85cacac645f344431ca646adc20148fa8cdfc33b86d28599c6bb1d466b"
+    },
+    "hysteresis_validation.jl": {
+      "path": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/hysteresis_validation.jl",
+      "sha256": "3659cc57df2595a7e71c8c7ad143fe658fb7b4b038bb4aceffdf8549de00cba1"
+    },
+    "old_inputs.json": {
+      "path": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/full_fault_wrr60_s03_c022_case12_20260910_v1/inputs.json",
+      "sha256": "c986dc3ef3fb58c68791fb8271c369f8019e90a15313c71dfe50107f39f7102a"
+    },
+    "old_raw_manifest.json": {
+      "path": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/full_fault_wrr60_s03_c022_case12_20260910_v1/raw_manifest.json",
+      "sha256": "e234c596cd58094efb63b956cd2ca4e1c43c097a0c845255af5458eeb28f28ed"
+    },
+    "reference/advanced.jl": {
+      "path": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/reference/advanced.jl",
+      "sha256": "bfb6b910cfda845fa5dd205c3ed11071f64fc35c87c79c30d3139c97a1bb3ce3"
+    },
+    "reference/production_qoi.jl": {
+      "path": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/reference/production_qoi.jl",
+      "sha256": "5557de90efe8902d6da68045e130482d555dc4c27122312beb15aed8a543a203"
+    }
+  },
+  "pins": {
+    "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_phase1_2430_common.mat": "c652b5a725b4cf922690ecd290555822906c748c50db6ebe00e3a0da04352b8c",
+    "/orcd/data/juanes/001/shaowen/gom_full_production/inputs/step62_phase1_2430_effective_globalplateau_v1_bf71e760_v1/jutul_split/gom_step62_87slice_s03_c022_case12_full_slice_geology_specific.mat": "23024de199a8c208cc1afd62b1015ef69be3d214501b560ddaef0321b50cd5ec",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/runtime/Manifest.toml": "f53278c35959640a90ae2e16d65737fe0470d4b5a158533870a0127dd45d7c9c",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/runtime/Project.toml": "4678ff6dc52bb582ffc9a66211aba2205dccdc2c190747a89eb46bb3802e2466",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/production_runs/independent_full_fault_v1_phase1_20260809_v1/case_results/cases/s03_c022/case12/kr/reservoir_ready/fault_properties_s03_c022_case12_pc_full_slice.mat": "d01897edb19d21e7e58f4d2b6f8a12f4d19372bf850aeb910975fc0e942c44f8"
+  },
+  "runtime": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/runtime",
+  "runtime_commit": "c403d9dd1bbb424ddfae9ae659d900c26c84e59d"
+}

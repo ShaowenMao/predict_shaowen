@@ -1,0 +1,122 @@
+[
+  {
+    "job": "22588288",
+    "dependency": "afterok:22588250:22588287"
+  },
+  {
+    "job": "22588290",
+    "dependency": "afterok:22588250:22588289"
+  },
+  {
+    "job": "22588292",
+    "dependency": "afterok:22588250:22588291"
+  },
+  {
+    "job": "22588294",
+    "dependency": "afterok:22588250:22588293"
+  },
+  {
+    "job": "22588296",
+    "dependency": "afterok:22588250:22588295"
+  },
+  {
+    "job": "22588298",
+    "dependency": "afterok:22588250:22588297"
+  },
+  {
+    "job": "22588300",
+    "dependency": "afterok:22588250:22588299"
+  },
+  {
+    "job": "22588302",
+    "dependency": "afterok:22588250:22588301"
+  },
+  {
+    "job": "22588304",
+    "dependency": "afterok:22588250:22588303"
+  },
+  {
+    "job": "22588307",
+    "dependency": "afterok:22588250:22588306"
+  },
+  {
+    "job": "22588310",
+    "dependency": "afterok:22588250:22588309"
+  },
+  {
+    "job": "22588312",
+    "dependency": "afterok:22588250:22588311"
+  },
+  {
+    "job": "22588314",
+    "dependency": "afterok:22588250:22588313"
+  },
+  {
+    "job": "22588316",
+    "dependency": "afterok:22588250:22588315"
+  },
+  {
+    "job": "22588318",
+    "dependency": "afterok:22588250:22588317"
+  },
+  {
+    "job": "22588287",
+    "dependency": ""
+  },
+  {
+    "job": "22588289",
+    "dependency": ""
+  },
+  {
+    "job": "22588291",
+    "dependency": ""
+  },
+  {
+    "job": "22588293",
+    "dependency": ""
+  },
+  {
+    "job": "22588295",
+    "dependency": ""
+  },
+  {
+    "job": "22588297",
+    "dependency": ""
+  },
+  {
+    "job": "22588299",
+    "dependency": ""
+  },
+  {
+    "job": "22588301",
+    "dependency": ""
+  },
+  {
+    "job": "22588303",
+    "dependency": ""
+  },
+  {
+    "job": "22588306",
+    "dependency": ""
+  },
+  {
+    "job": "22588309",
+    "dependency": ""
+  },
+  {
+    "job": "22588311",
+    "dependency": ""
+  },
+  {
+    "job": "22588313",
+    "dependency": ""
+  },
+  {
+    "job": "22588315",
+    "dependency": ""
+  },
+  {
+    "job": "22588317",
+    "dependency": ""
+  }
+]

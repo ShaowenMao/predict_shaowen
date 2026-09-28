@@ -1,0 +1,87 @@
+{
+  "datasets": {
+    "s01_c018_case07_wrr30": {
+      "job": "22577149"
+    },
+    "s01_c018_case07_wrr60": {
+      "job": "22577150"
+    },
+    "s03_c022_case12_wrr60": {
+      "job": "22577151"
+    },
+    "s03_c003_case08_wrr30": {
+      "job": "22577152"
+    },
+    "s03_c003_case08_wrr60": {
+      "job": "22577153"
+    }
+  },
+  "variants": {
+    "s01_c018_case07_wrr30_physical_prebreakthrough": {
+      "preflight_job": "22577154",
+      "full_job": "22577155"
+    },
+    "s01_c018_case07_wrr30_zero_before_breakthrough": {
+      "preflight_job": "22577156",
+      "full_job": "22577157"
+    },
+    "s01_c018_case07_wrr60_physical_prebreakthrough": {
+      "preflight_job": "22577158",
+      "full_job": "22577159"
+    },
+    "s01_c018_case07_wrr60_zero_before_breakthrough": {
+      "preflight_job": "22577160",
+      "full_job": "22577162"
+    },
+    "s03_c022_case12_wrr60_physical_prebreakthrough": {
+      "preflight_job": "22577163",
+      "full_job": "22577164"
+    },
+    "s03_c022_case12_wrr60_zero_before_breakthrough": {
+      "preflight_job": "22577165",
+      "full_job": "22577166"
+    },
+    "s03_c003_case08_wrr30_physical_prebreakthrough": {
+      "preflight_job": "22577167",
+      "full_job": "22577169"
+    },
+    "s03_c003_case08_wrr30_zero_before_breakthrough": {
+      "preflight_job": "22577170",
+      "full_job": "22577171"
+    },
+    "s03_c003_case08_wrr60_physical_prebreakthrough": {
+      "preflight_job": "22577172",
+      "full_job": "22577173"
+    },
+    "s03_c003_case08_wrr60_zero_before_breakthrough": {
+      "preflight_job": "22577174",
+      "full_job": "22577175"
+    }
+  },
+  "preserved_existing": [
+    {
+      "risk": "intermediate",
+      "case": "s03_c022_case12",
+      "task": 1137,
+      "angle": 30,
+      "pc_convention": "physical_prebreakthrough",
+      "variant": "s03_c022_case12_wrr30_physical_prebreakthrough",
+      "production_promotion": false,
+      "reuse_reservoir_root": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/reservoir_comparison_s03_c022_case12_20260910_v1",
+      "existing_job": "22438751_1137",
+      "launch_policy": "reuse_existing_do_not_duplicate"
+    },
+    {
+      "risk": "intermediate",
+      "case": "s03_c022_case12",
+      "task": 1137,
+      "angle": 30,
+      "pc_convention": "zero_before_breakthrough",
+      "variant": "s03_c022_case12_wrr30_zero_before_breakthrough",
+      "production_promotion": false,
+      "reuse_reservoir_root": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/reservoir_pc_breakthrough_s03_c022_case12_20260910_v1",
+      "existing_job": "22474505_1137",
+      "launch_policy": "reuse_existing_do_not_duplicate"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+test_checksum_rejection (test_workflow.WorkflowTests) ... ok
+test_export_adapter_uses_original_receipt_checks (test_workflow.WorkflowTests) ... ok
+test_frozen_source_checksums (test_workflow.WorkflowTests) ... ok
+test_never_reuse_output_or_package_root (test_workflow.WorkflowTests) ... ok
+test_physical_export_preserves_positive_pc (test_workflow.WorkflowTests) ... ok
+test_reject_path_escape (test_workflow.WorkflowTests) ... ok
+test_snapshot_tampering_and_addition_rejected (test_workflow.WorkflowTests) ... ok
+test_zero_onset_all_522_positions_and_no_original_changes (test_workflow.WorkflowTests) ... ok
+test_zero_onset_rejects_different_sampling (test_workflow.WorkflowTests) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 16.567s
+
+OK

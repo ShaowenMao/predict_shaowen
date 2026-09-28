@@ -1,0 +1,210 @@
+{
+  "bootstrap": {
+    "actual_scontrol": "JobId=22863775 JobName=kr10q_bootstrap UserId=shaowen(187343) GroupId=shaowen(100187343) MCS_label=N/A Priority=281204 Nice=0 Account=mit_amf_advanced_cpu QOS=mit_amf_advanced_cpu JobState=PENDING Reason=Priority Dependency=(null) Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0 RunTime=00:00:00 TimeLimit=00:30:00 TimeMin=N/A SubmitTime=2026-09-16T21:15:20 EligibleTime=2026-09-16T21:15:20 AccrueTime=Unknown StartTime=Unknown EndTime=Unknown Deadline=N/A SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-09-16T21:15:20 Scheduler=Main Partition=mit_normal AllocNode:Sid=login008:2890326 ReqNodeList=(null) ExcNodeList=node1622 NodeList= NumNodes=1-1 NumCPUs=2 NumTasks=1 CPUs/Task=2 ReqB:S:C:T=0:0:*:* ReqTRES=cpu=2,mem=4.50G,node=1,billing=2 AllocTRES=(null) Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=* MinCPUsNode=2 MinMemoryNode=4.50G MinTmpDiskNode=0 Features=(null) DelayBoot=00:00:00 OverSubscribe=NO Exclusive=NO Contiguous=0 Licenses=(null) LicensesAlloc=(null) Network=(null) Command=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh SubmitLine=sbatch --parsable --partition=mit_normal --account=mit_amf_advanced_cpu --qos=mit_amf_advanced_cpu --nodes=1 --ntasks=1 --cpus-per-task=2 --mem=4608M --time=30 --exclude=node1622 --job-name=kr10q_bootstrap --output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/bootstrap_%j.out /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3 bootstrap WorkDir=/home/shaowen StdErr= StdIn=/dev/null StdOut=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/bootstrap_22863775.out TresPerTask=cpu=2\n",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--partition=mit_normal",
+      "--account=mit_amf_advanced_cpu",
+      "--qos=mit_amf_advanced_cpu",
+      "--nodes=1",
+      "--ntasks=1",
+      "--cpus-per-task=2",
+      "--mem=4608M",
+      "--time=30",
+      "--exclude=node1622",
+      "--job-name=kr10q_bootstrap",
+      "--output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/bootstrap_%j.out",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3",
+      "bootstrap"
+    ],
+    "cpus": 2,
+    "dependencies": [],
+    "job": "22863775",
+    "memory_mib": 4608,
+    "stage": "bootstrap"
+  },
+  "collect": {
+    "actual_scontrol": "JobId=22863784 JobName=kr10q_collect UserId=shaowen(187343) GroupId=shaowen(100187343) MCS_label=N/A Priority=281204 Nice=0 Account=mit_amf_advanced_cpu QOS=mit_amf_advanced_cpu JobState=PENDING Reason=Dependency Dependency=afterok:22863777(unfulfilled),afterok:22863779(unfulfilled),afterok:22863782(unfulfilled) Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0 RunTime=00:00:00 TimeLimit=00:30:00 TimeMin=N/A SubmitTime=2026-09-16T21:15:22 EligibleTime=Unknown AccrueTime=Unknown StartTime=Unknown EndTime=Unknown Deadline=N/A SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-09-16T21:15:22 Scheduler=Main Partition=mit_normal AllocNode:Sid=login008:2890326 ReqNodeList=(null) ExcNodeList=node1622 NodeList= NumNodes=1-1 NumCPUs=1 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:* ReqTRES=cpu=1,mem=768M,node=1,billing=1 AllocTRES=(null) Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=* MinCPUsNode=1 MinMemoryNode=768M MinTmpDiskNode=0 Features=(null) DelayBoot=00:00:00 OverSubscribe=NO Exclusive=NO Contiguous=0 Licenses=(null) LicensesAlloc=(null) Network=(null) Command=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh SubmitLine=sbatch --parsable --partition=mit_normal --account=mit_amf_advanced_cpu --qos=mit_amf_advanced_cpu --nodes=1 --ntasks=1 --cpus-per-task=1 --mem=768M --time=30 --exclude=node1622 --job-name=kr10q_collect --output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/collect_%j.out --dependency=afterok:22863777:22863779:22863782 --kill-on-invalid-dep=yes /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3 collect WorkDir=/home/shaowen StdErr= StdIn=/dev/null StdOut=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/collect_22863784.out KillOnInvalidDependent=Yes TresPerTask=cpu=1\n",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--partition=mit_normal",
+      "--account=mit_amf_advanced_cpu",
+      "--qos=mit_amf_advanced_cpu",
+      "--nodes=1",
+      "--ntasks=1",
+      "--cpus-per-task=1",
+      "--mem=768M",
+      "--time=30",
+      "--exclude=node1622",
+      "--job-name=kr10q_collect",
+      "--output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/collect_%j.out",
+      "--dependency=afterok:22863777:22863779:22863782",
+      "--kill-on-invalid-dep=yes",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3",
+      "collect"
+    ],
+    "cpus": 1,
+    "dependencies": [
+      "22863777",
+      "22863779",
+      "22863782"
+    ],
+    "job": "22863784",
+    "memory_mib": 768,
+    "stage": "collect"
+  },
+  "larger": {
+    "actual_scontrol": "JobId=22863779 JobName=kr10q_larger UserId=shaowen(187343) GroupId=shaowen(100187343) MCS_label=N/A Priority=281204 Nice=0 Account=mit_amf_advanced_cpu QOS=mit_amf_advanced_cpu JobState=PENDING Reason=Dependency Dependency=afterok:22863775(unfulfilled) Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0 RunTime=00:00:00 TimeLimit=01:00:00 TimeMin=N/A SubmitTime=2026-09-16T21:15:21 EligibleTime=Unknown AccrueTime=Unknown StartTime=Unknown EndTime=Unknown Deadline=N/A SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-09-16T21:15:21 Scheduler=Main Partition=mit_normal AllocNode:Sid=login008:2890326 ReqNodeList=(null) ExcNodeList=node1622 NodeList= NumNodes=1-1 NumCPUs=2 NumTasks=1 CPUs/Task=2 ReqB:S:C:T=0:0:*:* ReqTRES=cpu=2,mem=6.50G,node=1,billing=2 AllocTRES=(null) Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=* MinCPUsNode=2 MinMemoryNode=6.50G MinTmpDiskNode=0 Features=(null) DelayBoot=00:00:00 OverSubscribe=NO Exclusive=NO Contiguous=0 Licenses=(null) LicensesAlloc=(null) Network=(null) Command=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh SubmitLine=sbatch --parsable --partition=mit_normal --account=mit_amf_advanced_cpu --qos=mit_amf_advanced_cpu --nodes=1 --ntasks=1 --cpus-per-task=2 --mem=6656M --time=60 --exclude=node1622 --job-name=kr10q_larger --output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/larger_%j.out --dependency=afterok:22863775 --kill-on-invalid-dep=yes /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3 larger WorkDir=/home/shaowen StdErr= StdIn=/dev/null StdOut=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/larger_22863779.out KillOnInvalidDependent=Yes TresPerTask=cpu=2\n",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--partition=mit_normal",
+      "--account=mit_amf_advanced_cpu",
+      "--qos=mit_amf_advanced_cpu",
+      "--nodes=1",
+      "--ntasks=1",
+      "--cpus-per-task=2",
+      "--mem=6656M",
+      "--time=60",
+      "--exclude=node1622",
+      "--job-name=kr10q_larger",
+      "--output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/larger_%j.out",
+      "--dependency=afterok:22863775",
+      "--kill-on-invalid-dep=yes",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3",
+      "larger"
+    ],
+    "cpus": 2,
+    "dependencies": [
+      "22863775"
+    ],
+    "job": "22863779",
+    "memory_mib": 6656,
+    "stage": "larger"
+  },
+  "native": {
+    "actual_scontrol": "JobId=22863786 JobName=kr10q_native UserId=shaowen(187343) GroupId=shaowen(100187343) MCS_label=N/A Priority=281204 Nice=0 Account=mit_amf_advanced_cpu QOS=mit_amf_advanced_cpu JobState=PENDING Reason=Dependency Dependency=afterok:22863784(unfulfilled) Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0 RunTime=00:00:00 TimeLimit=00:30:00 TimeMin=N/A SubmitTime=2026-09-16T21:15:22 EligibleTime=Unknown AccrueTime=Unknown StartTime=Unknown EndTime=Unknown Deadline=N/A SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-09-16T21:15:22 Scheduler=Main Partition=mit_normal AllocNode:Sid=login008:2890326 ReqNodeList=(null) ExcNodeList=node1622 NodeList= NumNodes=1-1 NumCPUs=1 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:* ReqTRES=cpu=1,mem=3G,node=1,billing=1 AllocTRES=(null) Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=* MinCPUsNode=1 MinMemoryNode=3G MinTmpDiskNode=0 Features=(null) DelayBoot=00:00:00 OverSubscribe=NO Exclusive=NO Contiguous=0 Licenses=(null) LicensesAlloc=(null) Network=(null) Command=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh SubmitLine=sbatch --parsable --partition=mit_normal --account=mit_amf_advanced_cpu --qos=mit_amf_advanced_cpu --nodes=1 --ntasks=1 --cpus-per-task=1 --mem=3072M --time=30 --exclude=node1622 --job-name=kr10q_native --output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/native_%j.out --dependency=afterok:22863784 --kill-on-invalid-dep=yes /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3 native WorkDir=/home/shaowen StdErr= StdIn=/dev/null StdOut=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/native_22863786.out KillOnInvalidDependent=Yes TresPerTask=cpu=1\n",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--partition=mit_normal",
+      "--account=mit_amf_advanced_cpu",
+      "--qos=mit_amf_advanced_cpu",
+      "--nodes=1",
+      "--ntasks=1",
+      "--cpus-per-task=1",
+      "--mem=3072M",
+      "--time=30",
+      "--exclude=node1622",
+      "--job-name=kr10q_native",
+      "--output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/native_%j.out",
+      "--dependency=afterok:22863784",
+      "--kill-on-invalid-dep=yes",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3",
+      "native"
+    ],
+    "cpus": 1,
+    "dependencies": [
+      "22863784"
+    ],
+    "job": "22863786",
+    "memory_mib": 3072,
+    "stage": "native"
+  },
+  "prefix": {
+    "actual_scontrol": "JobId=22863781 JobName=kr10q_prefix UserId=shaowen(187343) GroupId=shaowen(100187343) MCS_label=N/A Priority=281204 Nice=0 Account=mit_amf_advanced_cpu QOS=mit_amf_advanced_cpu JobState=PENDING Reason=Dependency Dependency=afterok:22863775(unfulfilled) Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0 RunTime=00:00:00 TimeLimit=00:45:00 TimeMin=N/A SubmitTime=2026-09-16T21:15:21 EligibleTime=Unknown AccrueTime=Unknown StartTime=Unknown EndTime=Unknown Deadline=N/A SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-09-16T21:15:21 Scheduler=Main Partition=mit_normal AllocNode:Sid=login008:2890326 ReqNodeList=(null) ExcNodeList=node1622 NodeList= NumNodes=1-1 NumCPUs=2 NumTasks=1 CPUs/Task=2 ReqB:S:C:T=0:0:*:* ReqTRES=cpu=2,mem=2816M,node=1,billing=2 AllocTRES=(null) Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=* MinCPUsNode=2 MinMemoryNode=2816M MinTmpDiskNode=0 Features=(null) DelayBoot=00:00:00 OverSubscribe=NO Exclusive=NO Contiguous=0 Licenses=(null) LicensesAlloc=(null) Network=(null) Command=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh SubmitLine=sbatch --parsable --partition=mit_normal --account=mit_amf_advanced_cpu --qos=mit_amf_advanced_cpu --nodes=1 --ntasks=1 --cpus-per-task=2 --mem=2816M --time=45 --exclude=node1622 --job-name=kr10q_prefix --output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/prefix_%j.out --dependency=afterok:22863775 --kill-on-invalid-dep=yes /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3 prefix WorkDir=/home/shaowen StdErr= StdIn=/dev/null StdOut=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/prefix_22863781.out KillOnInvalidDependent=Yes TresPerTask=cpu=2\n",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--partition=mit_normal",
+      "--account=mit_amf_advanced_cpu",
+      "--qos=mit_amf_advanced_cpu",
+      "--nodes=1",
+      "--ntasks=1",
+      "--cpus-per-task=2",
+      "--mem=2816M",
+      "--time=45",
+      "--exclude=node1622",
+      "--job-name=kr10q_prefix",
+      "--output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/prefix_%j.out",
+      "--dependency=afterok:22863775",
+      "--kill-on-invalid-dep=yes",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3",
+      "prefix"
+    ],
+    "cpus": 2,
+    "dependencies": [
+      "22863775"
+    ],
+    "job": "22863781",
+    "memory_mib": 2816,
+    "stage": "prefix"
+  },
+  "resume": {
+    "actual_scontrol": "JobId=22863782 JobName=kr10q_resume UserId=shaowen(187343) GroupId=shaowen(100187343) MCS_label=N/A Priority=281204 Nice=0 Account=mit_amf_advanced_cpu QOS=mit_amf_advanced_cpu JobState=PENDING Reason=Dependency Dependency=afterok:22863781(unfulfilled) Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0 RunTime=00:00:00 TimeLimit=00:45:00 TimeMin=N/A SubmitTime=2026-09-16T21:15:22 EligibleTime=Unknown AccrueTime=Unknown StartTime=Unknown EndTime=Unknown Deadline=N/A SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-09-16T21:15:22 Scheduler=Main Partition=mit_normal AllocNode:Sid=login008:2890326 ReqNodeList=(null) ExcNodeList=node1622 NodeList= NumNodes=1-1 NumCPUs=2 NumTasks=1 CPUs/Task=2 ReqB:S:C:T=0:0:*:* ReqTRES=cpu=2,mem=2816M,node=1,billing=2 AllocTRES=(null) Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=* MinCPUsNode=2 MinMemoryNode=2816M MinTmpDiskNode=0 Features=(null) DelayBoot=00:00:00 OverSubscribe=NO Exclusive=NO Contiguous=0 Licenses=(null) LicensesAlloc=(null) Network=(null) Command=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh SubmitLine=sbatch --parsable --partition=mit_normal --account=mit_amf_advanced_cpu --qos=mit_amf_advanced_cpu --nodes=1 --ntasks=1 --cpus-per-task=2 --mem=2816M --time=45 --exclude=node1622 --job-name=kr10q_resume --output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/resume_%j.out --dependency=afterok:22863781 --kill-on-invalid-dep=yes /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3 resume WorkDir=/home/shaowen StdErr= StdIn=/dev/null StdOut=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/resume_22863782.out KillOnInvalidDependent=Yes TresPerTask=cpu=2\n",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--partition=mit_normal",
+      "--account=mit_amf_advanced_cpu",
+      "--qos=mit_amf_advanced_cpu",
+      "--nodes=1",
+      "--ntasks=1",
+      "--cpus-per-task=2",
+      "--mem=2816M",
+      "--time=45",
+      "--exclude=node1622",
+      "--job-name=kr10q_resume",
+      "--output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/resume_%j.out",
+      "--dependency=afterok:22863781",
+      "--kill-on-invalid-dep=yes",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3",
+      "resume"
+    ],
+    "cpus": 2,
+    "dependencies": [
+      "22863781"
+    ],
+    "job": "22863782",
+    "memory_mib": 2816,
+    "stage": "resume"
+  },
+  "small": {
+    "actual_scontrol": "JobId=22863777 JobName=kr10q_small UserId=shaowen(187343) GroupId=shaowen(100187343) MCS_label=N/A Priority=281204 Nice=0 Account=mit_amf_advanced_cpu QOS=mit_amf_advanced_cpu JobState=PENDING Reason=Dependency Dependency=afterok:22863775(unfulfilled) Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0 RunTime=00:00:00 TimeLimit=00:45:00 TimeMin=N/A SubmitTime=2026-09-16T21:15:20 EligibleTime=Unknown AccrueTime=Unknown StartTime=Unknown EndTime=Unknown Deadline=N/A SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-09-16T21:15:20 Scheduler=Main Partition=mit_normal AllocNode:Sid=login008:2890326 ReqNodeList=(null) ExcNodeList=node1622 NodeList= NumNodes=1-1 NumCPUs=2 NumTasks=1 CPUs/Task=2 ReqB:S:C:T=0:0:*:* ReqTRES=cpu=2,mem=2816M,node=1,billing=2 AllocTRES=(null) Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=* MinCPUsNode=2 MinMemoryNode=2816M MinTmpDiskNode=0 Features=(null) DelayBoot=00:00:00 OverSubscribe=NO Exclusive=NO Contiguous=0 Licenses=(null) LicensesAlloc=(null) Network=(null) Command=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh SubmitLine=sbatch --parsable --partition=mit_normal --account=mit_amf_advanced_cpu --qos=mit_amf_advanced_cpu --nodes=1 --ntasks=1 --cpus-per-task=2 --mem=2816M --time=45 --exclude=node1622 --job-name=kr10q_small --output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/small_%j.out --dependency=afterok:22863775 --kill-on-invalid-dep=yes /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh /orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3 small WorkDir=/home/shaowen StdErr= StdIn=/dev/null StdOut=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/small_22863777.out KillOnInvalidDependent=Yes TresPerTask=cpu=2\n",
+    "command": [
+      "sbatch",
+      "--parsable",
+      "--partition=mit_normal",
+      "--account=mit_amf_advanced_cpu",
+      "--qos=mit_amf_advanced_cpu",
+      "--nodes=1",
+      "--ntasks=1",
+      "--cpus-per-task=2",
+      "--mem=2816M",
+      "--time=45",
+      "--exclude=node1622",
+      "--job-name=kr10q_small",
+      "--output=/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/logs/small_%j.out",
+      "--dependency=afterok:22863775",
+      "--kill-on-invalid-dep=yes",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3/job.sh",
+      "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_pc100_kr10_campaign_20260916_v1/qualification_v3",
+      "small"
+    ],
+    "cpus": 2,
+    "dependencies": [
+      "22863775"
+    ],
+    "job": "22863777",
+    "memory_mib": 2816,
+    "stage": "small"
+  }
+}

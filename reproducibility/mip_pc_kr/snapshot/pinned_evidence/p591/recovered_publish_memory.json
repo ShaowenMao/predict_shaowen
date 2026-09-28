@@ -1,0 +1,10 @@
+{
+  "policy": "relative_memory_accept105_size120_v1",
+  "peak_bytes": 260878336,
+  "limit_bytes": 671088640,
+  "events": 0,
+  "required_bytes": 273922253,
+  "passed": true,
+  "peak_gib": 0.24296188354492188,
+  "limit_gib": 0.625
+}

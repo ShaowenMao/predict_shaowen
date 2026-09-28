@@ -1,0 +1,49 @@
+{
+  "borrowed": {
+    "Backend.jl": {
+      "parent": "D:\\codex_gom\\studies\\wrr60_phase1_production_candidate_20260912_v1\\broader_numerical_v1\\releases\\be634618c2500c8a\\Backend.jl",
+      "sha256": "2f142efa6db7fe48cf6403a34064c82f81349a4aea3dca1989dfc7f8452308d6"
+    },
+    "ManagedLU.jl": {
+      "parent": "D:\\codex_gom\\studies\\wrr60_phase1_production_candidate_20260912_v1\\broader_numerical_v1\\releases\\be634618c2500c8a\\ManagedLU.jl",
+      "sha256": "b29bb641c53e1f28d12ae7c2665b69f9d8c004f8d502f3071d00951c10d13622"
+    },
+    "MemoryProbe.jl": {
+      "parent": "D:\\codex_gom\\studies\\wrr60_phase1_production_candidate_20260912_v1\\broader_numerical_v1\\releases\\be634618c2500c8a\\MemoryProbe.jl",
+      "sha256": "67e71256a2be96074cffc9f10cf763da69204e99f643f1d4b7d768a664e29c6f"
+    },
+    "build_tables.py": {
+      "parent": "D:\\codex_gom\\studies\\wrr60_phase1_production_candidate_20260912_v1\\broader_numerical_v1\\releases\\be634618c2500c8a\\build_tables.py",
+      "sha256": "2e2f198b61458cd1c7f98941012ab073056cf2077b4256b658a7e7a15780d01d"
+    },
+    "context.py": {
+      "parent": "D:\\codex_gom\\studies\\wrr60_phase1_production_candidate_20260912_v1\\broader_numerical_v1\\releases\\be634618c2500c8a\\context.py",
+      "sha256": "a1bec2cd86fe741c5b52638fe64b6798b6779feb7b3de4f821ee32ece83a2e0b"
+    },
+    "prepare.jl": {
+      "parent": "D:\\codex_gom\\studies\\wrr60_phase1_production_candidate_20260912_v1\\broader_numerical_v1\\releases\\be634618c2500c8a\\prepare.jl",
+      "sha256": "901fd68cd1cc7fc1d8cf0b4175fbb9ce77a515c44ce3ca6e3f2c39ff97916e36"
+    },
+    "worker.jl": {
+      "parent": "D:\\codex_gom\\studies\\wrr60_phase1_production_candidate_20260912_v1\\broader_numerical_v1\\releases\\be634618c2500c8a\\worker.jl",
+      "sha256": "c6be43a94d8525667490b470e932ff19b9aff89e3f96a68b8b72d722a17b2b92"
+    }
+  },
+  "native_parent_sha256": "1121ef76c312faa00e058a127705b17dd36f44c9df9e66f24ba492d038d6112c",
+  "native_replacements": [
+    [
+      "@assert length(T)==6",
+      "@assert length(T)>=1"
+    ],
+    [
+      "collect(1:6)",
+      "collect(1:length(T))"
+    ],
+    [
+      "@test length(exceptions)==1",
+      "@test length(exceptions)<=1"
+    ]
+  ],
+  "native_scope": "Arbitrary number of tables; only same exact documented Core243 exception",
+  "scientific_kernels_byte_identical": true
+}

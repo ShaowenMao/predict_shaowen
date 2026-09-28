@@ -1,0 +1,3 @@
+# Numerical workers previously used an empty active environment and frozen
+# implicit-directory dependencies. Keep that resolution; do not load reservoir packages.
+[deps]

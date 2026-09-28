@@ -1,0 +1,11 @@
+test_exact_breakthrough_sample_has_entry_plateau (test_pc_only.PcOnlyTests) ... ok
+test_inconsistent_threshold_rejected (test_pc_only.PcOnlyTests) ... ok
+test_input_not_mutated (test_pc_only.PcOnlyTests) ... ok
+test_no_breakthrough_rejected (test_pc_only.PcOnlyTests) ... ok
+test_nonmonotone_breakthrough_flags_rejected (test_pc_only.PcOnlyTests) ... ok
+test_pc_only_preserves_coordinates_kr_and_post_branch (test_pc_only.PcOnlyTests) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.002s
+
+OK

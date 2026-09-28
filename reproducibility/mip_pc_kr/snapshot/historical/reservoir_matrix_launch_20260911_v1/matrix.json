@@ -1,0 +1,101 @@
+{
+  "new_variants": [
+    {
+      "case": "s01_c018_case07",
+      "angle": 30,
+      "pc_convention": "physical_prebreakthrough",
+      "variant": "s01_c018_case07_wrr30_physical_prebreakthrough",
+      "dataset": 0
+    },
+    {
+      "case": "s01_c018_case07",
+      "angle": 30,
+      "pc_convention": "zero_before_breakthrough",
+      "variant": "s01_c018_case07_wrr30_zero_before_breakthrough",
+      "dataset": 0
+    },
+    {
+      "case": "s01_c018_case07",
+      "angle": 60,
+      "pc_convention": "physical_prebreakthrough",
+      "variant": "s01_c018_case07_wrr60_physical_prebreakthrough",
+      "dataset": 1
+    },
+    {
+      "case": "s01_c018_case07",
+      "angle": 60,
+      "pc_convention": "zero_before_breakthrough",
+      "variant": "s01_c018_case07_wrr60_zero_before_breakthrough",
+      "dataset": 1
+    },
+    {
+      "case": "s03_c022_case12",
+      "angle": 60,
+      "pc_convention": "physical_prebreakthrough",
+      "variant": "s03_c022_case12_wrr60_physical_prebreakthrough",
+      "dataset": 2
+    },
+    {
+      "case": "s03_c022_case12",
+      "angle": 60,
+      "pc_convention": "zero_before_breakthrough",
+      "variant": "s03_c022_case12_wrr60_zero_before_breakthrough",
+      "dataset": 2
+    },
+    {
+      "case": "s03_c003_case08",
+      "angle": 30,
+      "pc_convention": "physical_prebreakthrough",
+      "variant": "s03_c003_case08_wrr30_physical_prebreakthrough",
+      "dataset": 3
+    },
+    {
+      "case": "s03_c003_case08",
+      "angle": 30,
+      "pc_convention": "zero_before_breakthrough",
+      "variant": "s03_c003_case08_wrr30_zero_before_breakthrough",
+      "dataset": 3
+    },
+    {
+      "case": "s03_c003_case08",
+      "angle": 60,
+      "pc_convention": "physical_prebreakthrough",
+      "variant": "s03_c003_case08_wrr60_physical_prebreakthrough",
+      "dataset": 4
+    },
+    {
+      "case": "s03_c003_case08",
+      "angle": 60,
+      "pc_convention": "zero_before_breakthrough",
+      "variant": "s03_c003_case08_wrr60_zero_before_breakthrough",
+      "dataset": 4
+    }
+  ],
+  "preserved_existing": [
+    {
+      "risk": "intermediate",
+      "case": "s03_c022_case12",
+      "task": 1137,
+      "angle": 30,
+      "pc_convention": "physical_prebreakthrough",
+      "variant": "s03_c022_case12_wrr30_physical_prebreakthrough",
+      "production_promotion": false,
+      "reuse_reservoir_root": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/reservoir_comparison_s03_c022_case12_20260910_v1",
+      "existing_job": "22438751_1137",
+      "launch_policy": "reuse_existing_do_not_duplicate"
+    },
+    {
+      "risk": "intermediate",
+      "case": "s03_c022_case12",
+      "task": 1137,
+      "angle": 30,
+      "pc_convention": "zero_before_breakthrough",
+      "variant": "s03_c022_case12_wrr30_zero_before_breakthrough",
+      "production_promotion": false,
+      "reuse_reservoir_root": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/reservoir_pc_breakthrough_s03_c022_case12_20260910_v1",
+      "existing_job": "22474505_1137",
+      "launch_policy": "reuse_existing_do_not_duplicate"
+    }
+  ],
+  "production_modified": false
+}

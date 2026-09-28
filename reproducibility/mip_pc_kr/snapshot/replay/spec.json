@@ -1,0 +1,28 @@
+{
+  "accounting_since": "2026-09-14",
+  "adapter_inverse_proof": true,
+  "adapter_parent_sha256": "641d0c9d1a7fcdc9b5b8a9ff8d0128a6cb5ec2ebe1c655bf919614a57ec5cbd3",
+  "authorization": "User requested campaign batches on 2026-09-14; preserve original production.",
+  "campaign_authorized": true,
+  "campaign_manifest_sha256": "adf73c15b1c4edc4b4721c7666a2c2b56aaf800088fff3599a5541dce0ed3dde",
+  "cpu_ceiling": 500,
+  "full_campaign_authorized": false,
+  "inventory": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/phase1_mip_acceleration_20260911_v1/attempts/inventory_job22597695/inventory.sqlite",
+  "inventory_sha256": "c7520c00819ce2737eecd35acac0d8d54f453c70641406b356da36fc828949b8",
+  "maintenance_end": "2026-09-15T21:00:00",
+  "maintenance_start": "2026-09-15T00:00:00",
+  "matlab_version": "25.2.0.3177638 (R2025b) Update 5",
+  "memory_ceiling_gib": 1984,
+  "numerical_dispatch_approved": false,
+  "root": "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1",
+  "scope_note": "First-wave replay only. Same scientific sources; fresh process per core. Unknown >150k-cell geometry and all unqualified numerical classes held.",
+  "sources": {
+    "archive_sha256": "92fe1461be5e0240a224deec7e7bd38efab75b0088aecced3de116b070259e42",
+    "external_runtime_inventory_qualified": false,
+    "physics_commit": "68351e35f3679317b35532a9ca0533674e0aafb5",
+    "physics_method_sha256": "21266acc83f38d374cdc966d8243834e92b786b75ab1f90dd0a99f4244717a8f",
+    "prepare_slot_sha256": "931d3ed4a44a3cd13a64ee79c22d9ab9c312fe313508b71f7d7c69ce58b442ee",
+    "replay_orchestrator_sha256": "cf223e6b575086ca527b8d72473eff1ac69bed3e7c81111683765135b5ec1208"
+  },
+  "stage": "exact_draw_replay_wave01"
+}

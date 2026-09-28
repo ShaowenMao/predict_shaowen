@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "resource_class": "mixed_150000",
+  "qualifier": "mixed_150000_q",
+  "source_lock": "548d341a3fae0c19e4bcb9176a12c4fbe07d94ae0f95934ccd84bf37ab6133c3",
+  "memory_mib": {
+    "flow": 20096,
+    "prepare": 1280,
+    "collect": 512,
+    "native": 2304,
+    "publish": 640
+  },
+  "measured_peak_bytes": {
+    "flow": 17452744704,
+    "prepare": 1049096192,
+    "collect": 313856000,
+    "native": 817860608,
+    "publish": 529326080
+  },
+  "evidence": {
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_150000_q/runs/live4/RELATIVE_RESOURCE_REVIEW.json": "50ae3bc1c1f84abee0b5d7294296afc503cb0ac09822911957814bf9769a7746",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_150000_q/receipts/prepare_memory.json": "2503c2377a7d5d483970f5e5fa1ab466cd263116792203487ea5fd15244fa51b",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_150000_q/receipts/flow_memory.json": "53a222b693c4f1f29e8f105a3ba3696a4d963085312ed947189d2cb941051d62",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_150000_q/receipts/native_memory.json": "42b302dde9547bb64dd2e36ed74ceb4c8297f6c5b58f04ead74cbc569360247b",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/publication_repair_v1/recovered_publish_memory.json": "e45c24030a2ba04012b3138b503adcf5065dc00ad92201c0bfd71511c8624634",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_150000_q/receipts/publish_memory.json": "3a28051e4764049a6ffdde7402cb81a04b5f5696dc587935f761303a77e93f57",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/publication_repair_v1/RECOVERY_PASS.json": "e838b596df274b923923ea7f2a0470d4d342efee313bd767da6006971a8107c7",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/publication_repair_v1/source_lock.json": "e7ec461ad46cd0f1a9dc713f54d36d7f1de521cdcb821faaef31279af8a0dbc5",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/campaigns/wrr60_phase1_2430_20260914_v1/numerical_wave01_reuse_v1/staged_dispatch_v1/progressive_warm_wave02_20260915_v1/batches/mixed_150000_q/PASS.json": "29098e942d2ab1c7a23d6798f0c247293beb3ca9b2819d0eb1ab1d4cc2c3528c",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_150000_q/receipts/COLLECT_PASS.json": "f877e2a058f92fd1d4932ba7bf76ddcdd8c9f90fc59d1b95b15364fd391b857e",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_150000_q/receipts/NATIVE_PASS.json": "7ae2cd1aa1b6bbe7031de299b3586527374571f26f1009c3529d20ed0ced2582",
+    "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/warm_worker_qualification/20260915_v2/progressive_launch_v1/batches/mixed_150000_q/receipts/READTHROUGH_PASS.json": "67f593e4f9b20aa19bc6ecf5ca695a7b7daaf75b11712cb5810fc3030e1a88a4"
+  },
+  "recovered_publication_source_lock": "e7ec461ad46cd0f1a9dc713f54d36d7f1de521cdcb821faaef31279af8a0dbc5",
+  "scope": "four-core fixed100 WRR60 batches in this frozen 12-case plan only",
+  "all2430_expansion": false
+}

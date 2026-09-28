@@ -1,0 +1,15 @@
+test_bounded_cleanup (test_tables.ExportTests) ... ok
+test_lossless_branches_and_explicit_endpoints (test_tables.ExportTests) ... ok
+test_never_force_positive_terminal_brine_to_zero (test_tables.ExportTests) ... ok
+test_reject_changed_mobility_at_duplicate (test_tables.ExportTests) ... ok
+test_reject_interior_vertical_branch (test_tables.ExportTests) ... ok
+test_reject_invalid_entry_bracket (test_tables.ExportTests) ... ok
+test_reject_large_kr_reversal (test_tables.ExportTests) ... ok
+test_reject_nan (test_tables.ExportTests) ... ok
+test_reject_nonmonotone_or_nearly_repeated_sg (test_tables.ExportTests) ... ok
+test_roundoff_above_one (test_tables.ExportTests) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.003s
+
+OK

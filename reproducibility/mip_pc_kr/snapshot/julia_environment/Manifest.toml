@@ -1,0 +1,5 @@
+julia_version = "1.12.6"
+manifest_format = "2.0"
+project_hash = "71853c6197a6a7f222db0f1978c7cb232b87c5ee"
+
+[deps]

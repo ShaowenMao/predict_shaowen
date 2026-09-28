@@ -1,0 +1,27 @@
+core = 243
+active_slope = 0.05197226472762934
+raw_tables_modified = false
+status = "READ_ONLY_ORIGIN_CONFIRMED"
+active_interval_y = [0.0, 0.003540380684687808]
+active_interval_x = [-1.0e-16, 0.06812057745110492]
+source_explanation = "PhaseRelativePermeability default epsilon=1e-16 shifts the first changing zero node left; native interpolation at Sg=0 is then positive."
+zero_epsilon_is_ephemeral_comparison_only = true
+maximum_value_difference = 1.1102230246251565e-16
+zero_epsilon_krg_zero = 0.0
+shared_runtime_modified = false
+predicted_native_krg_zero = 5.1972264727629346e-18
+maximum_other_sample_derivative_difference = 4.0800252065764653e-10
+maximum_knot_derivative_difference = 1.0353361879922138
+native_krg_zero = 5.1972264727629346e-18
+time_marching_performed = false
+values_sha256 = "0b472c2eb229bb10349c4f438d88587e1ba70ff5cf214505557a0a6f992aac50"
+strict_native_zero_gate_reclassified = false
+future_runtime_adoption_authorized = false
+
+[input_hashes]
+"/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/runtime/src/types.jl" = "391da47b6901f12bac8ab4e250c12e31fec7eec61fc2352ea339406a46d7df0f"
+"/home/shaowen/.julia/packages/Jutul/H2Efp/src/interpolation.jl" = "28776192b181f4f7a8302b0136fda6e53f010843d250fa0db5bf3662c8e2716e"
+"/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/runtime/src/io.jl" = "b2fe1b067a96f8b9d658066cb6882ac277d6e9aaed9c4e595485c8639d7426db"
+"/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/wrr60_phase1_production_candidate_20260912_v1/broader_numerical_v1/attempts/be634618c2500c8a/batch5_attempt1/sgof.csv" = "57f2b459e0480532107ea63f4092fa4e0b792bac632abfdbbd9ad3852cd503f5"
+"/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/runtime/Project.toml" = "4678ff6dc52bb582ffc9a66211aba2205dccdc2c190747a89eb46bb3802e2466"
+"/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/corrected_hysteresis_15case_20260911_v1/runtime/Manifest.toml" = "f53278c35959640a90ae2e16d65737fe0470d4b5a158533870a0127dd45d7c9c"
