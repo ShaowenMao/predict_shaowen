@@ -5,19 +5,33 @@ scientific sources, not a replacement controller or a new scientific method.
 The original local and Engaging files, source locks, jobs and results remain
 untouched. Nothing here authorizes deleting original data or restarting a campaign.
 
+## Default workflow
+
+**WRR60 Pc100/Kr10 with physical pre-breakthrough behavior is the default MIP
+Pc/Kr workflow.** Use the 60-degree clay Pc/Kr configuration, 100 saved Pc
+pressure points and at most 10 selected Kr states from the same MIP microstates.
+The standard command sequence is `prepare`, `flow`, then `export`, using the
+verified `planned60` inputs described in `REPRODUCE.md`.
+
+The zero-before-breakthrough Pc treatment is an explicit opt-in comparison,
+not the default; invoke `pc-onset` only when that alternative is requested.
+Historical WRR30 and full100 workflows remain preserved for reproduction and
+comparison, but are not defaults. This designation documents the existing
+workflow; it does not change numerical code, stored results or running jobs.
+
 ## Two Pc treatments
 
 | Workflow | Meaning | Preserved implementation |
 | --- | --- | --- |
-| Physical pre-breakthrough | Retain physical pore-volume-weighted gas saturation before outlet breakthrough. Pc and both Kr phases use the same MIP microstates. | `snapshot/pipeline`, `snapshot/backend`, `snapshot/kernel`, `snapshot/campaign` |
-| Zero-before-breakthrough Pc convention | Use archived breakthrough-pressure onset in the reservoir Pc table. Retain the existing saturation coordinates, both MIP Kr columns and all post-breakthrough Pc nodes. | `snapshot/pc_onset/prepare_inputs.py` and the historical comparison/export releases |
+| Physical pre-breakthrough (default) | Retain physical pore-volume-weighted gas saturation before outlet breakthrough. Pc and both Kr phases use the same MIP microstates. | `snapshot/pipeline`, `snapshot/backend`, `snapshot/kernel`, `snapshot/campaign` |
+| Zero-before-breakthrough Pc convention (opt-in) | Use archived breakthrough-pressure onset in the reservoir Pc table. Retain the existing saturation coordinates, both MIP Kr columns and all post-breakthrough Pc nodes. | `snapshot/pc_onset/prepare_inputs.py` and the historical comparison/export releases |
 
 The second workflow is a **Pc table treatment**, not another flow solver, a hard
 invasion switch, or permission to clamp reservoir-cell saturation. Both workflows
 preserve the original draws. Pc entry pressure and whole-core breakthrough
 pressure are different quantities and must not be substituted for one another.
 
-The current WRR60 campaign contract is 60-degree clay Pc/Kr, sand endpoint 0.95,
+The default WRR60 campaign contract is 60-degree clay Pc/Kr, sand endpoint 0.95,
 clay endpoint 0.8, 100 saved Pc pressures and at most 10 selected Kr states, with
 corrected direct flow, conservation/precision checks and managed factor release.
 Historical full100 and WRR30/WRR60 comparison sources are retained separately;

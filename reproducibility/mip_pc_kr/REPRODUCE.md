@@ -5,6 +5,17 @@ The commands below do not submit Slurm jobs, create claims, import into a live
 ledger or publish acceptance to a campaign. Never run the numerical examples
 on an Engaging login node. The supplied small fixtures may be tested locally.
 
+## Default selection
+
+Unless an alternative is explicitly requested, use **WRR60 Pc100/Kr10 with
+physical pre-breakthrough behavior**: 60-degree clay Pc/Kr, 100 saved Pc
+pressure points and at most 10 selected Kr states from the same MIP microstates.
+Follow sections 3 and 4 with verified `planned60` inputs. The `flow` and `export`
+commands are the default numerical/export path; section 5's `pc-onset` command
+is opt-in and must not be appended automatically. Historical WRR30/full100
+paths are preserved alternatives, not defaults. Existing acceptance, resource
+and preservation safeguards still apply without change.
+
 ## 1. Environments and source verification
 
 ```sh
@@ -99,7 +110,7 @@ unchanged; the same endpoint/pressure coverage safeguards run. The older WRR30
 and full100 numerical paths remain in the frozen historical sources. Do not use
 the WRR60-only sparse worker for a WRR30 input.
 
-## 4. Qualified Pc100/Kr10 flow and physical export
+## 4. Default WRR60 Pc100/Kr10 flow and physical export
 
 The flow JSON needs `raw`, `geometry`, `scenario_audit`, and `bridge`, each with
 `path` and expected `sha256`, plus `slot` and a qualified `memory_class`.
@@ -134,7 +145,7 @@ For a full case, use the preserved 522-position assembly/native verification
 sources and original mapping manifests. Four or fewer core tests are not a
 substitute for full-case mapping verification.
 
-## 5. Alternate Pc treatment without recomputing Kr
+## 5. Opt-in alternate Pc treatment without recomputing Kr
 
 The exact historical alternative uses three input tables: the accepted `mip`
 specific MAT file, its matching physical-Pc donor, and its matching zero-before-
