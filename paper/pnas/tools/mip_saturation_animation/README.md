@@ -52,6 +52,8 @@ second palette quantization. Do not re-save it with Pillow just to change timing
 Core 172 is the reference/pilot. `render_keys.txt` contains the other seven.
 These examples illustrate contrasting responses, not frequencies or controlled
 experiments. Large binary inputs, frames and movies remain outside Git.
+See [the completed Engaging run record](RUN_20261016.md) for source versions,
+job IDs, measured resources, validation results and output locations.
 
 ## Input preparation (once, local or on compute)
 
