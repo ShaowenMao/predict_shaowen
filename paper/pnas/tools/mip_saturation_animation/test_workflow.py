@@ -60,6 +60,20 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(len(keys), len(set(keys)))
         self.assertEqual(len(set(keys) - {"high_172"}), 7)
 
+    def test_wide_and_narrow_core_viewport_fit(self):
+        core = dict(n=8, material=np.array([1, 2] * 4))
+        for thickness in (1., 2., 5., 10.):
+            grid, _ = data.build_grid(core, (2, 2, 2), [thickness / 2, 72.972, 72.972])
+            position, focus, view_up = map(np.asarray, data.camera_for_right_dipping_material(grid))
+            view = focus - position
+            view /= np.linalg.norm(view)
+            right = np.cross(view, view_up)
+            right /= np.linalg.norm(right)
+            up = np.cross(right, view)
+            scale = data.camera_scale([dict(grid=grid)]) * 1.05
+            self.assertLessEqual(np.ptp(grid.points @ right) / (2 * scale * 1050 / 1640), .836)
+            self.assertLessEqual(np.ptp(grid.points @ up) / (2 * scale), .836)
+
     @unittest.skipUnless(os.environ.get("MIPVIZ_BUNDLE") and os.environ.get("MIPVIZ_BASELINE"), "optional saved-data regression")
     def test_approved_core172_saved_data(self):
         bundle = Path(os.environ["MIPVIZ_BUNDLE"]) / "high_172"

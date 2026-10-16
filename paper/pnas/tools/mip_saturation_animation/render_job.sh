@@ -8,9 +8,14 @@
 #SBATCH --time=01:00:00
 set -euo pipefail
 root=$1
-key=${2:-}
-if [[ -z "$key" ]]; then
+key=${2:-array}
+workflow=${3:-$root/workflow}
+if [[ "$key" == array ]]; then
     key=$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$root/bundle/render_keys.txt")
+fi
+if [[ ! -f "$workflow/run_core.py" ]]; then
+    printf 'Missing workflow source: %s\n' "$workflow" >&2
+    exit 1
 fi
 key=${key%$'\r'}
 if [[ ! "$key" =~ ^(low|intermediate|high)_[0-9]{3}$ ]]; then
@@ -21,7 +26,6 @@ if [[ ${MIPVIZ_VALIDATE_ONLY:-0} == 1 ]]; then
     printf '%s\n' "$key"
     exit 0
 fi
-workflow=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 module load tex-live/20251104 julia/1.12.6
 export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
 export JULIA_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1 PYVISTA_OFF_SCREEN=true

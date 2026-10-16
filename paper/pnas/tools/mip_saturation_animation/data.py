@@ -122,7 +122,8 @@ def camera_scale(items):
         right /= np.linalg.norm(right)
         up = np.cross(right, view)
         points = item["grid"].points - focus
-        sizes += [float(np.ptp(points @ up)), float(np.ptp(points @ right) * 1900 / 1800)]
+        # Each material occupies 1050 x 1640 pixels of the two-panel screenshot.
+        sizes += [float(np.ptp(points @ up)), float(np.ptp(points @ right) * 1640 / 1050)]
     return max(sizes) * .57
 
 

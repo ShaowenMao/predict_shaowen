@@ -35,6 +35,8 @@ projected from the transformed grid using the actual orthographic camera.
 - Header/material row spacing is 1.5 times the previous 0.042 figure-height gap.
 - Small padding around the Kr axes; Pc upper bound expands only when necessary
   to avoid clipping a different core's pressure range. No curve rescaling/smoothing.
+- Camera zoom fits both projected dimensions to each material's actual viewport;
+  wider cores are not cropped. Core 172 retains its approved scale and angle.
 
 The GIF endpoint pauses are inserted by changing delay bytes only, without a
 second palette quantization. Do not re-save it with Pillow just to change timing.
@@ -106,7 +108,10 @@ Requirements are installed once in a dedicated environment on a compute node.
 The array launcher accepts LF and CRLF task lists and rejects missing/invalid
 keys before loading scientific code. `MIPVIZ_VALIDATE_ONLY=1` exercises that
 launcher without starting a render. The launcher uses its own versioned source
-directory, so a repair need not overwrite the original deployed code.
+directory from the third argument (default `RUN/workflow`), not from the Slurm
+spool-script path. For a separate source version use
+`render_job.sh RUN array /absolute/source/version`. A repair need not overwrite
+the original deployed code. The launcher test includes a Slurm-like copied script.
 
 `run_core.py` refuses an existing output directory. On failure retain the old
 output and log; investigate and use an explicit new output/run directory. Do not
