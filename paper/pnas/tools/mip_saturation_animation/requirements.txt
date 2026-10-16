@@ -1,0 +1,8 @@
+numpy==2.4.4
+pandas==3.0.5
+matplotlib==3.10.9
+Pillow==12.2.0
+pyvista==0.48.4
+vtk==9.6.2
+h5py==3.16.0
+imageio-ffmpeg==0.6.0

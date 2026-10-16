@@ -1,0 +1,5 @@
+{
+  "low": {"case": "s01_c018_case07", "cores": [143, 462]},
+  "intermediate": {"case": "s03_c022_case12", "cores": [98, 100, 167]},
+  "high": {"case": "s03_c003_case08", "cores": [144, 165, 172]}
+}
