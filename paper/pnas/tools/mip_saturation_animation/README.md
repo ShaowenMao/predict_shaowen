@@ -60,6 +60,7 @@ The native directory contains the three `<risk>_mip_wrr60_fault_nohys.mat` files
 ```sh
 python -B prepare_bundle.py --audit /path/to/audit --native /path/to/native --output /new/bundle
 python -B -m unittest -v test_workflow
+bash test_launcher.sh
 ```
 
 The bundle contains per-core original raw input, TPFA geometry, saved accepted
@@ -101,6 +102,11 @@ production rendering allocation is chosen from its measured peak plus headroom.
 The setup job requests 2 CPUs/4096 MiB. Rendering uses Mesa/EGL, TeX Live and Julia
 modules; no GPU is needed. Private LaTeX and Julia caches avoid concurrent writes.
 Requirements are installed once in a dedicated environment on a compute node.
+
+The array launcher accepts LF and CRLF task lists and rejects missing/invalid
+keys before loading scientific code. `MIPVIZ_VALIDATE_ONLY=1` exercises that
+launcher without starting a render. The launcher uses its own versioned source
+directory, so a repair need not overwrite the original deployed code.
 
 `run_core.py` refuses an existing output directory. On failure retain the old
 output and log; investigate and use an explicit new output/run directory. Do not

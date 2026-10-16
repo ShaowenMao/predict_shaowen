@@ -59,7 +59,7 @@ def prepare(a):
                 print(f"Prepared {key}: {core['n']} cells, {len(curve)} saved states", flush=True)
     (a.output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     (a.output / "render_keys.txt").write_text("\n".join(e["key"] for e in manifest["cores"]
-        if e["key"] != "high_172") + "\n")
+        if e["key"] != "high_172") + "\n", newline="\n")
 
 
 if __name__ == "__main__":
