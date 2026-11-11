@@ -1,0 +1,133 @@
+{
+  "batches": [
+    [
+      "s02_c003_pc04_ca40_IND_001_core333",
+      "s02_c006_pc04_ca40_IND_002_core414",
+      "s02_c006_pc04_ca40_IND_003_core247",
+      "s02_c006_pc04_ca40_IND_003_core376",
+      "s02_c010_pc04_ca40_IND_008_core115",
+      "s02_c011_pc04_ca40_IND_003_core205",
+      "s02_c011_pc04_ca40_IND_004_core116",
+      "s06_c003_pc04_ca40_IND_006_core311"
+    ]
+  ],
+  "keys": [
+    "s02_c003_pc04_ca40_IND_001_core333",
+    "s02_c006_pc04_ca40_IND_002_core414",
+    "s02_c006_pc04_ca40_IND_003_core247",
+    "s02_c006_pc04_ca40_IND_003_core376",
+    "s02_c010_pc04_ca40_IND_008_core115",
+    "s02_c011_pc04_ca40_IND_003_core205",
+    "s02_c011_pc04_ca40_IND_004_core116",
+    "s06_c003_pc04_ca40_IND_006_core311"
+  ],
+  "new_keys": [
+    "s02_c003_pc04_ca40_IND_001_core333",
+    "s02_c006_pc04_ca40_IND_002_core414",
+    "s02_c006_pc04_ca40_IND_003_core247",
+    "s02_c006_pc04_ca40_IND_003_core376",
+    "s02_c010_pc04_ca40_IND_008_core115",
+    "s02_c011_pc04_ca40_IND_003_core205",
+    "s02_c011_pc04_ca40_IND_004_core116",
+    "s06_c003_pc04_ca40_IND_006_core311"
+  ],
+  "pilot_closeout_sha256": "0d4d2c63df7b444458eb1696fe01a5a84e20b48beecac60eb83270cae3811444",
+  "rows": {
+    "s02_c003_pc04_ca40_IND_001_core333": {
+      "category": "remaining_primary_failure",
+      "metadata": {
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/isolated/s02_c003_pc04_ca40_IND_001_core333.json": "36757ebad347a0ccd68c082b375766851f9d543fa1b8ef35f1d1faf98a278471",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_001_core333/ATTEMPT.json": "a328f82119362dbc6dac153dec70029f792128180305cb83839efc9a170d5162",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_001_core333/CAPTURE.json": "4aaa863a8a8ad7241f5c5cb1c1e3ce7ff2722d56ccc5a96a2150259f11b5af23",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_001_core333/DIAGNOSTIC_COMPLETE.json": "9b177584ddd8fa3d3eb91acb14fdb10c7777f66d42da4b394cd8fcc8a1aa4a38",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_001_core333/INPUT_MATCH.json": "7e8103975c6165fe172164384bdd260201167c3d2796e7e3b1e6fe35b6607367",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_001_core333/PROBE_RESULT.json": "22cfb14646add12fef46baa259f2f23c28b890017a9dea35d46939c0eb0211ad"
+      },
+      "prior_scientific_failures": 2
+    },
+    "s02_c006_pc04_ca40_IND_002_core414": {
+      "category": "remaining_primary_failure",
+      "metadata": {
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/isolated/s02_c006_pc04_ca40_IND_002_core414.json": "53ec964f715d0da45228f3c27ce7d77082cffa66428c7dcfa33851ce71140ebd",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_002_core414/ATTEMPT.json": "34dd61b7ca8ae91b1e38ee0b86741d77d63b65ba21d1b042e0ac0b3d63a9d97b",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_002_core414/CAPTURE.json": "92fb6c47260a38218752bf167202e47ed9138b7614f574d5f4597869489b1502",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_002_core414/DIAGNOSTIC_COMPLETE.json": "439c22c2e4c16de3558cf3d0bb5f8989b2cc8b47a9535320cbe9f5cb21b321b7",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_002_core414/INPUT_MATCH.json": "d4c1ca1030f8e3a7bc1800237a13ae5541a09de14a965c19c988d6b770f1f05c",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_002_core414/PROBE_RESULT.json": "4ae2b62b4693a965b24fe494fd4997d309fc6379d074f2d2878929cb51c6f2c5"
+      },
+      "prior_scientific_failures": 2
+    },
+    "s02_c006_pc04_ca40_IND_003_core247": {
+      "category": "remaining_primary_failure",
+      "metadata": {
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/isolated/s02_c006_pc04_ca40_IND_003_core247.json": "685561123b7803a3573de2c4fa6797b0ff529a3bc2b173f93fef33040da26217",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_003_core247/ATTEMPT.json": "a2e690faaca80992cb38e4725580ad01fe181981c8c83d480dc97de4b15c2f38",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_003_core247/CAPTURE.json": "f94537adfd2b0c77efee110a3dc9b16f75acc27c926c70c5be9711e7d241416d",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_003_core247/DIAGNOSTIC_COMPLETE.json": "4762c5b7aabd9bb8ab6111292735c6368ecac6cd9bcbc62816bdcb34cac9654a",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_003_core247/INPUT_MATCH.json": "e10fcd43690fbc7d5841f1400aa5eeee036eafedec0bf6680ceeb275d734a566",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_003_core247/PROBE_RESULT.json": "5bc2c11d54da444bd92395df9c47aa904bacd6a6cecb0645afa87f4ca2c1ab97"
+      },
+      "prior_scientific_failures": 2
+    },
+    "s02_c006_pc04_ca40_IND_003_core376": {
+      "category": "remaining_primary_failure",
+      "metadata": {
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/isolated/s02_c006_pc04_ca40_IND_003_core376.json": "82ff08698083d65d59b561fd14362222b34786f19e8a74ab744ba5c575e556b9",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_003_core376/ATTEMPT.json": "00019cea9236c6f5386d54275905ad04fe54f1dbeda483c6473aa6421ffaf68d",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_003_core376/CAPTURE.json": "b6f9d47d2751c4987114525d047981e1b72f413d51c80908ff873baa2e8841ab",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_003_core376/DIAGNOSTIC_COMPLETE.json": "d6f50e180afc191318207264761ba5a819673745688f37e3c20382f9916e9341",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_003_core376/INPUT_MATCH.json": "61c4996bbf71e48b6884193206e3f0e69694d5154866624fe5ac522dcc9d2e68",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c006_pc04_ca40_IND_003_core376/PROBE_RESULT.json": "64d1352545b505695c845283e03cf7d3b9d1b6166f4efd5e1c53a7ccdbff5afa"
+      },
+      "prior_scientific_failures": 2
+    },
+    "s02_c010_pc04_ca40_IND_008_core115": {
+      "category": "remaining_primary_failure",
+      "metadata": {
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/isolated/s02_c010_pc04_ca40_IND_008_core115.json": "d23336fbfd722985fefd0c433629cffb2ad34bdedf45d6e17b5bc238008c72ec",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_008_core115/ATTEMPT.json": "10b5adb00917d42a8170cb4e49c9e2e90391ef9f31dc65e2bee9f95254406a4a",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_008_core115/CAPTURE.json": "78b28d9d1b0c19c64110b33252bd1ba6078c9fe1a01fee0813c4b55f5d32c054",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_008_core115/DIAGNOSTIC_COMPLETE.json": "93923d4e1aabafbe75ec5dffe6da64febcffd6a88e60227ba899e4660ac7147b",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_008_core115/INPUT_MATCH.json": "e9d9620c4642e84c28732646647407b36e85d5d10891466f21dcb87797f72319",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_008_core115/PROBE_RESULT.json": "f2c52188177d42703333f9695eb4192a1be77cd2d9b8e846fbf28c3884791ac0"
+      },
+      "prior_scientific_failures": 2
+    },
+    "s02_c011_pc04_ca40_IND_003_core205": {
+      "category": "remaining_primary_failure",
+      "metadata": {
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/isolated/s02_c011_pc04_ca40_IND_003_core205.json": "d892dfb12316bf23fcb103afb8d36d4bc4f4ba7c28473439fc055ed1f05060ce",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c011_pc04_ca40_IND_003_core205/ATTEMPT.json": "74ec4029d82b3be32ee6728f6e8eb4a64b4bfc3a649186acb5e051149474540e",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c011_pc04_ca40_IND_003_core205/CAPTURE.json": "2096ff7beabd732316ae8a92a09bd33bff04a3f658b06958ee91deab71f2fcec",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c011_pc04_ca40_IND_003_core205/DIAGNOSTIC_COMPLETE.json": "fc8e5c204404639936081aebce95d1c5b6ae3d4243b591c504b5519ae4935699",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c011_pc04_ca40_IND_003_core205/INPUT_MATCH.json": "a6f5f8cfebc0a95822403920748d6f5f8147b8de5b2b8cfe1d45e2c57ef41a6a",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c011_pc04_ca40_IND_003_core205/PROBE_RESULT.json": "47f5fb2a0bbe01146d1d8a5249fd2c09eb05e93f06ca9cd4698973c7111e05de"
+      },
+      "prior_scientific_failures": 2
+    },
+    "s02_c011_pc04_ca40_IND_004_core116": {
+      "category": "remaining_primary_failure",
+      "metadata": {
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/isolated/s02_c011_pc04_ca40_IND_004_core116.json": "395d631d7061df5347e15d49b0837f1d06e30c6d3b18bf34a6746f3086d17a46",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c011_pc04_ca40_IND_004_core116/ATTEMPT.json": "0a7587cb5ee7b729440e68e9789f3a370afd5e6db28a558461ba99c4a1e875fd",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c011_pc04_ca40_IND_004_core116/CAPTURE.json": "f003cc342f6bc05f542a01c01ef2ea0675db63d021b2bfcb2cd87d3e8cd90aa3",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c011_pc04_ca40_IND_004_core116/DIAGNOSTIC_COMPLETE.json": "7841211c2cabf1ba755e57303248060faa6ad2d29216ceb47f477a371ca58d49",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c011_pc04_ca40_IND_004_core116/INPUT_MATCH.json": "009cab83a8e74f1fd43ada9f0f826f9df2a98dbfce228277da373298056fcdbf",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c011_pc04_ca40_IND_004_core116/PROBE_RESULT.json": "7ced08cace6bd8d70137e1b35447fb593a1a0fb06ed4a205492f27371926cd41"
+      },
+      "prior_scientific_failures": 2
+    },
+    "s06_c003_pc04_ca40_IND_006_core311": {
+      "category": "remaining_primary_failure",
+      "metadata": {
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/isolated/s06_c003_pc04_ca40_IND_006_core311.json": "7b36faf4d6ce9fa9ce71e6541df561c831dfd7099e0634b33a5810d78d213e0a",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s06_c003_pc04_ca40_IND_006_core311/ATTEMPT.json": "64f5f76765504bb6799fa17000329b596af5265f91f8bfc5708910a944ef7dd9",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s06_c003_pc04_ca40_IND_006_core311/CAPTURE.json": "544d935cfeeb3c4f9897eff8d37235a9b5c1e3a896c35a91ee7f9ccf2f1404b1",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s06_c003_pc04_ca40_IND_006_core311/DIAGNOSTIC_COMPLETE.json": "22373c8698418a6e270d6f58aa6492eac26ea1fb3235e3c3116362ff49040960",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s06_c003_pc04_ca40_IND_006_core311/INPUT_MATCH.json": "2d5801bc54348b7478f368a0d133837a18679af50a0201de19314c892aa805ea",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s06_c003_pc04_ca40_IND_006_core311/PROBE_RESULT.json": "85008479cfc4d6a744310caa5f984996c303c16c8cdaeb71996d2f59020d880c"
+      },
+      "prior_scientific_failures": 2
+    }
+  }
+}

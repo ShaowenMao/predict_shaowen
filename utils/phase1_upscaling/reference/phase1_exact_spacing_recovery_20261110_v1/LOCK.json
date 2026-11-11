@@ -1,0 +1,16 @@
+{
+  "code": {
+    "common.py": "550a8a1892a8b46a6ee4b29930b7ccf092c6f36652a1691c7940df223753028e",
+    "exact_export.py": "52a30efedf22d8863a59aba4e196ed4de09bd3e2f5bd1b14bc3736a378a17313",
+    "export_saved.py": "15411ef854550df67c367ca409e9b303d20c4f7385685730f5bb9a1c2040481a",
+    "job.sh": "edcbac08355ea1af60462f4f67c419eb6d8b291c968d205bb322c5ad546bd228",
+    "native_packet.jl": "c102af85ff7c262bf81df20990b8f81c4a8db46d44f99222aca378de79b995c4",
+    "recover_saved.py": "3ba705847f04d0c24dae87c78d0972c7266f6a2ec9cb90c1a8e5f80d408286d9",
+    "science_bundle.zip": "f20d1c12982d1fa94d950c34f2c08991d293dc4bed6b32c79b6e8df2777b68d1",
+    "seal.py": "7d35a872a320275ad8de5f6209645e12e9596bf66c7dc907ac6c2847621ad537",
+    "slurm.py": "7b429e34c8f1874b3d7c99b925cdc435492e64fdda51f99bfc530565942948ae",
+    "test_exact_export.py": "14cf7adea017f8b83d2d780d9685e1107bb6c56fb0efa34a2194ef36c1e3f540"
+  },
+  "production_adoption": false,
+  "purpose": "isolated_exact_spacing_export_qualification_only"
+}

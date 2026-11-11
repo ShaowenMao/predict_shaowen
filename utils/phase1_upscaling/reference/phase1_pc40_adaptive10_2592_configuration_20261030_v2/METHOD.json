@@ -1,0 +1,59 @@
+{
+  "profiles": {
+    "atlas_sample4_ca40": {
+      "file": "profiles/atlas_sample4_ca40.json",
+      "sha256": "3501af19b48e535d0e0cac033dc747d02a5c897cc6da7d2d74fc331e241dee7f"
+    },
+    "atlas_sample6_ca40": {
+      "file": "profiles/atlas_sample6_ca40.json",
+      "sha256": "e4b6caa3cb71959be7a868029b592535f4317494723cbef9555cd0d7b5d4677e"
+    }
+  },
+  "settings": {
+    "entry_sg": 0.001,
+    "sand_endpoint": 0.95,
+    "clay_endpoint": 0.8,
+    "min_scaling_phi": 0.0001,
+    "min_scaling_k_md": 1e-09,
+    "md_to_m2": 9.869233e-16,
+    "reference_sand_k_m2": 7.60393535652603e-13,
+    "reference_sand_phi": 0.289875,
+    "clay_fit_slope": -0.1992,
+    "clay_fit_intercept": 1.407,
+    "co2_brine_sigma_mn_m": 25.0,
+    "co2_brine_theta_deg": 40.0,
+    "hg_air_sigma_mn_m": 485.0,
+    "hg_air_theta_deg": 140.0,
+    "clay_anchor_sg": 0.1
+  },
+  "numerics": {
+    "pc_states": 100,
+    "max_kr_states": 10,
+    "flow_axis": 3,
+    "solver": "corrected_direct",
+    "kr_selector": {
+      "id": "adaptive10_endpoint_delta_v1",
+      "source": "adaptive/AdaptiveSelector.jl",
+      "sha256": "f752b97b699a0cb944b59e0b0b4ff31bdbd89fecdd56c973333389a2d6235027",
+      "curve_source": "adaptive/AdaptiveCurve.jl",
+      "curve_sha256": "00e5c7089864e63e5ffbe86c7a0e13ecb25d39411a8786dfd59e7e16f2f03da4",
+      "budget": 10,
+      "shared_gas_brine_states": true,
+      "endpoints": "first and final Pc states always queried",
+      "criterion": "largest max(abs(delta Krw), abs(delta Krg)) between queried interval endpoints",
+      "tie_breaks": [
+        "widest Sg interval",
+        "earliest eligible index"
+      ],
+      "next_query": "midpoint rank among unique-Sg eligible state indices",
+      "plateau_policy": "retain first and final states; fewer than 10 states if fewer eligible",
+      "replay": "exact drainage history from initial state per query; hash each visited microstate",
+      "dense_Kr_reference_access_during_selection": false,
+      "accuracy_claim": "tested adaptive heuristic, not uniformly superior for every core or phase"
+    }
+  },
+  "pipeline_hash": "55e54e0ec7b5ebb179ab296cfa983baac8d8a40e0c1fbf1a2a32dd8415bba5f9",
+  "bridge_sha256": "9cac5d97a3612d7ada95724aa6cd82a0088775c7a9003555f579b2963d2fd1b9",
+  "pressure_plan_sha256": "ddde09e281c002968138cf14886923bf734371c3668efc6f6712ab97ed5e819a",
+  "export_sha256": "2e2f198b61458cd1c7f98941012ab073056cf2077b4256b658a7e7a15780d01d"
+}

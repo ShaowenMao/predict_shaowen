@@ -1,0 +1,15 @@
+{
+  "allow_core229": true,
+  "approved_by_user": true,
+  "keys": [
+    "s02_c003_pc04_ca40_IND_002_core096",
+    "s02_c003_pc04_ca40_IND_005_core229",
+    "s02_c010_pc04_ca40_IND_005_core192",
+    "s02_c010_pc04_ca40_IND_008_core221"
+  ],
+  "new_bounded_attempt": 4,
+  "prior_failures_per_core": 3,
+  "publication": true,
+  "reference_attempts_per_core": 1,
+  "request": "Approved. Please run one isolated direct-reference test for each of the four remaining cores. Reuse saved primary solutions, keep scientific checks unchanged, and finish the cases if they pass without recalculating completed results."
+}

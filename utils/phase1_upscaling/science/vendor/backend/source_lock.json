@@ -1,0 +1,64 @@
+{
+  "identity": "b55149fc930cb128e0c1274e02df4ae7960f967b805842f590697a71c32798ce",
+  "fingerprint": {
+    "original_sources": {
+      "backend": {
+        "path": "campaign_numerical_v1/releases/6c240610c9f90e81/Backend.jl",
+        "sha256": "2f142efa6db7fe48cf6403a34064c82f81349a4aea3dca1989dfc7f8452308d6"
+      },
+      "dispatcher": {
+        "path": "campaign_numerical_v1/staged_dispatch_v1/releases/950f393bde27cc83/dispatch.py",
+        "sha256": "20db886e68102dc7f7b0c5637c4d9ed27f956061666d2c9ea94a9b41a9840a91"
+      },
+      "endpoint_checker": {
+        "path": "campaign_numerical_v1/staged_dispatch_v1/repair_refill_v1/releases/6001f627c138d80e/endpoint_check.jl",
+        "sha256": "3b53f437d77679945445a49247b7705d62d8137a6c96336fcd3a07ad01c97933"
+      },
+      "historical_retention_checker": {
+        "path": "homogeneous_memory_headroom_v1/releases/342b6f2fda019107/retention.py",
+        "sha256": "2d2a1209237032518990a0f9bf9e0783bf8bbfa022735cc90568d41a15739f19"
+      },
+      "managed_lu": {
+        "path": "campaign_numerical_v1/releases/6c240610c9f90e81/ManagedLU.jl",
+        "sha256": "b29bb641c53e1f28d12ae7c2665b69f9d8c004f8d502f3071d00951c10d13622"
+      },
+      "memory_checker": {
+        "path": "campaign_numerical_v1/releases/6c240610c9f90e81/context.py",
+        "sha256": "a1bec2cd86fe741c5b52638fe64b6798b6779feb7b3de4f821ee32ece83a2e0b"
+      },
+      "numerical_worker": {
+        "path": "campaign_numerical_v1/releases/6c240610c9f90e81/worker.jl",
+        "sha256": "c6be43a94d8525667490b470e932ff19b9aff89e3f96a68b8b72d722a17b2b92"
+      },
+      "resource_policy": {
+        "path": "campaign_numerical_v1/releases/6c240610c9f90e81/policy.py",
+        "sha256": "04194ba3cb369baf123a2ecd4cbc0767dfc58a2cf8cd9bdf0c1711ce2266dc87"
+      },
+      "service": {
+        "path": "campaign_numerical_v1/staged_dispatch_v1/repair_refill_v1/releases/6001f627c138d80e/service.py",
+        "sha256": "685bcf64068cc04b859d52e190278542faca9c9967b30b988ee4bad1e9090ee0"
+      }
+    },
+    "memory_probe": "67e71256a2be96074cffc9f10cf763da69204e99f643f1d4b7d768a664e29c6f",
+    "local_sources": {
+      "BatchGuard.jl": "2172e0ec5e0de2b701e0796c3ab48fb004d55c2252e33852a4f58833267033d0",
+      "bootstrap.jl": "e3ce78947c2cff4c77bd40baf1c30e8eb4e75f169512ec90ed0bb50f4fba3266",
+      "runner.py": "3daa01c715963e95a7faff225da19dfb079c9e7c8c7856d35fa63ab4acdbefd0",
+      "prepare.py": "8aa623ee785b5e0b9a16a21c51998be7227de1353c8ce3f832ddab898fc54082"
+    },
+    "adapter_sha256": "e4a23cb11b9b044c397eefde89b1cb87e18b53dbed5ee6be41dbafc844b6bd0d"
+  },
+  "files": {
+    "Backend.jl": "2f142efa6db7fe48cf6403a34064c82f81349a4aea3dca1989dfc7f8452308d6",
+    "BatchGuard.jl": "2172e0ec5e0de2b701e0796c3ab48fb004d55c2252e33852a4f58833267033d0",
+    "bootstrap.jl": "e3ce78947c2cff4c77bd40baf1c30e8eb4e75f169512ec90ed0bb50f4fba3266",
+    "ManagedLU.jl": "b29bb641c53e1f28d12ae7c2665b69f9d8c004f8d502f3071d00951c10d13622",
+    "MemoryProbe.jl": "67e71256a2be96074cffc9f10cf763da69204e99f643f1d4b7d768a664e29c6f",
+    "prepare.py": "8aa623ee785b5e0b9a16a21c51998be7227de1353c8ce3f832ddab898fc54082",
+    "runner.py": "3daa01c715963e95a7faff225da19dfb079c9e7c8c7856d35fa63ab4acdbefd0",
+    "worker.jl": "e4a23cb11b9b044c397eefde89b1cb87e18b53dbed5ee6be41dbafc844b6bd0d"
+  },
+  "production_modified": false,
+  "engaging_qualified": false,
+  "campaign_launch_approved": false
+}

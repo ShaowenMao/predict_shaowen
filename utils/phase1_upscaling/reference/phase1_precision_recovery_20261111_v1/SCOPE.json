@@ -1,0 +1,36 @@
+{
+  "diagnostic_closeout_sha256": "15d1ca96539b45f0685c2295778416df517ccdaceafaf80a282d7a3cc0dda49d",
+  "diagnostic_source": "aea89e68590c31f60d060a40c009b82ee76df0a2983d7fa97a9da0af4e44463a",
+  "full_recovery_attempt": 1,
+  "keys": [
+    "s04_c002_pc04_ca40_IND_001_core253",
+    "s01_c002_pc04_ca40_IND_008_core283",
+    "s04_c005_pc06_ca40_IND_001_core422"
+  ],
+  "precision_diagnostic_passed": true,
+  "prior_scientific_failures_per_core": 2,
+  "production_publication": false,
+  "proofs": {
+    "s01_c002_pc04_ca40_IND_008_core283": {
+      "COMPLETE.json": "475231492fa481776eee07cff26fb6cffab4fcea2fc39869e223f6bf579dc0a2",
+      "PROTECTED.json": "17b41228d90ac161c7f0475a536c72d8ef9adf373946b0683b60686f503cc7b3",
+      "RESULT.toml": "7438b06094c44ed35f6a84d3e5033054f767997234613fd713022c2a69ccf2b7",
+      "primary_1.0e-14_pressure.jls": "7f7c1791fa96477e4fde6883036010e75fec1391672dcce5496dea5c41066400",
+      "reference_1.0e-13_pressure.jls": "6836339ce53fc3fa33ad2d06bd9cc1b0b5c49c7f95425b3311d7b8e876b43ba2"
+    },
+    "s04_c002_pc04_ca40_IND_001_core253": {
+      "COMPLETE.json": "314777ffd9c5c584032d67431123ec9fcba7bcfad18db46fb7fddf3431845718",
+      "PROTECTED.json": "5b6c08655bff71836a6b6bd935bccf37e6b0ac8ad51cc918d377b992dc425cae",
+      "RESULT.toml": "6a120e5464b5e4a1916e479579dab7422404e35c574ccfd34877ed0751c31947",
+      "primary_1.0e-14_pressure.jls": "2aa88b80bcb7f3df29af1d1c29d92e4b5a5a1b62fa64dbd7709541aa56e012ef",
+      "reference_1.0e-13_pressure.jls": "bc3ea7f30f7afe0486f5b97bb3f9076444cfe7412f5736026f9cdec92b2f28be"
+    },
+    "s04_c005_pc06_ca40_IND_001_core422": {
+      "COMPLETE.json": "6ed34bbd66530a7902254a61d031ce03755bc77f51ab5ab2575eef4856e64f51",
+      "PROTECTED.json": "97150965b579a726f686e5360ead6588dbafc90e8cfdaf7dfb948840c8ce6122",
+      "RESULT.toml": "a17a9e0614bebcef8044d16c208e87618b18c018fa0e1a1e3e25ab8f6dd9e759",
+      "primary_1.0e-14_pressure.jls": "940a68bb6da89e41f69209a2e3504775df3ab2edd40061986f91ebb1b981ff03",
+      "reference_1.0e-13_pressure.jls": "3ef75d691279a271bff309dd33eaf2005d460c9915dd58e9df0124a215c5ab84"
+    }
+  }
+}

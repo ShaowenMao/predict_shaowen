@@ -1,0 +1,12 @@
+{
+  "code": {
+    "closeout.py": "5e5ed20266f1ecb4e02e4e204c3c8ea05dfc61e09abd974dd930b8840948f603",
+    "common.py": "550a8a1892a8b46a6ee4b29930b7ccf092c6f36652a1691c7940df223753028e",
+    "job.sh": "599bd0235c371db214a1b4f892a9bb0296e156e07deb0a46ca843a7a06e5bb90",
+    "seal.py": "4e626ff195434061fd95c9bfd7f576fee3e6cbc7f924c6e8b8cae01a57739f05",
+    "slurm.py": "7b429e34c8f1874b3d7c99b925cdc435492e64fdda51f99bfc530565942948ae",
+    "test_closeout.py": "aafeda271b48ca9ced5208609e406c562bd52934311629fe3e2ae54562349d0e"
+  },
+  "parent_source": "5bcedae1b145ac77f0fb19975acc8ed7addcae4538c3d5ba546caea3d255bbd6",
+  "purpose": "portable_cross_node_archive_preservation_guard_only"
+}

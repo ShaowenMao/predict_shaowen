@@ -1,0 +1,27 @@
+{
+  "code": {
+    "AccurateAudit.jl": "d00333ff8330c7685ff19b49f6554c3a01bc97d2e69b3701e7ed5ba7c065ef50",
+    "PrecisionRecovery.jl": "35870b8b70edf875a823c6ef770e9a4df2a066406f1141512d5590f58df72a52",
+    "ResumeContract.jl": "9f403fe11bc1480fd8f390985dc9961fbd2e3773a8e532c006d8eb1ea8d37fbe",
+    "SCOPE.json": "f8795f68461e9c8f26e09de2ad691b14c22044001f3d5bde5da06b7fe1aacd3b",
+    "StrictProbe.jl": "fd735343c356a12e432195034eb65f8c0528d20c9b14861dc9f4983ecb863037",
+    "common.py": "6a56520b5d9bff8684cb6153b1e12898d3f35d84ceb57c18609610fdb80361f9",
+    "driver.py": "3ba780e3a2d0edf9a71c954c7496a797e6c7d57359159977412c6b47d7158b4c",
+    "job.sh": "6a616c933e93926632ab6d383b9eb9ee42840a7b3aec57ca214b458893f0bf6e",
+    "recover_flow.jl": "8c09a23bfeab208f7f7c6da08a3c9e898b76a1ac5afd0bb870fcb6ccd04d1579",
+    "recovery.py": "37e8fbb25eaf52739af5c2098937f5d93cc7603aba4db49f11d74dd93e925e50",
+    "scope.py": "e83971bc8649cd0c5b134e2cc6c991eb95859b7d2e5cdb93865547367ea2a5f3",
+    "seal.py": "fa79880402028c19822e5c43bfbd942327f80024d3f91bc5f1fd1fe809728af9",
+    "slurm.py": "3181b752d1f825c0d64972d81111541489dbcb01bcf0509402d0865cff4cb572",
+    "test_extra.jl": "1bc08b00be0908e1d9a98176fd1ccdc62e9d8865c1b0fc2fa3d6f9f0db6927cd",
+    "test_gates.jl": "3ef29e24fbff75105d13e96f25c83536e3c1568048dd31c90ad61a9ad418ad7d",
+    "test_integration.jl": "5ceabf5a72bc656fc72e4042f3e85f316f8870646de66580e69b4bc2250a8723",
+    "test_precision.jl": "ee6c4fc2369ee6d59ac330a234b034cba59cab86b6e75acd5c7cf7f79b20a333",
+    "test_recovery.py": "409b2618c5c588dfb4d523500ad6a1865a7c06c8a6a79afc153962d0f61b8998",
+    "test_resume.jl": "6f331924c1da81c7ee01ff041e908ab4f0910e73ad3e2d55e62c4f0e1d093318"
+  },
+  "method": "ea1919d05292929667a2e33f38accd9cf0d935cdecafc5ba349083960867b832",
+  "precision_diagnostic_source": "aea89e68590c31f60d060a40c009b82ee76df0a2983d7fa97a9da0af4e44463a",
+  "qualification_only": true,
+  "science_source": "2d1202371c3d80eea4e99ef6ac32069c665cc0699b6ace1d728fff2ce87b0b8b"
+}

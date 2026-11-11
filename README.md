@@ -38,6 +38,10 @@ This code was developed as part of my PhD in Prof. Ruben Juanes' lab (<a href="h
 ## Short Description
 Computes upscaled fault permeability distributions using a parameter-based, probabilistic description of clay and sand smears. MATLAB and MRST are required to run this code.
 
+For the completed Phase 1 multiphase Pc/Kr campaign, see the
+[reusable upscaling workflow](utils/phase1_upscaling/README.md): preserved source,
+offline checks, scheduling and recovery procedures, and a Phase 2/3 adaptation guide.
+
 ## Overview
 **PREDICT** is a novel algorithm designed to *predict*, i.e., compute, the diagonal components of the fault permeability tensor (perpendicular to the fault, *k*<sub>xx</sub>; strike-parallel, *k*<sub>yy</sub>; and dip-parallel, *k*<sub>zz</sub>) in relatively shallow siliciclastic sequences (<~3 km of depth). The computation is done for a given throw interval, and the material distributions and output permeability values are representative of the main shear zone within a faulted sediment volume. Hence, **PREDICT** represents an architectural domain typically referred to as the fault core (see figures below). PREDICT can be run in two modes: 2D and 3D.
 

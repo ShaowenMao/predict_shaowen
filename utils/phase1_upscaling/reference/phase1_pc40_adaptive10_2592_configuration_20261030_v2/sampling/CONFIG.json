@@ -1,0 +1,43 @@
+{
+  "design_version": "independent_full_fault_pc40_324_v1",
+  "scope": "sampling_only",
+  "base_seed": 20261029,
+  "seed_method_version": "sha256_scenario_pc_u63_counter_u64_rejection_v1",
+  "seed_identity": "complete scenario_id including clay Pc sample and angle",
+  "base_geologies": 162,
+  "scenarios": 324,
+  "realizations_per_scenario": 8,
+  "reservoir_cases": 2592,
+  "windows": [
+    "famp1",
+    "famp2",
+    "famp3",
+    "famp4",
+    "famp5",
+    "famp6"
+  ],
+  "slices_per_window": 87,
+  "accepted_library_size": 2000,
+  "clay_pc_samples": [
+    4,
+    6
+  ],
+  "co2_brine_contact_angle_deg": 40,
+  "with_replacement": true,
+  "cross_window": "conditionally_independent",
+  "along_strike": "conditionally_independent",
+  "cross_pc": "independently_sampled_not_paired",
+  "joint_permeability_components_preserved": true,
+  "benchmarks_included": false,
+  "old_reservoir_outcomes_used": false,
+  "reference_curve_source": "D:/codex_gom/studies/lu2017_six_pc70_table_entry_monotonic_20261027_v1/pc70_table_entry_monotonic_plot_points.csv",
+  "reference_curve_source_contact_angle_deg": 70,
+  "curve_source_note": "Source/provenance only. The 40-degree solver inputs are NOT generated here.",
+  "clay_pc_application": "same selected atlas sample for host clay and fault-clay master",
+  "pc_kr_upscaling_status": "not_performed",
+  "reservoir_simulation_status": "not_started",
+  "source_predict_code_commit": "68351e35f3679317b35532a9ca0533674e0aafb5",
+  "source_predict_method_config_hash": "21266acc83f38d374cdc966d8243834e92b786b75ab1f90dd0a99f4244717a8f",
+  "source_sampling_config": "D:/codex_gom/UQ_workflow/independent_full_fault_v1_phase1_20260809_v1/config/effective_sampling_config.toml",
+  "implementation_sha256": "097873b585b6ab8380d1cb53ed09f35dbaf38d512219ddec899b6eb5c00764b5"
+}

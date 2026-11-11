@@ -1,0 +1,17 @@
+{
+  "approved_by_user": true,
+  "exclude_core229": true,
+  "keys": [
+    "s02_c003_pc04_ca40_IND_001_core333",
+    "s02_c006_pc04_ca40_IND_002_core414",
+    "s02_c006_pc04_ca40_IND_003_core247",
+    "s02_c006_pc04_ca40_IND_003_core376",
+    "s02_c010_pc04_ca40_IND_008_core115",
+    "s02_c011_pc04_ca40_IND_003_core205",
+    "s02_c011_pc04_ca40_IND_004_core116",
+    "s06_c003_pc04_ca40_IND_006_core311"
+  ],
+  "publication": true,
+  "request": "Please move forward carefully and do not stop until you complete all the cases.",
+  "scope": "Eight remaining primary failures after three direct full recoveries publish; one bounded third attempt each, preserve all completed calculations"
+}

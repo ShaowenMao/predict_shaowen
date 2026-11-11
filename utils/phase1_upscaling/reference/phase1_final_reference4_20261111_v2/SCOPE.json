@@ -1,0 +1,127 @@
+{
+  "batches": [
+    [
+      "s02_c003_pc04_ca40_IND_002_core096",
+      "s02_c003_pc04_ca40_IND_005_core229",
+      "s02_c010_pc04_ca40_IND_005_core192",
+      "s02_c010_pc04_ca40_IND_008_core221"
+    ]
+  ],
+  "keys": [
+    "s02_c003_pc04_ca40_IND_002_core096",
+    "s02_c003_pc04_ca40_IND_005_core229",
+    "s02_c010_pc04_ca40_IND_005_core192",
+    "s02_c010_pc04_ca40_IND_008_core221"
+  ],
+  "new_keys": [
+    "s02_c003_pc04_ca40_IND_002_core096",
+    "s02_c003_pc04_ca40_IND_005_core229",
+    "s02_c010_pc04_ca40_IND_005_core192",
+    "s02_c010_pc04_ca40_IND_008_core221"
+  ],
+  "pilot_closeout_sha256": "0d4d2c63df7b444458eb1696fe01a5a84e20b48beecac60eb83270cae3811444",
+  "previous_jobs": [
+    "28665837",
+    "28666059",
+    "28666060",
+    "28650395"
+  ],
+  "rows": {
+    "s02_c003_pc04_ca40_IND_002_core096": {
+      "category": "saved_primary_failed_reference",
+      "key": "s02_c003_pc04_ca40_IND_002_core096",
+      "metadata": {
+        "/orcd/data/juanes/001/shaowen/phase1_precision_reference5_20261111_v1/output/s02_c003_pc04_ca40_IND_002_core096/work/recovery/precision/RESULT.toml": "ce2ba0b02e7ef67d3e9e2eb4b2ecd261429d3d3d630c39b17c51fd59e22ebf9d",
+        "/orcd/data/juanes/001/shaowen/phase1_precision_reference5_20261111_v1/output/s02_c003_pc04_ca40_IND_002_core096/work/recovery/precision/primary_1.0e-14_pressure.jls": "aee2fbfcae5f0a15c9bf8cf364228c93d9cc0471f56c9cc70322364fe0babe84",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/isolated/s02_c003_pc04_ca40_IND_002_core096.json": "0bff80f1b3c01b88267293bb7f886c8b64e63a13174d9a9cf9dbd83a5835d92c",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_002_core096/ATTEMPT.json": "01ec3bc3f427fe59daad4f4cd2d325d6a65c9e4820e9d35950f643019f1381fd",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_002_core096/CAPTURE.json": "b17ad65edf0e492941673874ee52ffa995103fdec800c798fd9684f3c08ffb98",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_002_core096/DIAGNOSTIC_COMPLETE.json": "60f5b26cdc96f08ecb38f4188a9043382198d36634629d9ec58749beb0493758",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_002_core096/INPUT_MATCH.json": "4ba63c99ea685d6f2fd420d946d3f791113564aea7bb786e7757b8d80c6a38d8",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_002_core096/PROBE_RESULT.json": "86f078d5a48050b9ecbcd8a0bf50fd9faf390485f3d66831ecd87c68bef9c445"
+      },
+      "operator_sha256": "be723895fb6c1a6526908ef42bb3568ff132253c29163ffbb9de9678138de34d",
+      "parts_hash": "a5a814beb2e02008db07a690cf1986ab5349ff732d208a26aefab059b4b33870",
+      "primary_q": 2.065501634302415e-25,
+      "primary_shift": 1e-14,
+      "primary_stage": "primary_1.0e-14",
+      "prior_scientific_failures": 3,
+      "saved_mode": "precision",
+      "saved_primary": "/orcd/data/juanes/001/shaowen/phase1_precision_reference5_20261111_v1/output/s02_c003_pc04_ca40_IND_002_core096/work/recovery/precision/primary_1.0e-14_pressure.jls",
+      "saved_result": "/orcd/data/juanes/001/shaowen/phase1_precision_reference5_20261111_v1/output/s02_c003_pc04_ca40_IND_002_core096/work/recovery/precision/RESULT.toml",
+      "saved_source": "2e13b97f38cc46af649e3e73e63791cac4075e32216ee4e33b22da41acdd2727"
+    },
+    "s02_c003_pc04_ca40_IND_005_core229": {
+      "category": "saved_primary_failed_reference",
+      "key": "s02_c003_pc04_ca40_IND_005_core229",
+      "metadata": {
+        "/orcd/data/juanes/001/shaowen/phase1_remaining56_tests_20261111_v1/output/s02_c003_pc04_ca40_IND_005_core229/RESULT.toml": "6b139b68685fee3daf5af730026c58705cd41f8fe17fc02820e42f7fe1ba35c7",
+        "/orcd/data/juanes/001/shaowen/phase1_remaining56_tests_20261111_v1/output/s02_c003_pc04_ca40_IND_005_core229/primary_1.0e-12_pressure.jls": "0673e8c642aec5c1d9ccf0054889adb539512fd0792492eb1c87e9368e1c1158",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/isolated/s02_c003_pc04_ca40_IND_005_core229.json": "e99a3964c0e0f7c8a5efb81ca968551e6ec6bcc143b84653d1be0dc7e8c736ec",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_005_core229/ATTEMPT.json": "80954e120e8223df2920a35ad2b69a71e0655cb1a6e05bb7643bfae65ceb35a2",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_005_core229/CAPTURE.json": "716c446ebd0b82e294cc611a0eed5a15ac923e4840d6d1f514efdd690739b4cf",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_005_core229/DIAGNOSTIC_COMPLETE.json": "0dfd268ef6ba5ef97bca6d06ba699e47410cdd21db0d8e16f5a9a8fa4de6d274",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_005_core229/INPUT_MATCH.json": "e5e83491f9eed5d796b32e76a9c28980f4cd17a8da44e021cee43b5a6bbe6add",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c003_pc04_ca40_IND_005_core229/PROBE_RESULT.json": "4200821f7d6e45ad3436e08ae1fd7a701f623ca4592492ceba6e466a7c675209"
+      },
+      "operator_sha256": "7b51cff741da9238444b03317a88bc7618705238193dfbf4227e1991d00870f4",
+      "parts_hash": "ab229f7e6938d36c93d895a59a3dc8140a5c17a3832fa1c97afb6edbde339ddc",
+      "primary_q": 3.209708778701281e-26,
+      "primary_shift": 1e-12,
+      "primary_stage": "primary_1.0e-12",
+      "prior_scientific_failures": 3,
+      "saved_mode": "iterations",
+      "saved_primary": "/orcd/data/juanes/001/shaowen/phase1_remaining56_tests_20261111_v1/output/s02_c003_pc04_ca40_IND_005_core229/primary_1.0e-12_pressure.jls",
+      "saved_result": "/orcd/data/juanes/001/shaowen/phase1_remaining56_tests_20261111_v1/output/s02_c003_pc04_ca40_IND_005_core229/RESULT.toml",
+      "saved_source": "aea89e68590c31f60d060a40c009b82ee76df0a2983d7fa97a9da0af4e44463a"
+    },
+    "s02_c010_pc04_ca40_IND_005_core192": {
+      "category": "saved_primary_failed_reference",
+      "key": "s02_c010_pc04_ca40_IND_005_core192",
+      "metadata": {
+        "/orcd/data/juanes/001/shaowen/phase1_precision_reference5_20261111_v1/output/s02_c010_pc04_ca40_IND_005_core192/work/recovery/precision/RESULT.toml": "8390e1963e3702f4606fc7eb819e8306393808fcefbf488066b175e7b78d514a",
+        "/orcd/data/juanes/001/shaowen/phase1_precision_reference5_20261111_v1/output/s02_c010_pc04_ca40_IND_005_core192/work/recovery/precision/primary_1.0e-12_pressure.jls": "60d1815d1674201ab0d37c75a8ef1a218dbfac0ad77ece259f9f49d5b83e5593",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/isolated/s02_c010_pc04_ca40_IND_005_core192.json": "7ae85b95f401b89da95a728dc281b58bfb583f4a0d85db2baca1661538dd031b",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_005_core192/ATTEMPT.json": "f9f06d11771f38cd60cc1ca13078700f4cd21efc43f1d2952c9d060b9fdb1f5d",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_005_core192/CAPTURE.json": "409319b7dd7521bcc7fcf73dad2e35294fe3c506119a52b75145281fd46c7a41",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_005_core192/DIAGNOSTIC_COMPLETE.json": "b7902067085db8431594f133261cdd3c2a5a478340d339ee84023251f8d640fa",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_005_core192/INPUT_MATCH.json": "2bb583eb9e9f27af3811d413b007366a00fbe66d2b823d2aedfc2dc9801fb3d7",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_005_core192/PROBE_RESULT.json": "1c991e80ce3bd71a1a36538e78e97f78a92a77b180e561f0182c397c08fa4c4e"
+      },
+      "operator_sha256": "7b9af8188bcd8235c8d8d8c7118a49974eb9061475d326dfe7dda1f3ae430a89",
+      "parts_hash": "4711cab041efd87bb68ff239fe1d3116b87b01c55c1cf73f3d39d7263cd8c504",
+      "primary_q": 1.4597961365873e-25,
+      "primary_shift": 1e-12,
+      "primary_stage": "primary_1.0e-12",
+      "prior_scientific_failures": 3,
+      "saved_mode": "precision",
+      "saved_primary": "/orcd/data/juanes/001/shaowen/phase1_precision_reference5_20261111_v1/output/s02_c010_pc04_ca40_IND_005_core192/work/recovery/precision/primary_1.0e-12_pressure.jls",
+      "saved_result": "/orcd/data/juanes/001/shaowen/phase1_precision_reference5_20261111_v1/output/s02_c010_pc04_ca40_IND_005_core192/work/recovery/precision/RESULT.toml",
+      "saved_source": "2e13b97f38cc46af649e3e73e63791cac4075e32216ee4e33b22da41acdd2727"
+    },
+    "s02_c010_pc04_ca40_IND_008_core221": {
+      "category": "saved_primary_failed_reference",
+      "key": "s02_c010_pc04_ca40_IND_008_core221",
+      "metadata": {
+        "/orcd/data/juanes/001/shaowen/phase1_precision_reference5_20261111_v1/output/s02_c010_pc04_ca40_IND_008_core221/work/recovery/precision/RESULT.toml": "c6a4f1309dbc161c4de224f6fb3a63b381a7a032c42ff4c25c9a0581a227434a",
+        "/orcd/data/juanes/001/shaowen/phase1_precision_reference5_20261111_v1/output/s02_c010_pc04_ca40_IND_008_core221/work/recovery/precision/primary_1.0e-12_pressure.jls": "fba8690e9d3fa966f63c32ba5ee2cf8978010f052c9a524b254981b22a901859",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/isolated/s02_c010_pc04_ca40_IND_008_core221.json": "f43f43da7612f8d1529b354f463154b299b285f4dd12b07574bafebf004f90ed",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_008_core221/ATTEMPT.json": "b55160ab8da420959e18214e0f5f665ef28b8459135d38fa95b6c5e88ad9faeb",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_008_core221/CAPTURE.json": "52687f7d32904e548f88706569aabfe682dc904e569551bc92567fd0a5a356f1",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_008_core221/DIAGNOSTIC_COMPLETE.json": "1d8055ffba08bc7a1c77ed172cdbe6a2ae5180fb1259f02fde1cb46634730459",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_008_core221/INPUT_MATCH.json": "da480acc0a5534a3605934f38c4879c46b5a41dcde099e6d79cacde73ba5290c",
+        "/orcd/data/juanes/001/shaowen/phase1_solver_targeted_20261110_v1/output/probes/s02_c010_pc04_ca40_IND_008_core221/PROBE_RESULT.json": "96c3e01ebba743ac1182bbd6ec73073e9bfaa64dd240703f147572abe4ba85bf"
+      },
+      "operator_sha256": "803ef079dfcd40b65f4b985d763d9ae2ddb2acfaff0d5ddc33ca9dcd1944ce21",
+      "parts_hash": "4711cab041efd87bb68ff239fe1d3116b87b01c55c1cf73f3d39d7263cd8c504",
+      "primary_q": 1.4597961365873e-25,
+      "primary_shift": 1e-12,
+      "primary_stage": "primary_1.0e-12",
+      "prior_scientific_failures": 3,
+      "saved_mode": "precision",
+      "saved_primary": "/orcd/data/juanes/001/shaowen/phase1_precision_reference5_20261111_v1/output/s02_c010_pc04_ca40_IND_008_core221/work/recovery/precision/primary_1.0e-12_pressure.jls",
+      "saved_result": "/orcd/data/juanes/001/shaowen/phase1_precision_reference5_20261111_v1/output/s02_c010_pc04_ca40_IND_008_core221/work/recovery/precision/RESULT.toml",
+      "saved_source": "2e13b97f38cc46af649e3e73e63791cac4075e32216ee4e33b22da41acdd2727"
+    }
+  }
+}

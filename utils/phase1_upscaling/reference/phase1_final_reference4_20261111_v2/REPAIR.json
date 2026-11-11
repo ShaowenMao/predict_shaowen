@@ -1,0 +1,10 @@
+{
+  "condition": "raw_job_id_vs_array_display_id",
+  "prior_preflight_failures": 1,
+  "prior_new_scientific_attempts": 0,
+  "predecessor_source": "9e9c3a7ed5d1ebac3b94ce6af977baac55a0ee223e1d69135ddfd18eb1b66053",
+  "predecessor_array": "28694786",
+  "predecessor_publisher": "28694787",
+  "predecessor_scope_preserved": true,
+  "scientific_changes": false
+}

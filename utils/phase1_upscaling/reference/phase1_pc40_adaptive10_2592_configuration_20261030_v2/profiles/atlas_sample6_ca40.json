@@ -1,0 +1,45 @@
+{
+  "profile_id": "atlas_sample6_ca40",
+  "sample_id": 6,
+  "contact_angle_deg": 40,
+  "hg_to_co2_brine_multiplier": 0.05154639175257733,
+  "pressure_units": "Pa",
+  "interpolation": "piecewise_linear_in_Sg_and_Pc; monotonic; no exponential fit",
+  "fault_local_scaling": "target_at_Sg_0.10_times_master_Pc(Sg)/master_Pc(0.10)",
+  "local_entry_evaluated_at_sg": 0.001,
+  "settings": {
+    "entry_sg": 0.001,
+    "sand_endpoint": 0.95,
+    "clay_endpoint": 0.8,
+    "min_scaling_phi": 0.0001,
+    "min_scaling_k_md": 1e-09,
+    "md_to_m2": 9.869233e-16,
+    "reference_sand_k_m2": 7.60393535652603e-13,
+    "reference_sand_phi": 0.289875,
+    "clay_fit_slope": -0.1992,
+    "clay_fit_intercept": 1.407,
+    "co2_brine_sigma_mn_m": 25.0,
+    "co2_brine_theta_deg": 40.0,
+    "hg_air_sigma_mn_m": 485.0,
+    "hg_air_theta_deg": 140.0,
+    "clay_anchor_sg": 0.1
+  },
+  "local_kr_policy": "unchanged; union old Kr knots with new Pc knots",
+  "host_kr_policy": "unchanged; not redefined by this configuration",
+  "host": {
+    "file": "physics/data/host_sample6.csv",
+    "sha256": "3ed6a593962d003c17926438df5ceed5a66408ccb5d9a04ac8192736a64fbf5b",
+    "endpoint_sg": 0.57,
+    "table_entry_pa": 900938.6079896907,
+    "endpoint_pc_pa": 4299006.6115645105,
+    "extension": "constant endpoint Pc; endpoint is not a hard saturation cap"
+  },
+  "master": {
+    "file": "physics/data/master_sample6.csv",
+    "sha256": "5b5ed297ef255a07e624d8beab4122a33f2dc67c1a12e9c02f5a350442376229",
+    "endpoint_sg": 0.8,
+    "table_entry_pa": 900938.6079896907,
+    "endpoint_pc_pa": 7170467.052555063,
+    "extension": "none before scaling; no saturation stretching"
+  }
+}

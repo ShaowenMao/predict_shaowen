@@ -1,0 +1,157 @@
+{
+  "schema_version": 2,
+  "freeze_id": "phase1_pc40_adaptive10_2592_configuration_20261030_v2",
+  "created_utc": "2026-10-30T02:03:40.299839+00:00",
+  "scope": "case assignments and scientific configuration; not a full-campaign deployment",
+  "state": "FROZEN_INTEGRATION_QUALIFIED_NOT_LAUNCHED",
+  "launch_authorized": false,
+  "reservoir_jobs_submitted": 0,
+  "counts": {
+    "base_geologies": 162,
+    "scenarios": 324,
+    "cases": 2592,
+    "stochastic_per_scenario": 8,
+    "windows_per_case": 6,
+    "positions_per_window": 87,
+    "assignments_per_case": 522,
+    "total_assignments": 1353024
+  },
+  "sampling": {
+    "source": "D:\\codex_gom\\UQ_workflow\\independent_full_fault_pc40_324_phase1_20261029_v1",
+    "snapshot": "sampling",
+    "base_seed": 20261029,
+    "seed_method": "sha256_scenario_pc_u63_counter_u64_rejection_v1",
+    "cross_pc": "independent_not_paired",
+    "with_replacement": true,
+    "benchmarks": false,
+    "old_QoI_selection": false,
+    "PREDICT_library_population_per_window": 2000,
+    "case_manifest": "CASE_ASSIGNMENTS.csv",
+    "arrays": "sampling/phase1/sampled_fields.h5",
+    "segment_manifest": "sampling/phase1/sampling_manifest_all_scenarios.csv.gz",
+    "array_case_index_base": 0,
+    "source_row_and_slice_index_base": 1,
+    "window_order": [
+      "famp1",
+      "famp2",
+      "famp3",
+      "famp4",
+      "famp5",
+      "famp6"
+    ],
+    "core_index_one_based": "87*(window_index_one_based-1)+slice_id"
+  },
+  "profiles": {
+    "atlas_sample4_ca40": {
+      "file": "profiles/atlas_sample4_ca40.json",
+      "sha256": "3501af19b48e535d0e0cac033dc747d02a5c897cc6da7d2d74fc331e241dee7f"
+    },
+    "atlas_sample6_ca40": {
+      "file": "profiles/atlas_sample6_ca40.json",
+      "sha256": "e4b6caa3cb71959be7a868029b592535f4317494723cbef9555cd0d7b5d4677e"
+    }
+  },
+  "explicit_local_cell_settings": {
+    "entry_sg": 0.001,
+    "sand_endpoint": 0.95,
+    "clay_endpoint": 0.8,
+    "min_scaling_phi": 0.0001,
+    "min_scaling_k_md": 1e-09,
+    "md_to_m2": 9.869233e-16,
+    "reference_sand_k_m2": 7.60393535652603e-13,
+    "reference_sand_phi": 0.289875,
+    "clay_fit_slope": -0.1992,
+    "clay_fit_intercept": 1.407,
+    "co2_brine_sigma_mn_m": 25.0,
+    "co2_brine_theta_deg": 40.0,
+    "hg_air_sigma_mn_m": 485.0,
+    "hg_air_theta_deg": 140.0,
+    "clay_anchor_sg": 0.1
+  },
+  "numerics": {
+    "pilot_source": "integration_source",
+    "qualified_job_id": "27293942",
+    "runtime_pins": {
+      "bridge": "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/phase1_mip_acceleration_20260911_v1/benchmark_attempts/plan_job22598403/libphase_bridge.so",
+      "bridge_sha256": "9cac5d97a3612d7ada95724aa6cd82a0088775c7a9003555f579b2963d2fd1b9",
+      "pipeline_hash": "55e54e0ec7b5ebb179ab296cfa983baac8d8a40e0c1fbf1a2a32dd8415bba5f9",
+      "kernel_sha256": "a245ea84fd9eca5bb9499a9312595de5a133873de65e80eaa6a32068c415b354",
+      "pilot_only": true,
+      "full_campaign_authorized": false,
+      "kernel_fixed_selector_dependency_sha256": "41db74e3c2c38916427e57306d71820e51be1672832f0cfde0efdf21cc1a4bed"
+    },
+    "pc_states": 100,
+    "max_kr_states": 10,
+    "flow_axis": 3,
+    "julia_threads": 2,
+    "pressure_plan": "physics/vendor/PressurePlan.jl",
+    "pressure_grid": "rebuild for each new core and curve; cover all local endpoints",
+    "mip_trapping_and_acceptance": "unchanged pinned implementation",
+    "export": "physics/vendor/kernel/build_tables.py",
+    "solver": "corrected_direct",
+    "reuse_old_numerical_results": false,
+    "previous_fixed_pilot_job_id": "27286397",
+    "kr_selector": {
+      "id": "adaptive10_endpoint_delta_v1",
+      "source": "adaptive/AdaptiveSelector.jl",
+      "sha256": "f752b97b699a0cb944b59e0b0b4ff31bdbd89fecdd56c973333389a2d6235027",
+      "curve_source": "adaptive/AdaptiveCurve.jl",
+      "curve_sha256": "00e5c7089864e63e5ffbe86c7a0e13ecb25d39411a8786dfd59e7e16f2f03da4",
+      "budget": 10,
+      "shared_gas_brine_states": true,
+      "endpoints": "first and final Pc states always queried",
+      "criterion": "largest max(abs(delta Krw), abs(delta Krg)) between queried interval endpoints",
+      "tie_breaks": [
+        "widest Sg interval",
+        "earliest eligible index"
+      ],
+      "next_query": "midpoint rank among unique-Sg eligible state indices",
+      "plateau_policy": "retain first and final states; fewer than 10 states if fewer eligible",
+      "replay": "exact drainage history from initial state per query; hash each visited microstate",
+      "dense_Kr_reference_access_during_selection": false,
+      "accuracy_claim": "tested adaptive heuristic, not uniformly superior for every core or phase"
+    }
+  },
+  "execution_gate": {
+    "campaign_launcher_included": false,
+    "campaign_launch_authorized": false,
+    "cpu_partition": "mit_normal",
+    "cpu_account": "mit_amf_advanced_cpu",
+    "cpu_qos": "mit_amf_advanced_cpu",
+    "general_tier_fallback_allowed": false,
+    "before_launch": [
+      "explicit full-campaign launch authorization",
+      "adapt and qualify campaign fine-core generation for frozen stochastic assignments and both profiles",
+      "qualify 32-core worker checkpoints, recovery and compact-output lifecycle",
+      "qualify continuous eight-case scheduling and actual Slurm allocations",
+      "population/largest-grid and packet memory checks; retain separate high-memory exceptions"
+    ],
+    "pilot_allocation_is_not_population_memory_qualification": true
+  },
+  "unchanged": [
+    "PREDICT libraries",
+    "old sampling",
+    "old simulations",
+    "geometry and intrinsic properties",
+    "local sand Pc",
+    "local Kr laws",
+    "numerical tolerances and acceptance checks"
+  ],
+  "parent_configuration": "phase1_pc40_2592_configuration_20261030_v1",
+  "parent_lock_sha256": "b57b9b565ad0c6dce221314dda627ed7153c6b7e35980fe9a510572f9d7553cd",
+  "production_upscaling_jobs_submitted": 0,
+  "isolated_integration_jobs_submitted": 1,
+  "planned_execution": {
+    "implementation_status": "not_deployed_or_qualified_by_this_pilot",
+    "cores_per_worker": 32,
+    "packets_per_522_core_case": 17,
+    "continuous_case_window": 8,
+    "array_throttle": null,
+    "scheduler": "Slurm",
+    "old_campaign_resumed": false
+  },
+  "method_manifest": {
+    "file": "METHOD.json",
+    "sha256": "ea1919d05292929667a2e33f38accd9cf0d935cdecafc5ba349083960867b832"
+  }
+}

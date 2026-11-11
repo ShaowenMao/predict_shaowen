@@ -1,0 +1,10 @@
+{
+  "cases": 9,
+  "failure_did_not_block": true,
+  "passed": true,
+  "queued_legacy_preserved": true,
+  "rolling_window": 8,
+  "scientific_results_modified": false,
+  "source": "c5b9ae6c9e49f6ff8a21f66aaba7724235a761de63e03bd04c1a96e93dc1bccf",
+  "tasks": 18
+}

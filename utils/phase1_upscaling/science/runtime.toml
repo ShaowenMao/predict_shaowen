@@ -1,0 +1,7 @@
+bridge = "/orcd/data/juanes/001/shaowen/predict_shaowen/candidates/cell_pc_mip_kr_v1_20260908/phase1_mip_acceleration_20260911_v1/benchmark_attempts/plan_job22598403/libphase_bridge.so"
+bridge_sha256 = "9cac5d97a3612d7ada95724aa6cd82a0088775c7a9003555f579b2963d2fd1b9"
+pipeline_hash = "55e54e0ec7b5ebb179ab296cfa983baac8d8a40e0c1fbf1a2a32dd8415bba5f9"
+kernel_sha256 = "a245ea84fd9eca5bb9499a9312595de5a133873de65e80eaa6a32068c415b354"
+selector_sha256 = "41db74e3c2c38916427e57306d71820e51be1672832f0cfde0efdf21cc1a4bed"
+pilot_only = true
+full_campaign_authorized = false

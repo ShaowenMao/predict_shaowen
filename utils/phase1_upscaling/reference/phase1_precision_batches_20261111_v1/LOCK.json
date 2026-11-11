@@ -1,0 +1,38 @@
+{
+  "code": {
+    "AUTHORIZATION.json": "a81f05c5cfdd214565bc2878b7b2f3c0313f63ae8dbd3a3119a295a4b182e385",
+    "AccurateAudit.jl": "d00333ff8330c7685ff19b49f6554c3a01bc97d2e69b3701e7ed5ba7c065ef50",
+    "PrecisionRecovery.jl": "35870b8b70edf875a823c6ef770e9a4df2a066406f1141512d5590f58df72a52",
+    "ResumeContract.jl": "9f403fe11bc1480fd8f390985dc9961fbd2e3773a8e532c006d8eb1ea8d37fbe",
+    "SCOPE.json": "0b776e74cbe47bcfd07cf9097858888144839f4145a259b07cc4de6e8390213b",
+    "StrictProbe.jl": "fd735343c356a12e432195034eb65f8c0528d20c9b14861dc9f4983ecb863037",
+    "common.py": "6a56520b5d9bff8684cb6153b1e12898d3f35d84ceb57c18609610fdb80361f9",
+    "driver.py": "e797c9fd2f2d75401da7fdd0f9b402303c9c587fca7b2baed950d9a141ddc138",
+    "experiment.jl": "b425d22d07decf20496d33ad45cb995746ea47282226e33e28f0ac2ff1f92261",
+    "job.sh": "cdd057b0dd6ad7e9e829f19563cccf78648b95191344e39e5704af55ce5b030b",
+    "prepare_scope.py": "c7169f88b013c76a93995b9e508cd265a5b774305397b183b650cedca72486e3",
+    "publish.py": "748c07b1c8b532ec178b5fb2eb8f00664e4ac3384b14909aa722f517986dc53b",
+    "recover_flow.jl": "8c09a23bfeab208f7f7c6da08a3c9e898b76a1ac5afd0bb870fcb6ccd04d1579",
+    "recovery.py": "a9ed146afeb071aa13c244570b6a633ed127bfe506abc7386680962be9fcbf2c",
+    "scope.py": "f2f12a40f45e671dd67f04cced57710f070fd34488b82322d128bc3eeaa3a831",
+    "seal.py": "e437d24ad1e5a9a736d070748530cd042a9044064fd3a4ec19bc93aa094f6452",
+    "slurm.py": "3181b752d1f825c0d64972d81111541489dbcb01bcf0509402d0865cff4cb572",
+    "test_batches.py": "b5c2e6b752f55d7e50aed3f8a80248f0febabb77e20de4330bff00b7ae567363",
+    "test_extra.jl": "1bc08b00be0908e1d9a98176fd1ccdc62e9d8865c1b0fc2fa3d6f9f0db6927cd",
+    "test_gates.jl": "3ef29e24fbff75105d13e96f25c83536e3c1568048dd31c90ad61a9ad418ad7d",
+    "test_integration.jl": "5ceabf5a72bc656fc72e4042f3e85f316f8870646de66580e69b4bc2250a8723",
+    "test_precision.jl": "ee6c4fc2369ee6d59ac330a234b034cba59cab86b6e75acd5c7cf7f79b20a333",
+    "test_recovery.py": "56e586e195139d4879c8ebcb5e5b2e8496fec67dd6f7940baff2ec2dd73d7ba0",
+    "test_resume.jl": "6f331924c1da81c7ee01ff041e908ab4f0910e73ad3e2d55e62c4f0e1d093318"
+  },
+  "method": "ea1919d05292929667a2e33f38accd9cf0d935cdecafc5ba349083960867b832",
+  "numerical_sources_unchanged": [
+    "AccurateAudit.jl",
+    "PrecisionRecovery.jl",
+    "StrictProbe.jl",
+    "ResumeContract.jl",
+    "recover_flow.jl",
+    "test_integration.jl"
+  ],
+  "prior_full_recovery_source": "1bf8764d77764c1813cc6bbcc59911deb52c1fa26162b8b0cabb268f8bcc4b82"
+}

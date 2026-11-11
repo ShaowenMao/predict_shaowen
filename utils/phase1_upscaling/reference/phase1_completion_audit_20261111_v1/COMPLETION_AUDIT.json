@@ -1,0 +1,101 @@
+{
+  "basis": "Exact frozen catalog coverage, canonical 522-position completion receipts and plan seals; final four full recovery/publication proofs.",
+  "campaign": "/orcd/data/juanes/001/shaowen/phase1_pc40_adaptive10_campaign_20261030_v1",
+  "cases_complete": 2592,
+  "cases_expected": 2592,
+  "completion_receipts_sha256": "df50b8b7695a7f2102b165998b46471f4a367ae183dc5fa04f9d879c91b52b4e",
+  "configuration_sha256": "7cbd42d913d516c765a6e3dff9f06994814e8b83ea67b2f96c98ae08289b1f36",
+  "controller_states": {
+    "STATE.json": {
+      "active": [],
+      "cursor": 2592
+    },
+    "round2_20261109_v1/solve/STATE.json": {
+      "active": [],
+      "cursor": 125
+    },
+    "round3_20261110_v1/solve/STATE.json": {
+      "active": [],
+      "cursor": 55
+    }
+  },
+  "final_cores": [
+    {
+      "completion_seconds": 187.56616733199917,
+      "key": "s02_c003_pc04_ca40_IND_002_core096",
+      "new_later_flow_calls": 2,
+      "receipt": {
+        "archive_sha256": "a7181d0257fccaf46351b0b68a77ef12b6e709d3e3ad9b0dca8e4770b0cf064b",
+        "bytes": 2701089,
+        "key": "s02_c003_pc04_ca40_IND_002_core096",
+        "method": "ea1919d05292929667a2e33f38accd9cf0d935cdecafc5ba349083960867b832",
+        "record_sha256": "9cd111ce1f743d0cc1a56cf0f19f4064f17b614b303ff86f83e7056ec08d6745",
+        "scientific_pass": true
+      },
+      "reference_seconds": 91.41048192977905,
+      "relative_flow_difference": 6.702585374855862e-14,
+      "saved_flow_calls": 18,
+      "saved_primary_solves_repeated": 0
+    },
+    {
+      "completion_seconds": 125.48907872103155,
+      "key": "s02_c003_pc04_ca40_IND_005_core229",
+      "new_later_flow_calls": 2,
+      "receipt": {
+        "archive_sha256": "985a579132e8f52a72ebffd59dc25bbc76c7019d0a74f1e941db5f8b2e828c8c",
+        "bytes": 2882341,
+        "key": "s02_c003_pc04_ca40_IND_005_core229",
+        "method": "ea1919d05292929667a2e33f38accd9cf0d935cdecafc5ba349083960867b832",
+        "record_sha256": "0947c5bd14c523eca7153b7433a35906243bb342fee5bf170245094f20b4727f",
+        "scientific_pass": true
+      },
+      "reference_seconds": 38.03230285644531,
+      "relative_flow_difference": 8.047064414636989e-15,
+      "saved_flow_calls": 18,
+      "saved_primary_solves_repeated": 0
+    },
+    {
+      "completion_seconds": 98.9395008739084,
+      "key": "s02_c010_pc04_ca40_IND_005_core192",
+      "new_later_flow_calls": 0,
+      "receipt": {
+        "archive_sha256": "71187b15855cb5c00adc838757130efa1acbafeee4b8750455cde441c42cc0e3",
+        "bytes": 1371315,
+        "key": "s02_c010_pc04_ca40_IND_005_core192",
+        "method": "ea1919d05292929667a2e33f38accd9cf0d935cdecafc5ba349083960867b832",
+        "record_sha256": "bc879789638b9571618de5197f6f7ab850ee0c4e6ad1b10276ada50ad3cd31ae",
+        "scientific_pass": true
+      },
+      "reference_seconds": 1.3989369869232178,
+      "relative_flow_difference": 2.0288413408320447e-14,
+      "saved_flow_calls": 20,
+      "saved_primary_solves_repeated": 0
+    },
+    {
+      "completion_seconds": 99.55151136196218,
+      "key": "s02_c010_pc04_ca40_IND_008_core221",
+      "new_later_flow_calls": 0,
+      "receipt": {
+        "archive_sha256": "1d7494bcb0259de7181531558f7f9372417940cfbaa5822576ad4c5a9f85702b",
+        "bytes": 1353117,
+        "key": "s02_c010_pc04_ca40_IND_008_core221",
+        "method": "ea1919d05292929667a2e33f38accd9cf0d935cdecafc5ba349083960867b832",
+        "record_sha256": "24c321b8702accec1991547edb3e54264988492846603d8f2b81883ad4850790",
+        "scientific_pass": true
+      },
+      "reference_seconds": 1.3332140445709229,
+      "relative_flow_difference": 2.0288413408320447e-14,
+      "saved_flow_calls": 20,
+      "saved_primary_solves_repeated": 0
+    }
+  ],
+  "final_recovery_source": "8b61b7dabc42f57c858a2d137858fece866174ede388aa75fa6479137b2c0fbe",
+  "fresh_campaign_archive_rehash": false,
+  "method": "ea1919d05292929667a2e33f38accd9cf0d935cdecafc5ba349083960867b832",
+  "passed": true,
+  "positions_complete": 1353024,
+  "remaining_cases": [],
+  "remaining_positions": 0,
+  "terminal_accounting": "28695498_0|COMPLETED|0:0|00:03:08\n28695498_1|COMPLETED|0:0|00:02:06\n28695498_2|COMPLETED|0:0|00:01:39\n28695498_3|COMPLETED|0:0|00:01:40\n28695499|COMPLETED|0:0|00:00:48\n",
+  "utc": "2026-11-11T15:51:59.828839+00:00"
+}

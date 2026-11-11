@@ -1,0 +1,21 @@
+{
+  "automatic_core_retry": false,
+  "code": {
+    "common.py": "550a8a1892a8b46a6ee4b29930b7ccf092c6f36652a1691c7940df223753028e",
+    "job.sh": "76b2abf05f3ab1ad1247ef31b1be27e6d3551027acc3e5a19b96a94e04b10eba",
+    "seal.py": "08fc104699cadff815d39ca87106415e154600e15ce6c8c9cd73eaafd88f9811",
+    "slurm.py": "3181b752d1f825c0d64972d81111541489dbcb01bcf0509402d0865cff4cb572",
+    "test_window.py": "c5fa7199c94e08af367cb9d9226a56cefd7760c671d62aff6f0132c964890347",
+    "window.py": "9c4ea333c319a95b3dce48f215b19c6507892f092092fffa5a234c6904217573"
+  },
+  "failed_source": "4ac5b8a073c7a89968c60c23442d41894878d5362028b28c078e6919f389ecf9",
+  "finite_batches": 20,
+  "max_groups_equivalent": 8,
+  "max_workers": 64,
+  "prior_operational_failed_launches": 1,
+  "publication_changes": false,
+  "repair": "Pass immutable spec root to actual launcher; compute cross-root proof and terminal no-science audit before one corrected pilot",
+  "scientific_changes": false,
+  "worker_changes": false,
+  "worker_source": "846e9f7ac692a9da5df92254df6c0b5f8a0a2c3ac35a5507d86a4429fd2dd502"
+}

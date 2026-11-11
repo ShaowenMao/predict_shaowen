@@ -1,0 +1,6 @@
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+# Original byte-level source pins must survive Windows/Linux checkouts.
+reference/** -text
+science/** -text

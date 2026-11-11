@@ -1,0 +1,80 @@
+{
+  "passed": true,
+  "contact_angle_deg": 40,
+  "co2_brine_sigma_mn_m": 25.0,
+  "hg_air_sigma_mn_m": 485.0,
+  "hg_air_contact_angle_deg": 140.0,
+  "mercury_to_co2_brine_pressure_factor": 0.05154639175257733,
+  "pc40_to_pc70_multiplier": 2.2397641135117494,
+  "curves": [
+    {
+      "use": "host",
+      "sample_id": 4,
+      "angle_deg": 40,
+      "table_entry_hg_psi": 520.0,
+      "entry_anchor_mpa": 0.18480791958762888,
+      "pc_at_sg_0p001_mpa": 0.18872495211559415,
+      "pc_at_sg_0p10_mpa": 0.4345234720655377,
+      "endpoint_sg": 0.57,
+      "endpoint_pc_mpa": 3.5588313409354453
+    },
+    {
+      "use": "master",
+      "sample_id": 4,
+      "angle_deg": 40,
+      "table_entry_hg_psi": 520.0,
+      "entry_anchor_mpa": 0.18480791958762888,
+      "pc_at_sg_0p001_mpa": 0.18872495211559415,
+      "pc_at_sg_0p10_mpa": 0.4345234720655377,
+      "endpoint_sg": 0.8,
+      "endpoint_pc_mpa": 6.66659297429306
+    },
+    {
+      "use": "host",
+      "sample_id": 6,
+      "angle_deg": 40,
+      "table_entry_hg_psi": 2535.0,
+      "entry_anchor_mpa": 0.9009386079896907,
+      "pc_at_sg_0p001_mpa": 0.9010602800607967,
+      "pc_at_sg_0p10_mpa": 1.2509256206122823,
+      "endpoint_sg": 0.57,
+      "endpoint_pc_mpa": 4.2990066115645105
+    },
+    {
+      "use": "master",
+      "sample_id": 6,
+      "angle_deg": 40,
+      "table_entry_hg_psi": 2535.0,
+      "entry_anchor_mpa": 0.9009386079896907,
+      "pc_at_sg_0p001_mpa": 0.9010602800607967,
+      "pc_at_sg_0p10_mpa": 1.2509256206122823,
+      "endpoint_sg": 0.8,
+      "endpoint_pc_mpa": 7.170467052555063
+    }
+  ],
+  "entry_below_all_retained_figure_pressures": true,
+  "strict_monotonicity_verified": true,
+  "common_range_host_master_equal": true,
+  "pressure_interpolation": "linear in Pc versus original gas saturation",
+  "fitting": false,
+  "saturation_stretching": false,
+  "extrapolation": false,
+  "local_permeability_scaling": false,
+  "entry_convention": "Table 3.3 incipient-invasion anchor at Sg=0, not the numerical MIP Sg=0.001 entry criterion",
+  "entry_bridge": "Linear connection to first retained digitized point; not new measured data",
+  "simulation_inputs_modified": false,
+  "simulation_results_modified": false,
+  "sampling_config_unchanged": true,
+  "analysis_only_not_solver_tables": true,
+  "legend_overlap_checked": true,
+  "footer_spacing_checked": true,
+  "future_implementation_note": "40 degrees must also be used in the permeability-based local-clay target; not only master conversion",
+  "source_sha256": {
+    "D:\\codex_gom\\studies\\lu2017_six_pc70_table_entry_monotonic_20261027_v1\\pc70_table_entry_monotonic_plot_points.csv": "6af56e7ff81259bfd7b412bc8dfa0594d4440188756c8a355660631ed0b4623f",
+    "D:\\codex_gom\\studies\\lu2017_six_pc70_table_entry_monotonic_20261027_v1\\entry_and_monotonicity_checks.csv": "209deaa728d1f8b9b0e0e01e5855d770ff3a12c5a86d7c78b812244523138635",
+    "D:\\codex_gom\\studies\\host_fault_clay_pc60_comparison_20261026_v1\\validation.json": "be9fe259e09ec72053336ee2cdb949e7400498b5c2f43379a4194e0ea6110e90",
+    "D:\\codex_gom\\studies\\host_clay_endmembers_pc70_20261028_v1\\validation.json": "8380bd97b5a9fce2886ddbba962486f9a96186e15c7ae327e7409f27046425b0",
+    "D:\\codex_gom\\UQ_workflow\\independent_full_fault_pc40_324_phase1_20261029_v1\\CONFIG.json": "6d92a9a885ca546864e0362373f53b2c25c332e83159fbe5893d7b551bb489e9"
+  },
+  "script_sha256": "51d23984a6d4acf882270daf12555fb8711c44354a1b1b99295c2c0576fb769e"
+}
